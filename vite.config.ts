@@ -2,28 +2,55 @@
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import dts from 'vite-plugin-dts' // Helps generate TypeScript declaration files
+import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-  plugins: [react(), dts()], // Use dts() plugin if using TypeScript
+  plugins: [
+    react(),
+    dts({
+      include: ['src/lib/**/*'],
+      rollupTypes: true,
+    })
+  ],
+  css: {
+    postcss: './postcss.config.js',
+  },
   build: {
     lib: {
-      // Could also be a dictionary or array of multiple entry points
-      entry: resolve(__dirname, 'src/lib/index.ts'), // Your library's entry point
-      name: 'MyReactLibrary',
-      // the proper extensions will be added
-      fileName: 'my-react-library',
+      entry: {
+        index: resolve(__dirname, 'src/lib/index.ts'),
+        providers: resolve(__dirname, 'src/lib/providers/index.ts'),
+        storage: resolve(__dirname, 'src/lib/storage/index.ts'),
+        context: resolve(__dirname, 'src/lib/context/index.ts'),
+      },
+      name: 'AISDKReactModelPicker',
+      fileName: (format, entryName) => {
+        const extension = format === 'es' ? 'js' : 'cjs'
+        return `${entryName}.${extension}`
+      },
     },
     rollupOptions: {
-      // Make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ['react', 'react-dom'],
+      external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react-hook-form',
+        '@heroicons/react',
+        '@ai-sdk/openai',
+        '@ai-sdk/anthropic',
+        '@ai-sdk/google',
+        '@ai-sdk/azure',
+        '@ai-sdk/mistral',
+        '@ai-sdk/cohere',
+        'ai',
+      ],
       output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
+        preserveModules: false,
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          'react/jsx-runtime': 'jsxRuntime',
+          'react-hook-form': 'ReactHookForm',
         },
       },
     },

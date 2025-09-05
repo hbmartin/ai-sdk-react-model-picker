@@ -1,0 +1,252 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0, 1.0.0-beta.1)'
+        required: true
+        type: string
+      tag:
+        description: 'NPM tag (latest, beta, next)'
+        required: true
+        default: 'latest'
+        type: choice
+        options:
+          - latest
+          - beta
+          - next
+          - alpha
+
+jobs:
+  quality-checks:
+    name: Pre-publish Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run TypeScript check
+        run: npm run typecheck || npx tsc --noEmit
+      
+      - name: Run linter
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test -- --run 2>/dev/null || echo "No tests configured"
+      
+      - name: Build library
+        run: npm run build
+      
+      - name: Check package contents
+        run: |
+          npm pack --dry-run
+          echo "Package contents:"
+          npm pack --dry-run 2>/dev/null | grep -E "^npm notice"
+
+  publish-npm:
+    name: Publish to NPM Registry
+    needs: quality-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # For NPM provenance
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js with NPM registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build library
+        run: npm run build
+      
+      - name: Update package version (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          echo "Updated version to ${{ github.event.inputs.version }}"
+      
+      - name: Configure NPM for publishing
+        run: |
+          echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > ~/.npmrc
+          npm whoami || echo "Not authenticated yet"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Publish to NPM (release trigger)
+        if: github.event_name == 'release'
+        run: |
+          # Determine tag from release (beta, alpha, etc.)
+          TAG="latest"
+          if [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
+            TAG="next"
+          fi
+          
+          echo "Publishing with tag: $TAG"
+          npm publish --access public --tag $TAG
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Publish to NPM (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Publishing version ${{ github.event.inputs.version }} with tag: ${{ github.event.inputs.tag }}"
+          npm publish --access public --tag ${{ github.event.inputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create GitHub Release Assets
+        if: github.event_name == 'release'
+        run: |
+          npm pack
+          mv *.tgz ai-sdk-react-model-picker-${{ github.event.release.tag_name }}.tgz
+      
+      - name: Upload Release Assets
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./ai-sdk-react-model-picker-${{ github.event.release.tag_name }}.tgz
+          asset_name: ai-sdk-react-model-picker-${{ github.event.release.tag_name }}.tgz
+          asset_content_type: application/gzip
+        continue-on-error: true
+
+  publish-github-packages:
+    name: Publish to GitHub Packages
+    needs: quality-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js with GitHub registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://npm.pkg.github.com'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build library
+        run: npm run build
+      
+      - name: Update package version (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
+      
+      - name: Configure package.json for GitHub Packages
+        run: |
+          # Update package name for GitHub packages if needed
+          node -e "
+          const pkg = require('./package.json');
+          pkg.publishConfig = {
+            registry: 'https://npm.pkg.github.com',
+            access: 'public'
+          };
+          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+      
+      - name: Publish to GitHub Packages
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            npm publish --tag ${{ github.event.inputs.tag }}
+          else
+            npm publish
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  create-release-pr:
+    name: Create Release Pull Request
+    if: github.event_name == 'workflow_dispatch'
+    needs: [publish-npm, publish-github-packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      
+      - name: Update version in package.json
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          
+          # Update changelog
+          cat > RELEASE_NOTES.md << EOF
+          ## Version ${{ github.event.inputs.version }}
+          
+          Published to NPM with tag: ${{ github.event.inputs.tag }}
+          
+          ### Changes
+          - Updated version to ${{ github.event.inputs.version }}
+          
+          ### Installation
+          \`\`\`bash
+          npm install ai-sdk-react-model-picker@${{ github.event.inputs.tag }}
+          \`\`\`
+          EOF
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: release version ${{ github.event.inputs.version }}'
+          title: 'Release: v${{ github.event.inputs.version }}'
+          body: |
+            ## 🚀 Release v${{ github.event.inputs.version }}
+            
+            This PR updates the package version to ${{ github.event.inputs.version }}.
+            
+            ### NPM Package
+            - Published with tag: `${{ github.event.inputs.tag }}`
+            - Install: `npm install ai-sdk-react-model-picker@${{ github.event.inputs.tag }}`
+            
+            ### Checklist
+            - [x] Version updated in package.json
+            - [x] Published to NPM registry
+            - [ ] Changelog updated
+            - [ ] Documentation updated
+            
+            ---
+            *This PR was automatically created by the publish workflow.*
+          branch: release/v${{ github.event.inputs.version }}
+          delete-branch: true

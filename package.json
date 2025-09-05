@@ -1,15 +1,35 @@
 {
   "name": "ai-sdk-react-model-picker",
   "private": false,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
-  "main": "./dist/ai-sdk-react-model-picker.umd.cjs",
-  "module": "./dist/ai-sdk-react-model-picker.js",
+  "author": "Harold Martin & Continue Dev, Inc",
+  "license": "Apache-2.0",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/ai-sdk-react-model-picker.js",
-      "require": "./dist/ai-sdk-react-model-picker.umd.cjs"
-    }
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./providers": {
+      "import": "./dist/providers.js",
+      "require": "./dist/providers.cjs",
+      "types": "./dist/providers.d.ts"
+    },
+    "./storage": {
+      "import": "./dist/storage.js",
+      "require": "./dist/storage.cjs",
+      "types": "./dist/storage.d.ts"
+    },
+    "./context": {
+      "import": "./dist/context.js",
+      "require": "./dist/context.cjs",
+      "types": "./dist/context.d.ts"
+    },
+    "./styles.css": "./dist/styles.css"
   },
   "files": [
     "dist"
@@ -18,15 +38,46 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
+    "@ai-sdk/openai": ">=0.0.1",
+    "@ai-sdk/anthropic": ">=0.0.1",
+    "@ai-sdk/google": ">=0.0.1",
+    "@ai-sdk/azure": ">=0.0.1",
+    "@ai-sdk/mistral": ">=0.0.1",
+    "@ai-sdk/cohere": ">=0.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/openai": { "optional": true },
+    "@ai-sdk/anthropic": { "optional": true },
+    "@ai-sdk/google": { "optional": true },
+    "@ai-sdk/azure": { "optional": true },
+    "@ai-sdk/mistral": { "optional": true },
+    "@ai-sdk/cohere": { "optional": true }
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
     "react-hook-form": "^7.62.0"
   },
   "devDependencies": {
+    "@ai-sdk/anthropic": "^2.0.11",
+    "@ai-sdk/azure": "^2.0.0",
+    "@ai-sdk/cohere": "^2.0.0",
+    "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/mistral": "^2.0.0",
+    "@ai-sdk/openai": "^2.0.0",
     "@eslint/js": "^9.33.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
@@ -38,13 +89,19 @@
     "@typescript-eslint/parser": "^8.42.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/ui": "^3.2.4",
+    "ai": "^5.0.30",
+    "autoprefixer": "^10.4.16",
     "eslint": "^9.33.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
+    "postcss": "^8.4.32",
     "prettier": "^3.6.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^3.4.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2",
