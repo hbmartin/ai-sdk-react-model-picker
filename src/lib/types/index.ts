@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from 'ai';
+import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type { ReactNode } from 'react';
 
 // Branded types for type safety
@@ -117,7 +117,7 @@ export abstract class AIProvider {
   abstract hasCredentials(config: Record<string, any>): boolean;
 
   // AI SDK v5 integration - return configured model instance
-  abstract createInstance(params: ProviderInstanceParams): LanguageModelV1;
+  abstract createInstance(params: ProviderInstanceParams): LanguageModelV2;
 
   // Optional dynamic model loading
   async loadModels?(storage: StorageAdapter): Promise<ModelConfig[]> {

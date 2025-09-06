@@ -50,25 +50,38 @@
     "clean": "rm -rf dist node_modules/.tmp"
   },
   "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0",
-    "@ai-sdk/openai": ">=0.0.1",
     "@ai-sdk/anthropic": ">=0.0.1",
-    "@ai-sdk/google": ">=0.0.1",
     "@ai-sdk/azure": ">=0.0.1",
+    "@ai-sdk/cohere": ">=0.0.1",
+    "@ai-sdk/google": ">=0.0.1",
     "@ai-sdk/mistral": ">=0.0.1",
-    "@ai-sdk/cohere": ">=0.0.1"
+    "@ai-sdk/openai": ">=0.0.1",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
   },
   "peerDependenciesMeta": {
-    "@ai-sdk/openai": { "optional": true },
-    "@ai-sdk/anthropic": { "optional": true },
-    "@ai-sdk/google": { "optional": true },
-    "@ai-sdk/azure": { "optional": true },
-    "@ai-sdk/mistral": { "optional": true },
-    "@ai-sdk/cohere": { "optional": true }
+    "@ai-sdk/openai": {
+      "optional": true
+    },
+    "@ai-sdk/anthropic": {
+      "optional": true
+    },
+    "@ai-sdk/google": {
+      "optional": true
+    },
+    "@ai-sdk/azure": {
+      "optional": true
+    },
+    "@ai-sdk/mistral": {
+      "optional": true
+    },
+    "@ai-sdk/cohere": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "eslint-plugin-unicorn": "^61.0.0",
     "react-hook-form": "^7.62.0"
   },
   "devDependencies": {
@@ -86,15 +99,19 @@
     "@types/node": "^24.3.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/ui": "^3.2.4",
     "ai": "^5.0.30",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.33.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "eslint-plugin-unused-imports": "^4.2.0",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
     "postcss": "^8.4.32",

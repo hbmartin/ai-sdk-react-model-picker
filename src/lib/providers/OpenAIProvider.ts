@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from 'ai';
+import type { LanguageModelV2 } from '@ai-sdk/provider';
 import { 
   AIProvider, 
   ModelConfig, 
@@ -100,7 +100,7 @@ export class OpenAIProvider extends AIProvider {
     return Boolean(config.apiKey);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV1 {
+  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
     // Dynamic import to avoid bundling if not needed
     let openai: any;
     

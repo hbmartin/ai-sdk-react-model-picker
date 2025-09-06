@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from 'ai';
+import type { LanguageModelV2 } from '@ai-sdk/provider';
 import { 
   AIProvider, 
   ModelConfig, 
@@ -87,7 +87,7 @@ export class AzureProvider extends AIProvider {
     return Boolean(config.apiKey && config.resourceName);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV1 {
+  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
     let azure: any;
     
     try {
