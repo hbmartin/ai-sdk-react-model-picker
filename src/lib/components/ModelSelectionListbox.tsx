@@ -1,13 +1,7 @@
 import React from 'react';
-import { 
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-  Transition,
-} from './ui/Listbox';
-import { ModelConfigWithProvider, ProviderMetadata } from '../types';
+import type { ModelConfigWithProvider, ProviderMetadata } from '../types';
 import { CubeIcon, CheckIcon, ChevronDownIcon } from '../icons';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from './ui/Listbox';
 
 export interface ModelSelectionListboxProps {
   /** Currently selected model/provider */
@@ -71,13 +65,10 @@ export function ModelSelectionListbox({
   const selectedTitle = selectedItem ? getItemTitle(selectedItem) : placeholder;
   const SelectedIcon = selectedItem ? getItemIcon(selectedItem) : CubeIcon;
 
-  const renderOption = (
-    item: ModelConfigWithProvider | ProviderMetadata,
-    index: number
-  ) => {
+  const renderOption = (item: ModelConfigWithProvider | ProviderMetadata, index: number) => {
     const title = getItemTitle(item);
     const ItemIcon = getItemIcon(item) || CubeIcon;
-    const isSelected = selectedItem === item;
+    const _isSelected = selectedItem === item;
 
     return (
       <ListboxOption
@@ -91,9 +82,7 @@ export function ModelSelectionListbox({
               <ItemIcon className="w-4 h-4 flex-shrink-0 text-current" />
               <span className="text-xs truncate">{title}</span>
             </div>
-            {selected && (
-              <CheckIcon className="w-3 h-3 flex-shrink-0" />
-            )}
+            {selected && <CheckIcon className="w-3 h-3 flex-shrink-0" />}
           </>
         )}
       </ListboxOption>
@@ -103,22 +92,12 @@ export function ModelSelectionListbox({
   return (
     <div className={`relative ${className}`}>
       <Listbox value={selectedItem} onChange={onSelectionChange}>
-        <ListboxButton
-          disabled={disabled || isLoading}
-          className="relative w-full"
-        >
+        <ListboxButton disabled={disabled || isLoading} className="relative w-full">
           <span className="flex items-center gap-2 min-w-0 flex-1">
-            {SelectedIcon && (
-              <SelectedIcon className="w-4 h-4 flex-shrink-0 text-current" />
-            )}
-            <span className="text-xs truncate">
-              {isLoading ? 'Loading...' : selectedTitle}
-            </span>
+            {SelectedIcon && <SelectedIcon className="w-4 h-4 flex-shrink-0 text-current" />}
+            <span className="text-xs truncate">{isLoading ? 'Loading...' : selectedTitle}</span>
           </span>
-          <ChevronDownIcon 
-            className="w-4 h-4 flex-shrink-0 text-muted" 
-            aria-hidden="true" 
-          />
+          <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-muted" aria-hidden="true" />
         </ListboxButton>
 
         <Transition>
@@ -146,7 +125,7 @@ export function ModelSelectionListbox({
                     Additional Options
                   </div>
                 )}
-                {otherOptions.map((option, index) => 
+                {otherOptions.map((option, index) =>
                   renderOption(option, topOptions.length + index)
                 )}
               </div>
@@ -154,9 +133,7 @@ export function ModelSelectionListbox({
 
             {/* Empty State */}
             {topOptions.length === 0 && otherOptions.length === 0 && !isLoading && (
-              <div className="px-3 py-4 text-center text-sm text-muted">
-                No options available
-              </div>
+              <div className="px-3 py-4 text-center text-sm text-muted">No options available</div>
             )}
 
             {/* Loading State */}

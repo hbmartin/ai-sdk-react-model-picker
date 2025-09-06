@@ -1,14 +1,11 @@
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { 
-  AIProvider, 
-  ModelConfig, 
-  ProviderMetadata, 
-  ProviderInstanceParams, 
+import type {
+  ModelConfig,
+  ProviderMetadata,
+  ProviderInstanceParams,
   ValidationResult,
-  createProviderId,
-  createModelId,
-  ModelProviderTags
 } from '../types';
+import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { AnthropicIcon } from '../icons';
 
 /**
@@ -30,8 +27,8 @@ export class AnthropicProvider extends AIProvider {
     {
       id: createModelId('claude-3-5-sonnet-20241022'),
       displayName: 'Claude 3.5 Sonnet',
-      maxTokens: 200000,
-      contextLength: 200000,
+      maxTokens: 200_000,
+      contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
@@ -39,32 +36,32 @@ export class AnthropicProvider extends AIProvider {
     {
       id: createModelId('claude-3-5-haiku-20241022'),
       displayName: 'Claude 3.5 Haiku',
-      maxTokens: 200000,
-      contextLength: 200000,
+      maxTokens: 200_000,
+      contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
     },
     {
       id: createModelId('claude-3-opus-20240229'),
       displayName: 'Claude 3 Opus',
-      maxTokens: 200000,
-      contextLength: 200000,
+      maxTokens: 200_000,
+      contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
     },
     {
       id: createModelId('claude-3-sonnet-20240229'),
       displayName: 'Claude 3 Sonnet',
-      maxTokens: 200000,
-      contextLength: 200000,
+      maxTokens: 200_000,
+      contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
     },
     {
       id: createModelId('claude-3-haiku-20240307'),
       displayName: 'Claude 3 Haiku',
-      maxTokens: 200000,
-      contextLength: 200000,
+      maxTokens: 200_000,
+      contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
     },
@@ -72,7 +69,7 @@ export class AnthropicProvider extends AIProvider {
 
   validateCredentials(config: Record<string, any>): ValidationResult {
     const apiKey = config.apiKey;
-    
+
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         isValid: false,
@@ -102,17 +99,17 @@ export class AnthropicProvider extends AIProvider {
     return Boolean(config.apiKey);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     // Dynamic import to avoid bundling if not needed
     let anthropic: any;
-    
+
     try {
       // This will be a peer dependency
-      anthropic = require('@ai-sdk/anthropic');
-    } catch (error) {
+      anthropic = await import('@ai-sdk/anthropic');
+    } catch {
       throw new Error(
         'Anthropic provider requires "@ai-sdk/anthropic" to be installed. ' +
-        'Please install it with: npm install @ai-sdk/anthropic'
+          'Please install it with: npm install @ai-sdk/anthropic'
       );
     }
 
@@ -148,17 +145,17 @@ export class AnthropicProvider extends AIProvider {
 
     try {
       // Dynamic import
-      const anthropic = require('@ai-sdk/anthropic');
-      
+      const anthropic = await import('@ai-sdk/anthropic');
+
       // Create a client with the API key
       const client = anthropic.anthropic({ apiKey });
-      
+
       // Test with a minimal request
-      const model = client('claude-3-haiku-20240307');
-      
+      const _model = client('claude-3-haiku-20240307');
+
       // Try to get model info or make a minimal test call
       // This would need to be implemented based on the actual AI SDK API
-      
+
       return { isValid: true };
     } catch (error: any) {
       if (error.message?.includes('401') || error.message?.includes('authentication')) {
@@ -167,7 +164,7 @@ export class AnthropicProvider extends AIProvider {
           error: 'Invalid Anthropic API key',
         };
       }
-      
+
       if (error.message?.includes('quota') || error.message?.includes('usage')) {
         return {
           isValid: true,
@@ -193,16 +190,19 @@ export class AnthropicProvider extends AIProvider {
    * Check if model supports specific capability
    */
   modelSupportsCapability(modelId: string, capability: 'vision' | 'tools'): boolean {
-    const model = this.models.find(m => m.id === modelId);
+    const model = this.models.find((m) => m.id === modelId);
     if (!model) return false;
 
     switch (capability) {
-      case 'vision':
+      case 'vision': {
         return model.supportsVision === true;
-      case 'tools':
+      }
+      case 'tools': {
         return model.supportsTools === true;
-      default:
+      }
+      default: {
         return false;
+      }
     }
   }
 
@@ -210,14 +210,17 @@ export class AnthropicProvider extends AIProvider {
    * Get model by capability
    */
   getModelsByCapability(capability: 'vision' | 'tools'): ModelConfig[] {
-    return this.models.filter(model => {
+    return this.models.filter((model) => {
       switch (capability) {
-        case 'vision':
+        case 'vision': {
           return model.supportsVision === true;
-        case 'tools':
+        }
+        case 'tools': {
           return model.supportsTools === true;
-        default:
+        }
+        default: {
           return false;
+        }
       }
     });
   }

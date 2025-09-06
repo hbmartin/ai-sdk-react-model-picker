@@ -1,14 +1,11 @@
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { 
-  AIProvider, 
-  ModelConfig, 
-  ProviderMetadata, 
-  ProviderInstanceParams, 
+import type {
+  ModelConfig,
+  ProviderMetadata,
+  ProviderInstanceParams,
   ValidationResult,
-  createProviderId,
-  createModelId,
-  ModelProviderTags
 } from '../types';
+import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { AzureIcon } from '../icons';
 
 export class AzureProvider extends AIProvider {
@@ -26,8 +23,8 @@ export class AzureProvider extends AIProvider {
     {
       id: createModelId('gpt-4o'),
       displayName: 'GPT-4 Omni (Azure)',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
@@ -35,8 +32,8 @@ export class AzureProvider extends AIProvider {
     {
       id: createModelId('gpt-4-turbo'),
       displayName: 'GPT-4 Turbo (Azure)',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsVision: true,
       supportsTools: true,
     },
@@ -51,14 +48,14 @@ export class AzureProvider extends AIProvider {
       id: createModelId('gpt-35-turbo'),
       displayName: 'GPT-3.5 Turbo (Azure)',
       maxTokens: 4096,
-      contextLength: 16385,
+      contextLength: 16_385,
       supportsTools: true,
     },
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
     const { apiKey, resourceName } = config;
-    
+
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         isValid: false,
@@ -87,15 +84,15 @@ export class AzureProvider extends AIProvider {
     return Boolean(config.apiKey && config.resourceName);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let azure: any;
-    
+
     try {
-      azure = require('@ai-sdk/azure');
-    } catch (error) {
+      azure = await import('@ai-sdk/azure');
+    } catch {
       throw new Error(
         'Azure provider requires "@ai-sdk/azure" to be installed. ' +
-        'Please install it with: npm install @ai-sdk/azure'
+          'Please install it with: npm install @ai-sdk/azure'
       );
     }
 

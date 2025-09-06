@@ -34,10 +34,7 @@ export function Toggle({
       <div
         className={`
           text-center px-3 py-2 rounded-default transition-all duration-200 ease-in-out
-          ${selected 
-            ? 'bg-primary text-white shadow-sm' 
-            : 'text-foreground hover:bg-opacity-60'
-          }
+          ${selected ? 'bg-primary text-white shadow-sm' : 'text-foreground hover:bg-opacity-60'}
         `}
       >
         {optionOne}
@@ -45,10 +42,7 @@ export function Toggle({
       <div
         className={`
           text-center px-3 py-2 rounded-default transition-all duration-200 ease-in-out
-          ${!selected 
-            ? 'bg-primary text-white shadow-sm' 
-            : 'text-foreground hover:bg-opacity-60'
-          }
+          ${selected ? 'text-foreground hover:bg-opacity-60' : 'bg-primary text-white shadow-sm'}
         `}
       >
         {optionTwo}

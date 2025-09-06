@@ -1,13 +1,5 @@
-import React, { 
-  createContext, 
-  useContext, 
-  useState, 
-  useRef, 
-  useEffect,
-  ReactNode,
-  ButtonHTMLAttributes,
-  HTMLAttributes
-} from 'react';
+import type { ReactNode, ButtonHTMLAttributes, HTMLAttributes } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 
 // Types for the Listbox components
 interface ListboxContextType {
@@ -37,12 +29,7 @@ export interface ListboxProps {
   className?: string;
 }
 
-export function Listbox({ 
-  value, 
-  onChange = () => {}, 
-  children,
-  className = '' 
-}: ListboxProps) {
+export function Listbox({ value, onChange = () => {}, children, className = '' }: ListboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
@@ -93,9 +80,7 @@ export function Listbox({
         optionsRef,
       }}
     >
-      <div className={`relative ${className}`}>
-        {children}
-      </div>
+      <div className={`relative ${className}`}>{children}</div>
     </ListboxContext.Provider>
   );
 }
@@ -105,12 +90,7 @@ export interface ListboxButtonProps extends ButtonHTMLAttributes<HTMLButtonEleme
   children: ReactNode;
 }
 
-export function ListboxButton({ 
-  children, 
-  className = '',
-  onClick,
-  ...props 
-}: ListboxButtonProps) {
+export function ListboxButton({ children, className = '', onClick, ...props }: ListboxButtonProps) {
   const { isOpen, setIsOpen, buttonRef } = useListboxContext();
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -155,11 +135,7 @@ export interface ListboxOptionsProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
-export function ListboxOptions({ 
-  children, 
-  className = '',
-  ...props 
-}: ListboxOptionsProps) {
+export function ListboxOptions({ children, className = '', ...props }: ListboxOptionsProps) {
   const { isOpen, optionsRef } = useListboxContext();
 
   if (!isOpen) return null;
@@ -189,20 +165,20 @@ export interface ListboxOptionProps extends HTMLAttributes<HTMLDivElement> {
   disabled?: boolean;
 }
 
-export function ListboxOption({ 
-  value, 
+export function ListboxOption({
+  value,
   children,
   disabled = false,
   className = '',
   onClick,
-  ...props 
+  ...props
 }: ListboxOptionProps) {
   const { value: selectedValue, onChange, setIsOpen } = useListboxContext();
   const isSelected = selectedValue === value;
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
-    
+
     onChange(value);
     setIsOpen(false);
     onClick?.(e);
@@ -210,7 +186,7 @@ export function ListboxOption({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (disabled) return;
-    
+
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onChange(value);
@@ -227,23 +203,14 @@ export function ListboxOption({
       onKeyDown={handleKeyDown}
       className={`
         px-3 py-2 cursor-pointer select-none
-        ${isSelected 
-          ? 'bg-primary text-white' 
-          : 'text-foreground hover:bg-accent'
-        }
-        ${disabled 
-          ? 'opacity-50 cursor-not-allowed' 
-          : 'hover:bg-accent'
-        }
+        ${isSelected ? 'bg-primary text-white' : 'text-foreground hover:bg-accent'}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent'}
         transition-colors duration-150
         ${className}
       `}
       {...props}
     >
-      {typeof children === 'function' 
-        ? children({ selected: isSelected })
-        : children
-      }
+      {typeof children === 'function' ? children({ selected: isSelected }) : children}
     </div>
   );
 }
@@ -257,10 +224,6 @@ export interface TransitionProps {
 
 export function Transition({ show = true, children, className = '' }: TransitionProps) {
   if (!show) return null;
-  
-  return (
-    <div className={`transition-all duration-150 ease-out ${className}`}>
-      {children}
-    </div>
-  );
+
+  return <div className={`transition-all duration-150 ease-out ${className}`}>{children}</div>;
 }

@@ -1,19 +1,13 @@
-import React, { 
-  createContext, 
-  useContext, 
-  useReducer, 
-  ReactNode,
-  useMemo,
-  useCallback,
-} from 'react';
-import { 
-  ModelConfigWithProvider, 
-  IProviderRegistry, 
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useMemo, useCallback } from 'react';
+import type {
+  ModelConfigWithProvider,
+  IProviderRegistry,
   StorageAdapter,
   ModelId,
   Role,
   ThemeConfig,
-  ProviderId
+  ProviderId,
 } from '../types';
 
 // State interface
@@ -40,13 +34,13 @@ interface ModelPickerContextValue {
   storage: StorageAdapter;
   roles?: Role[];
   theme?: ThemeConfig;
-  
+
   // Actions
   selectModel: (model: ModelConfigWithProvider) => void;
   selectRole: (roleId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
+
   // Callbacks
   onConfigureProvider?: (providerId: ProviderId) => void;
   onMissingConfiguration?: (keys: string[]) => void;
@@ -55,21 +49,23 @@ interface ModelPickerContextValue {
 const ModelPickerContext = createContext<ModelPickerContextValue | null>(null);
 
 // Reducer
-function modelPickerReducer(
-  state: ModelPickerState, 
-  action: ModelPickerAction
-): ModelPickerState {
+function modelPickerReducer(state: ModelPickerState, action: ModelPickerAction): ModelPickerState {
   switch (action.type) {
-    case 'SET_MODEL':
+    case 'SET_MODEL': {
       return { ...state, selectedModelId: action.payload };
-    case 'SET_ROLE':
+    }
+    case 'SET_ROLE': {
       return { ...state, selectedRole: action.payload };
-    case 'SET_LOADING':
+    }
+    case 'SET_LOADING': {
       return { ...state, isLoading: action.payload };
-    case 'SET_ERROR':
+    }
+    case 'SET_ERROR': {
       return { ...state, error: action.payload };
-    default:
+    }
+    default: {
       return state;
+    }
   }
 }
 
@@ -116,7 +112,7 @@ export function ModelPickerProvider({
   // Find selected model
   const selectedModel = useMemo(() => {
     if (!state.selectedModelId) return null;
-    return allModels.find(m => m.model.id === state.selectedModelId) || null;
+    return allModels.find((m) => m.model.id === state.selectedModelId) || null;
   }, [state.selectedModelId, allModels]);
 
   // Action creators
@@ -153,11 +149,7 @@ export function ModelPickerProvider({
     onMissingConfiguration,
   };
 
-  return React.createElement(
-    ModelPickerContext.Provider, 
-    { value: contextValue },
-    children
-  );
+  return React.createElement(ModelPickerContext.Provider, { value: contextValue }, children);
 }
 
 /**
@@ -166,9 +158,7 @@ export function ModelPickerProvider({
 export function useModelPicker(): ModelPickerContextValue {
   const context = useContext(ModelPickerContext);
   if (!context) {
-    throw new Error(
-      'useModelPicker must be used within a ModelPickerProvider'
-    );
+    throw new Error('useModelPicker must be used within a ModelPickerProvider');
   }
   return context;
 }
@@ -193,15 +183,8 @@ export function useAllModels(): ModelConfigWithProvider[] {
  * Hook for model selection actions
  */
 export function useModelSelection() {
-  const { 
-    state, 
-    selectedModel, 
-    selectModel, 
-    selectRole, 
-    setLoading, 
-    setError 
-  } = useModelPicker();
-  
+  const { state, selectedModel, selectModel, selectRole, setLoading, setError } = useModelPicker();
+
   return {
     selectedModelId: state.selectedModelId,
     selectedRole: state.selectedRole,
@@ -220,15 +203,21 @@ export function useModelSelection() {
  */
 export function useProviders() {
   const { providers, storage, onConfigureProvider, onMissingConfiguration } = useModelPicker();
-  
-  const configureProvider = useCallback((providerId: ProviderId) => {
-    onConfigureProvider?.(providerId);
-  }, [onConfigureProvider]);
-  
-  const handleMissingConfiguration = useCallback((keys: string[]) => {
-    onMissingConfiguration?.(keys);
-  }, [onMissingConfiguration]);
-  
+
+  const configureProvider = useCallback(
+    (providerId: ProviderId) => {
+      onConfigureProvider?.(providerId);
+    },
+    [onConfigureProvider]
+  );
+
+  const handleMissingConfiguration = useCallback(
+    (keys: string[]) => {
+      onMissingConfiguration?.(keys);
+    },
+    [onMissingConfiguration]
+  );
+
   return {
     providers,
     storage,

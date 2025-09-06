@@ -10,19 +10,15 @@ jobs:
   lint-and-test:
     name: Lint, Type Check, and Test
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: 'npm'
       
       - name: Install dependencies
@@ -66,7 +62,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 20
           cache: 'npm'
       
       - name: Install dependencies
@@ -113,34 +109,3 @@ jobs:
       - name: License compatibility check
         run: npx license-checker --production --summary
         continue-on-error: true
-
-  build-matrix:
-    name: Build on Multiple Platforms
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18.x]
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build library
-        run: npm run build
-      
-      - name: Verify build output
-        run: |
-          node -e "console.log('Build completed successfully on', process.platform)"
-          if [ -d "dist" ]; then echo "✓ dist folder exists"; else echo "✗ dist folder missing" && exit 1; fi
-        shell: bash

@@ -1,5 +1,5 @@
-import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type { ReactNode } from 'react';
+import type { LanguageModelV2 } from '@ai-sdk/provider';
 
 // Branded types for type safety
 export type Brand<T, B> = T & { readonly __brand: B };
@@ -68,13 +68,13 @@ export interface StorageAdapter {
 
 // Provider capability tags
 export enum ModelProviderTags {
-  RequiresApiKey = "Requires API Key",
-  Local = "Local",
-  Free = "Free",
-  OpenSource = "Open-Source",
-  Vision = "Vision",
-  Tools = "Tools/Functions",
-  LongContext = "Long Context"
+  RequiresApiKey = 'Requires API Key',
+  Local = 'Local',
+  Free = 'Free',
+  OpenSource = 'Open-Source',
+  Vision = 'Vision',
+  Tools = 'Tools/Functions',
+  LongContext = 'Long Context',
 }
 
 // Role configuration for model selection
@@ -117,10 +117,10 @@ export abstract class AIProvider {
   abstract hasCredentials(config: Record<string, any>): boolean;
 
   // AI SDK v5 integration - return configured model instance
-  abstract createInstance(params: ProviderInstanceParams): LanguageModelV2;
+  abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;
 
   // Optional dynamic model loading
-  async loadModels?(storage: StorageAdapter): Promise<ModelConfig[]> {
+  async loadModels?(_storage: StorageAdapter): Promise<ModelConfig[]> {
     return this.models;
   }
 }
@@ -154,7 +154,7 @@ export interface ModelSelectProps {
   theme?: ThemeConfig;
   className?: string;
   disabled?: boolean;
-  
+
   // Storage callbacks for credentials
   onSaveApiKey?: (providerId: ProviderId, key: ApiKey) => Promise<void>;
   onLoadApiKey?: (providerId: ProviderId) => Promise<ApiKey | undefined>;

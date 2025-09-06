@@ -45,14 +45,14 @@ export default tseslint.config([
         React: 'readonly',
       },
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.node.json'],
+        project: ['./tsconfig.app.json', './tsconfig.node.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
     settings: {
       'import/resolver': {
         typescript: {
-          project: './tsconfig.json',
+          project: './tsconfig.app.json',
         },
         node: {
           extensions: ['.js', '.jsx', '.ts', '.tsx'],
