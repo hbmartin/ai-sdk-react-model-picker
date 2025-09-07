@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type {
   IProviderRegistry,
@@ -65,7 +65,7 @@ export function AddModelForm({
     if (popularProviders.length > 0 && !selectedProvider) {
       setSelectedProvider(popularProviders[0]);
     }
-  }, [popularProviders]);
+  }, [popularProviders, selectedProvider]);
 
   // Update available models when provider changes
   const availableModels = selectedProvider
@@ -120,9 +120,11 @@ export function AddModelForm({
   };
 
   const isFormValid =
-    selectedProvider &&
-    selectedModel &&
-    (selectedProvider.requiredKeys?.every((key) => watch(key)) || true);
+    selectedProvider !== null &&
+    selectedModel !== null &&
+    selectedProvider.requiredKeys !== undefined
+      ? selectedProvider.requiredKeys.every((key) => watch(key))
+      : true;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

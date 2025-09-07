@@ -1,4 +1,3 @@
-import React from 'react';
 import { ModelProviderTags } from '../types';
 
 export interface ModelProviderTagProps {

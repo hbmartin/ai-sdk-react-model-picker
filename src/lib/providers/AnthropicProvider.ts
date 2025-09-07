@@ -135,51 +135,6 @@ export class AnthropicProvider extends AIProvider {
   }
 
   /**
-   * Async validation - actually test the API key
-   */
-  async validateApiKey(apiKey: string): Promise<ValidationResult> {
-    const basicValidation = this.validateCredentials({ apiKey });
-    if (!basicValidation.isValid) {
-      return basicValidation;
-    }
-
-    try {
-      // Dynamic import
-      const anthropic = await import('@ai-sdk/anthropic');
-
-      // Create a client with the API key
-      const client = anthropic.anthropic({ apiKey });
-
-      // Test with a minimal request
-      const _model = client('claude-3-haiku-20240307');
-
-      // Try to get model info or make a minimal test call
-      // This would need to be implemented based on the actual AI SDK API
-
-      return { isValid: true };
-    } catch (error: any) {
-      if (error.message?.includes('401') || error.message?.includes('authentication')) {
-        return {
-          isValid: false,
-          error: 'Invalid Anthropic API key',
-        };
-      }
-
-      if (error.message?.includes('quota') || error.message?.includes('usage')) {
-        return {
-          isValid: true,
-          warning: 'API key is valid but quota may be exceeded',
-        };
-      }
-
-      return {
-        isValid: false,
-        error: `Failed to validate API key: ${error.message}`,
-      };
-    }
-  }
-
-  /**
    * Get provider tags for display
    */
   getTags(): ModelProviderTags[] {

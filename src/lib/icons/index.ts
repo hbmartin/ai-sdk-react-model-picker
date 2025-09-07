@@ -236,20 +236,3 @@ export const SpinnerIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
       opacity: '0.75',
     })
   );
-
-// Export all icons
-export {
-  OpenAIIcon,
-  AnthropicIcon,
-  GoogleIcon,
-  AzureIcon,
-  MistralIcon,
-  CohereIcon,
-  ModelIcon,
-  CubeIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  SettingsIcon,
-  PlusIcon,
-  SpinnerIcon,
-};

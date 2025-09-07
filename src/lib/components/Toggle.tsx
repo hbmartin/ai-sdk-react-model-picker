@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface ToggleProps {
   optionOne: string;
   optionTwo: string;
@@ -30,6 +28,13 @@ export function Toggle({
         ${className}
       `}
       onClick={disabled ? undefined : onClick}
+      onKeyDown={disabled ? undefined : onClick}
+      onKeyUp={disabled ? undefined : onClick}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      aria-pressed={selected}
+      aria-label={`Toggle between ${optionOne} and ${optionTwo}`}
     >
       <div
         className={`

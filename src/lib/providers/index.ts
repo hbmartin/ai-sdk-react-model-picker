@@ -1,13 +1,11 @@
-// Core provider system
-export { ProviderRegistry } from './ProviderRegistry';
-export { OpenAIProvider } from './OpenAIProvider';
-export { AnthropicProvider } from './AnthropicProvider';
-export { GoogleProvider } from './GoogleProvider';
-export { AzureProvider } from './AzureProvider';
-export { MistralProvider } from './MistralProvider';
-export { CohereProvider } from './CohereProvider';
+import { AnthropicProvider } from './AnthropicProvider';
+import { AzureProvider } from './AzureProvider';
+import { CohereProvider } from './CohereProvider';
+import { GoogleProvider } from './GoogleProvider';
+import { MistralProvider } from './MistralProvider';
+import { OpenAIProvider } from './OpenAIProvider';
+import { ProviderRegistry } from './ProviderRegistry';
 
-// Re-export types for convenience
 export type {
   AIProvider,
   IProviderRegistry,

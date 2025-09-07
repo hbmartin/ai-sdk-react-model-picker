@@ -133,51 +133,6 @@ export class OpenAIProvider extends AIProvider {
   }
 
   /**
-   * Async validation - actually test the API key
-   */
-  async validateApiKey(apiKey: string): Promise<ValidationResult> {
-    const basicValidation = this.validateCredentials({ apiKey });
-    if (!basicValidation.isValid) {
-      return basicValidation;
-    }
-
-    try {
-      // Dynamic import
-      const openai = await import('@ai-sdk/openai');
-
-      // Create a client with the API key
-      const client = openai.openai({ apiKey });
-
-      // Test with a minimal request
-      const _model = client('gpt-3.5-turbo');
-
-      // Try to get model info or make a minimal test call
-      // This would need to be implemented based on the actual AI SDK API
-
-      return { isValid: true };
-    } catch (error: any) {
-      if (error.message?.includes('401')) {
-        return {
-          isValid: false,
-          error: 'Invalid OpenAI API key',
-        };
-      }
-
-      if (error.message?.includes('quota')) {
-        return {
-          isValid: true,
-          warning: 'API key is valid but quota may be exceeded',
-        };
-      }
-
-      return {
-        isValid: false,
-        error: `Failed to validate API key: ${error.message}`,
-      };
-    }
-  }
-
-  /**
    * Get provider tags for display
    */
   getTags(): ModelProviderTags[] {

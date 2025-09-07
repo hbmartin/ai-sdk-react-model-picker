@@ -15,8 +15,8 @@
 }
 
 /* Auto-detect VSCode environment and apply appropriate variables */
-body[data-vscode-theme-kind="vscode-dark"],
-body[data-vscode-theme-kind="vscode-high-contrast"] {
+body[data-vscode-theme-kind='vscode-dark'],
+body[data-vscode-theme-kind='vscode-high-contrast'] {
   --mp-background: var(--vscode-editor-background, #1e1e1e);
   --mp-foreground: var(--vscode-editor-foreground, #d4d4d4);
   --mp-primary: var(--vscode-button-background, #0e639c);
@@ -25,7 +25,7 @@ body[data-vscode-theme-kind="vscode-high-contrast"] {
   --mp-accent: var(--vscode-input-background, #3c3c3c);
 }
 
-body[data-vscode-theme-kind="vscode-light"] {
+body[data-vscode-theme-kind='vscode-light'] {
   --mp-background: var(--vscode-editor-background, #ffffff);
   --mp-foreground: var(--vscode-editor-foreground, #000000);
   --mp-primary: var(--vscode-button-background, #0066cc);
@@ -35,7 +35,7 @@ body[data-vscode-theme-kind="vscode-light"] {
 }
 
 /* JetBrains IDEs support */
-body[data-ide="jetbrains"] {
+body[data-ide='jetbrains'] {
   --mp-background: var(--intellij-background, #ffffff);
   --mp-foreground: var(--intellij-foreground, #000000);
   --mp-primary: var(--intellij-accent, #4a90e2);
@@ -44,9 +44,9 @@ body[data-ide="jetbrains"] {
 
 /* Component base styles */
 .ai-sdk-model-picker {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -89,7 +89,9 @@ body[data-ide="jetbrains"] {
 .dropdown-enter-active {
   opacity: 1;
   transform: scale(1);
-  transition: opacity 100ms ease-out, transform 100ms ease-out;
+  transition:
+    opacity 100ms ease-out,
+    transform 100ms ease-out;
 }
 
 .dropdown-exit {
@@ -100,7 +102,9 @@ body[data-ide="jetbrains"] {
 .dropdown-exit-active {
   opacity: 0;
   transform: scale(0.95);
-  transition: opacity 75ms ease-in, transform 75ms ease-in;
+  transition:
+    opacity 75ms ease-in,
+    transform 75ms ease-in;
 }
 
 /* Provider tag styles */
@@ -137,30 +141,30 @@ body[data-ide="jetbrains"] {
 }
 
 /* VSCode specific overrides */
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-requires-key {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-requires-key {
   @apply bg-red-900 text-red-200;
 }
 
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-local {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-local {
   @apply bg-green-900 text-green-200;
 }
 
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-free {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-free {
   @apply bg-yellow-900 text-yellow-200;
 }
 
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-open-source {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-open-source {
   @apply bg-blue-900 text-blue-200;
 }
 
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-vision {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-vision {
   @apply bg-purple-900 text-purple-200;
 }
 
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-tools {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-tools {
   @apply bg-indigo-900 text-indigo-200;
 }
 
-body[data-vscode-theme-kind="vscode-dark"] .provider-tag-long-context {
+body[data-vscode-theme-kind='vscode-dark'] .provider-tag-long-context {
   @apply bg-orange-900 text-orange-200;
 }

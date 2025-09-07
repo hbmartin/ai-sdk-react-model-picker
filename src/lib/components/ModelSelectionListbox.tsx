@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ModelConfigWithProvider, ProviderMetadata } from '../types';
 import { CubeIcon, CheckIcon, ChevronDownIcon } from '../icons';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from './ui/Listbox';
@@ -68,7 +67,6 @@ export function ModelSelectionListbox({
   const renderOption = (item: ModelConfigWithProvider | ProviderMetadata, index: number) => {
     const title = getItemTitle(item);
     const ItemIcon = getItemIcon(item) || CubeIcon;
-    const _isSelected = selectedItem === item;
 
     return (
       <ListboxOption

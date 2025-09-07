@@ -131,6 +131,7 @@ export interface IProviderRegistry {
   getProvider(providerId: ProviderId): AIProvider;
   getAllProviders(): AIProvider[];
   getAllModels(): ModelConfigWithProvider[];
+  getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[];
   getProviderMetadata(providerId: ProviderId): ProviderMetadata;
   hasProvider(providerId: ProviderId): boolean;
   unregister(providerId: ProviderId): boolean;

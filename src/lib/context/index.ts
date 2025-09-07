@@ -90,7 +90,7 @@ export function ModelPickerProvider({
   children,
   providers,
   storage,
-  initialModelId = null,
+  initialModelId,
   initialRole,
   roles,
   theme,
@@ -98,7 +98,7 @@ export function ModelPickerProvider({
   onMissingConfiguration,
 }: ModelPickerProviderProps) {
   const [state, dispatch] = useReducer(modelPickerReducer, {
-    selectedModelId: initialModelId,
+    selectedModelId: initialModelId ?? null,
     selectedRole: initialRole,
     isLoading: false,
     error: null,

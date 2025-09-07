@@ -7,8 +7,8 @@ interface ListboxContextType {
   onChange: (value: any) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  buttonRef: React.RefObject<HTMLButtonElement>;
-  optionsRef: React.RefObject<HTMLDivElement>;
+  buttonRef: React.RefObject<HTMLButtonElement | null>;
+  optionsRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ListboxContext = createContext<ListboxContextType | null>(null);
@@ -159,7 +159,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
 }
 
 // Listbox Option
-export interface ListboxOptionProps extends HTMLAttributes<HTMLDivElement> {
+export interface ListboxOptionProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   value: any;
   children: ReactNode | ((props: { selected: boolean }) => ReactNode);
   disabled?: boolean;

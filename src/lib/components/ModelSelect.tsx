@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { ModelSelectProps, ModelConfigWithProvider, ModelId } from '../types';
 import {
   CubeIcon,
@@ -167,6 +167,7 @@ export function ModelSelect({
             <div className="flex items-center justify-between gap-1 px-2 py-1 border-b border-border">
               <span className="font-semibold text-sm">Models</span>
               <button
+                type="button"
                 onClick={handleConfigureProvider}
                 className="p-1 text-muted hover:text-foreground transition-colors"
                 title="Configure provider"
@@ -185,13 +186,13 @@ export function ModelSelect({
               ) : sortedOptions.length === 0 ? (
                 <div className="text-muted px-2 py-4 text-center text-sm">No models configured</div>
               ) : (
-                sortedOptions.map((option, idx) => {
+                sortedOptions.map((option) => {
                   const isSelected = option.model.model.id === selectedModelId;
                   const showMissingKey = !option.hasApiKey;
 
                   return (
                     <ListboxOption
-                      key={idx}
+                      key={option.model.model.id}
                       value={option.model.model.id}
                       disabled={showMissingKey}
                       className="px-3 py-2"
@@ -257,3 +258,4 @@ export function ModelSelect({
 }
 
 export default ModelSelect;
+export type { ModelSelectProps };
