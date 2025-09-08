@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode, SVGProps } from 'react';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
 // Branded types for type safety
@@ -33,7 +33,7 @@ export interface ProviderMetadata {
   id: ProviderId;
   name: string;
   description?: string;
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
@@ -81,7 +81,7 @@ export enum ModelProviderTags {
 export interface Role {
   id: string;
   label: string;
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 // Theme configuration for styling

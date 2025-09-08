@@ -69,10 +69,18 @@ export function createPopularProvidersRegistry(): ProviderRegistry {
 
   try {
     registry.register(new OpenAIProvider());
+  } catch (error) {
+    console.warn('OpenAI provider not available:', error);
+  }
+  try {
     registry.register(new AnthropicProvider());
+  } catch (error) {
+    console.warn('Anthropic provider not available:', error);
+  }
+  try {
     registry.register(new GoogleProvider());
   } catch (error) {
-    console.warn('Some popular providers not available:', error);
+    console.warn('Google provider not available:', error);
   }
 
   return registry;

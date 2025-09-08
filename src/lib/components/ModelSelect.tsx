@@ -52,29 +52,31 @@ export function ModelSelect({
   useEffect(() => {
     async function loadModelOptions() {
       setIsLoading(true);
+      try {
+        const options: ModelOption[] = [];
 
-      const options: ModelOption[] = [];
+        for (const modelWithProvider of allModels) {
+          const providerId = modelWithProvider.provider.id;
+          const provider = providers.getProvider(providerId);
 
-      for (const modelWithProvider of allModels) {
-        const providerId = modelWithProvider.provider.id;
-        const provider = providers.getProvider(providerId);
+          // Check if provider has credentials stored
+          const storedConfig = (await storage.get(`${providerId}:config`)) || {};
+          const hasCredentials = provider.hasCredentials(storedConfig);
 
-        // Check if provider has credentials stored
-        const storedConfig = (await storage.get(`${providerId}:config`)) || {};
-        const hasCredentials = provider.hasCredentials(storedConfig);
+          options.push({
+            model: modelWithProvider,
+            hasApiKey: hasCredentials,
+            isAutoDetected: false, // TODO: Implement auto-detection logic
+          });
+        }
 
-        options.push({
-          model: modelWithProvider,
-          hasApiKey: hasCredentials,
-          isAutoDetected: false, // TODO: Implement auto-detection logic
-        });
+        setModelOptions(options);
+      } finally {
+        setIsLoading(false);
       }
-
-      setModelOptions(options);
-      setIsLoading(false);
     }
 
-    loadModelOptions();
+    void loadModelOptions();
   }, [allModels, storage, providers]);
 
   // Sort options: those with API keys first, then alphabetically

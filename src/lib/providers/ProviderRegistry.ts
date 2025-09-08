@@ -132,9 +132,9 @@ export class ProviderRegistry implements IProviderRegistry {
    * @param storage Storage adapter to check credentials
    * @returns Array of provider IDs with missing config
    */
-  async getProvidersWithMissingConfig(
-    storage: any // StorageAdapter type
-  ): Promise<ProviderId[]> {
+  async getProvidersWithMissingConfig(storage: {
+    get: (key: string) => Promise<unknown>;
+  }): Promise<ProviderId[]> {
     const missingProviders: ProviderId[] = [];
 
     for (const [providerId, provider] of this.providers) {
@@ -159,11 +159,10 @@ export class ProviderRegistry implements IProviderRegistry {
    */
   getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[] {
     const provider = this.getProvider(providerId);
-    const metadata = this.getProviderMetadata(providerId);
 
     return provider.models.map((model) => ({
       model,
-      provider: metadata,
+      provider: provider.metadata,
     }));
   }
 

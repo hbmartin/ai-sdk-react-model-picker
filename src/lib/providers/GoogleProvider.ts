@@ -21,27 +21,18 @@ export class GoogleProvider extends AIProvider {
 
   readonly models: ModelConfig[] = [
     {
-      id: createModelId('gemini-1.5-pro-latest'),
-      displayName: 'Gemini 1.5 Pro',
+      id: createModelId('gemini-2.5-pro'),
+      displayName: 'Gemini 2.5 Pro',
       maxTokens: 1_048_576,
-      contextLength: 1_048_576,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
     },
     {
-      id: createModelId('gemini-1.5-flash-latest'),
-      displayName: 'Gemini 1.5 Flash',
+      id: createModelId('gemini-2.5-flash'),
+      displayName: 'Gemini 2.5 Flash',
       maxTokens: 1_048_576,
-      contextLength: 1_048_576,
       supportsVision: true,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('gemini-pro'),
-      displayName: 'Gemini Pro',
-      maxTokens: 32_768,
-      contextLength: 32_768,
       supportsTools: true,
     },
   ];

@@ -89,8 +89,8 @@ export function ModelCard({
         {/* Tags */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {allTags.map((tag, i) => (
-              <ModelProviderTag key={i} tag={tag} />
+            {allTags.map((tag) => (
+              <ModelProviderTag key={String(tag)} tag={tag} />
             ))}
           </div>
         )}

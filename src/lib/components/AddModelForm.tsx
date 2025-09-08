@@ -43,7 +43,6 @@ export function AddModelForm({
     register,
     handleSubmit,
     watch,
-    reset: _reset,
     formState: { errors },
   } = useForm<FormData>();
 

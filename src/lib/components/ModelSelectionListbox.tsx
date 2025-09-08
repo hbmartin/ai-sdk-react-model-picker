@@ -21,11 +21,11 @@ export interface ModelSelectionListboxProps {
   disabled?: boolean;
 }
 
-function isProvider(item: any): item is ProviderMetadata {
+function isProvider(item: object): item is ProviderMetadata {
   return 'id' in item && 'name' in item && !('model' in item);
 }
 
-function isModel(item: any): item is ModelConfigWithProvider {
+function isModel(item: object): item is ModelConfigWithProvider {
   return 'model' in item && 'provider' in item;
 }
 

@@ -132,22 +132,38 @@ export function ModelPickerProvider({
     dispatch({ type: 'SET_ERROR', payload: error });
   }, []);
 
-  // Context value
-  const contextValue: ModelPickerContextValue = {
-    state,
-    selectedModel,
-    allModels,
-    providers,
-    storage,
-    roles,
-    theme,
-    selectModel,
-    selectRole,
-    setLoading,
-    setError,
-    onConfigureProvider,
-    onMissingConfiguration,
-  };
+  const contextValue = useMemo<ModelPickerContextValue>(
+    () => ({
+      state,
+      selectedModel,
+      allModels,
+      providers,
+      storage,
+      roles,
+      theme,
+      selectModel,
+      selectRole,
+      setLoading,
+      setError,
+      onConfigureProvider,
+      onMissingConfiguration,
+    }),
+    [
+      state,
+      selectedModel,
+      allModels,
+      providers,
+      storage,
+      roles,
+      theme,
+      selectModel,
+      selectRole,
+      setLoading,
+      setError,
+      onConfigureProvider,
+      onMissingConfiguration,
+    ]
+  );
 
   return React.createElement(ModelPickerContext.Provider, { value: contextValue }, children);
 }

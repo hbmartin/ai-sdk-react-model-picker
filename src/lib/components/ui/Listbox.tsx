@@ -41,8 +41,9 @@ export function Listbox({ value, onChange = () => {}, children, className = '' }
         isOpen &&
         buttonRef.current &&
         optionsRef.current &&
-        !buttonRef.current.contains(event.target as Node) &&
-        !optionsRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !buttonRef.current.contains(event.target) &&
+        !optionsRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }

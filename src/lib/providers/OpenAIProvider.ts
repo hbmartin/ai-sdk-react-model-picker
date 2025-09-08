@@ -146,16 +146,11 @@ export class OpenAIProvider extends AIProvider {
     const model = this.models.find((m) => m.id === modelId);
     if (!model) return false;
 
-    switch (capability) {
-      case 'vision': {
-        return model.supportsVision === true;
-      }
-      case 'tools': {
-        return model.supportsTools === true;
-      }
-      default: {
-        return false;
-      }
-    }
+    const capabilityMap = {
+      vision: model.supportsVision,
+      tools: model.supportsTools,
+    } as const;
+
+    return capabilityMap[capability] === true;
   }
 }

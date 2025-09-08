@@ -14,7 +14,7 @@ export class AzureProvider extends AIProvider {
     name: 'Azure OpenAI',
     description: 'Use GPT-4 and other models through Azure OpenAI Service',
     icon: AzureIcon,
-    documentationUrl: 'https://docs.microsoft.com/en-us/azure/cognitive-services/openai',
+    documentationUrl: 'https://learn.microsoft.com/en-us/azure/ai-foundry/',
     apiKeyUrl: 'https://portal.azure.com',
     requiredKeys: ['apiKey', 'resourceName'],
   };
