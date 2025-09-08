@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface ToggleProps {
   optionOne: string;
   optionTwo: string;
@@ -30,14 +28,18 @@ export function Toggle({
         ${className}
       `}
       onClick={disabled ? undefined : onClick}
+      onKeyDown={disabled ? undefined : onClick}
+      onKeyUp={disabled ? undefined : onClick}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      aria-pressed={selected}
+      aria-label={`Toggle between ${optionOne} and ${optionTwo}`}
     >
       <div
         className={`
           text-center px-3 py-2 rounded-default transition-all duration-200 ease-in-out
-          ${selected 
-            ? 'bg-primary text-white shadow-sm' 
-            : 'text-foreground hover:bg-opacity-60'
-          }
+          ${selected ? 'bg-primary text-white shadow-sm' : 'text-foreground hover:bg-opacity-60'}
         `}
       >
         {optionOne}
@@ -45,10 +47,7 @@ export function Toggle({
       <div
         className={`
           text-center px-3 py-2 rounded-default transition-all duration-200 ease-in-out
-          ${!selected 
-            ? 'bg-primary text-white shadow-sm' 
-            : 'text-foreground hover:bg-opacity-60'
-          }
+          ${selected ? 'text-foreground hover:bg-opacity-60' : 'bg-primary text-white shadow-sm'}
         `}
       >
         {optionTwo}

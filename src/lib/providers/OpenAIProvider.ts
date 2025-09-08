@@ -1,14 +1,11 @@
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { 
-  AIProvider, 
-  ModelConfig, 
-  ProviderMetadata, 
-  ProviderInstanceParams, 
+import type {
+  ModelConfig,
+  ProviderMetadata,
+  ProviderInstanceParams,
   ValidationResult,
-  createProviderId,
-  createModelId,
-  ModelProviderTags
 } from '../types';
+import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { OpenAIIcon } from '../icons';
 
 /**
@@ -30,8 +27,8 @@ export class OpenAIProvider extends AIProvider {
     {
       id: createModelId('gpt-4o'),
       displayName: 'GPT-4 Omni',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
@@ -39,16 +36,16 @@ export class OpenAIProvider extends AIProvider {
     {
       id: createModelId('gpt-4o-mini'),
       displayName: 'GPT-4 Omni Mini',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsVision: true,
       supportsTools: true,
     },
     {
       id: createModelId('gpt-4-turbo'),
       displayName: 'GPT-4 Turbo',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsVision: true,
       supportsTools: true,
     },
@@ -63,14 +60,14 @@ export class OpenAIProvider extends AIProvider {
       id: createModelId('gpt-3.5-turbo'),
       displayName: 'GPT-3.5 Turbo',
       maxTokens: 4096,
-      contextLength: 16385,
+      contextLength: 16_385,
       supportsTools: true,
     },
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
     const apiKey = config.apiKey;
-    
+
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         isValid: false,
@@ -100,17 +97,17 @@ export class OpenAIProvider extends AIProvider {
     return Boolean(config.apiKey);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     // Dynamic import to avoid bundling if not needed
     let openai: any;
-    
+
     try {
       // This will be a peer dependency
-      openai = require('@ai-sdk/openai');
-    } catch (error) {
+      openai = await import('@ai-sdk/openai');
+    } catch {
       throw new Error(
         'OpenAI provider requires "@ai-sdk/openai" to be installed. ' +
-        'Please install it with: npm install @ai-sdk/openai'
+          'Please install it with: npm install @ai-sdk/openai'
       );
     }
 
@@ -136,51 +133,6 @@ export class OpenAIProvider extends AIProvider {
   }
 
   /**
-   * Async validation - actually test the API key
-   */
-  async validateApiKey(apiKey: string): Promise<ValidationResult> {
-    const basicValidation = this.validateCredentials({ apiKey });
-    if (!basicValidation.isValid) {
-      return basicValidation;
-    }
-
-    try {
-      // Dynamic import
-      const openai = require('@ai-sdk/openai');
-      
-      // Create a client with the API key
-      const client = openai.openai({ apiKey });
-      
-      // Test with a minimal request
-      const model = client('gpt-3.5-turbo');
-      
-      // Try to get model info or make a minimal test call
-      // This would need to be implemented based on the actual AI SDK API
-      
-      return { isValid: true };
-    } catch (error: any) {
-      if (error.message?.includes('401')) {
-        return {
-          isValid: false,
-          error: 'Invalid OpenAI API key',
-        };
-      }
-      
-      if (error.message?.includes('quota')) {
-        return {
-          isValid: true,
-          warning: 'API key is valid but quota may be exceeded',
-        };
-      }
-
-      return {
-        isValid: false,
-        error: `Failed to validate API key: ${error.message}`,
-      };
-    }
-  }
-
-  /**
    * Get provider tags for display
    */
   getTags(): ModelProviderTags[] {
@@ -191,16 +143,19 @@ export class OpenAIProvider extends AIProvider {
    * Check if model supports specific capability
    */
   modelSupportsCapability(modelId: string, capability: 'vision' | 'tools'): boolean {
-    const model = this.models.find(m => m.id === modelId);
+    const model = this.models.find((m) => m.id === modelId);
     if (!model) return false;
 
     switch (capability) {
-      case 'vision':
+      case 'vision': {
         return model.supportsVision === true;
-      case 'tools':
+      }
+      case 'tools': {
         return model.supportsTools === true;
-      default:
+      }
+      default: {
         return false;
+      }
     }
   }
 }

@@ -1,14 +1,11 @@
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { 
-  AIProvider, 
-  ModelConfig, 
-  ProviderMetadata, 
-  ProviderInstanceParams, 
+import type {
+  ModelConfig,
+  ProviderMetadata,
+  ProviderInstanceParams,
   ValidationResult,
-  createProviderId,
-  createModelId,
-  ModelProviderTags
 } from '../types';
+import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { GoogleIcon } from '../icons';
 
 export class GoogleProvider extends AIProvider {
@@ -26,8 +23,8 @@ export class GoogleProvider extends AIProvider {
     {
       id: createModelId('gemini-1.5-pro-latest'),
       displayName: 'Gemini 1.5 Pro',
-      maxTokens: 1048576,
-      contextLength: 1048576,
+      maxTokens: 1_048_576,
+      contextLength: 1_048_576,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
@@ -35,23 +32,23 @@ export class GoogleProvider extends AIProvider {
     {
       id: createModelId('gemini-1.5-flash-latest'),
       displayName: 'Gemini 1.5 Flash',
-      maxTokens: 1048576,
-      contextLength: 1048576,
+      maxTokens: 1_048_576,
+      contextLength: 1_048_576,
       supportsVision: true,
       supportsTools: true,
     },
     {
       id: createModelId('gemini-pro'),
       displayName: 'Gemini Pro',
-      maxTokens: 32768,
-      contextLength: 32768,
+      maxTokens: 32_768,
+      contextLength: 32_768,
       supportsTools: true,
     },
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
     const apiKey = config.apiKey;
-    
+
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         isValid: false,
@@ -73,15 +70,15 @@ export class GoogleProvider extends AIProvider {
     return Boolean(config.apiKey);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let google: any;
-    
+
     try {
-      google = require('@ai-sdk/google');
-    } catch (error) {
+      google = await import('@ai-sdk/google');
+    } catch {
       throw new Error(
         'Google provider requires "@ai-sdk/google" to be installed. ' +
-        'Please install it with: npm install @ai-sdk/google'
+          'Please install it with: npm install @ai-sdk/google'
       );
     }
 

@@ -47,7 +47,7 @@ export class LocalStorageAdapter implements StorageAdapter {
    */
   async clear(): Promise<void> {
     const keysToRemove: string[] = [];
-    
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(`${this.namespace}:`)) {
@@ -55,7 +55,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       }
     }
 
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    for (const key of keysToRemove) localStorage.removeItem(key);
   }
 
   /**
@@ -64,14 +64,14 @@ export class LocalStorageAdapter implements StorageAdapter {
   async getKeys(): Promise<string[]> {
     const keys: string[] = [];
     const prefix = `${this.namespace}:`;
-    
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(prefix)) {
-        keys.push(key.substring(prefix.length));
+        keys.push(key.slice(prefix.length));
       }
     }
-    
+
     return keys;
   }
 }
@@ -109,14 +109,14 @@ export class MemoryStorageAdapter implements StorageAdapter {
   async clear(): Promise<void> {
     const prefix = `${this.namespace}:`;
     const keysToDelete: string[] = [];
-    
+
     for (const key of this.storage.keys()) {
       if (key.startsWith(prefix)) {
         keysToDelete.push(key);
       }
     }
-    
-    keysToDelete.forEach(key => this.storage.delete(key));
+
+    for (const key of keysToDelete) this.storage.delete(key);
   }
 
   /**
@@ -125,13 +125,13 @@ export class MemoryStorageAdapter implements StorageAdapter {
   async getKeys(): Promise<string[]> {
     const keys: string[] = [];
     const prefix = `${this.namespace}:`;
-    
+
     for (const key of this.storage.keys()) {
       if (key.startsWith(prefix)) {
-        keys.push(key.substring(prefix.length));
+        keys.push(key.slice(prefix.length));
       }
     }
-    
+
     return keys;
   }
 
@@ -141,13 +141,13 @@ export class MemoryStorageAdapter implements StorageAdapter {
   size(): number {
     let count = 0;
     const prefix = `${this.namespace}:`;
-    
+
     for (const key of this.storage.keys()) {
       if (key.startsWith(prefix)) {
         count++;
       }
     }
-    
+
     return count;
   }
 }
@@ -199,7 +199,7 @@ export class SessionStorageAdapter implements StorageAdapter {
    */
   async clear(): Promise<void> {
     const keysToRemove: string[] = [];
-    
+
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
       if (key?.startsWith(`${this.namespace}:`)) {
@@ -207,7 +207,7 @@ export class SessionStorageAdapter implements StorageAdapter {
       }
     }
 
-    keysToRemove.forEach(key => sessionStorage.removeItem(key));
+    for (const key of keysToRemove) sessionStorage.removeItem(key);
   }
 }
 
@@ -219,14 +219,18 @@ export function createStorageAdapter(
   namespace?: string
 ): StorageAdapter {
   switch (type) {
-    case 'local':
+    case 'local': {
       return new LocalStorageAdapter(namespace);
-    case 'session':
+    }
+    case 'session': {
       return new SessionStorageAdapter(namespace);
-    case 'memory':
+    }
+    case 'memory': {
       return new MemoryStorageAdapter(namespace);
-    default:
+    }
+    default: {
       return new LocalStorageAdapter(namespace);
+    }
   }
 }
 

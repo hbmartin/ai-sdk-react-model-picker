@@ -22,11 +22,11 @@ export class ProviderRegistry implements IProviderRegistry {
    */
   register(provider: AIProvider): ProviderId {
     const providerId = provider.metadata.id;
-    
+
     if (this.providers.has(providerId)) {
       throw new Error(`Provider '${providerId}' already registered`);
     }
-    
+
     this.providers.set(providerId, provider);
     return providerId;
   }
@@ -39,11 +39,11 @@ export class ProviderRegistry implements IProviderRegistry {
    */
   getProvider(providerId: ProviderId): AIProvider {
     const provider = this.providers.get(providerId);
-    
+
     if (!provider) {
       throw new Error(`Could not find provider '${providerId}' in the registry`);
     }
-    
+
     return provider;
   }
 
@@ -52,7 +52,7 @@ export class ProviderRegistry implements IProviderRegistry {
    * @returns Array of all provider instances
    */
   getAllProviders(): AIProvider[] {
-    return Array.from(this.providers.values());
+    return [...this.providers.values()];
   }
 
   /**
@@ -60,8 +60,8 @@ export class ProviderRegistry implements IProviderRegistry {
    * @returns Array of models with provider information attached
    */
   getAllModels(): ModelConfigWithProvider[] {
-    return Array.from(this.providers.entries()).flatMap(([providerId, provider]) =>
-      provider.models.map(model => ({
+    return [...this.providers.entries()].flatMap(([providerId, provider]) =>
+      provider.models.map((model) => ({
         model,
         provider: this.getProviderMetadata(providerId),
       }))
@@ -142,7 +142,7 @@ export class ProviderRegistry implements IProviderRegistry {
       if (!provider.hasCredentials({})) {
         // Try to load from storage
         const storedConfig = await storage.get(`${this.storagePrefix}:${providerId}:config`);
-        
+
         if (!storedConfig || !provider.hasCredentials(storedConfig)) {
           missingProviders.push(providerId);
         }
@@ -160,8 +160,8 @@ export class ProviderRegistry implements IProviderRegistry {
   getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[] {
     const provider = this.getProvider(providerId);
     const metadata = this.getProviderMetadata(providerId);
-    
-    return provider.models.map(model => ({
+
+    return provider.models.map((model) => ({
       model,
       provider: metadata,
     }));
@@ -173,8 +173,8 @@ export class ProviderRegistry implements IProviderRegistry {
    * @returns Array of providers supporting the capability
    */
   getProvidersByCapability(capability: keyof ModelConfigWithProvider['model']): AIProvider[] {
-    return this.getAllProviders().filter(provider =>
-      provider.models.some(model => model[capability] === true)
+    return this.getAllProviders().filter((provider) =>
+      provider.models.some((model) => model[capability] === true)
     );
   }
 }

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ModelProviderTags, ModelConfigWithProvider } from '../types';
+import React, { useState } from 'react';
+import type { ModelConfigWithProvider } from '../types';
+import { ModelProviderTags } from '../types';
 import { ModelProviderTag } from './ModelProviderTag';
 
 export interface ModelCardProps {
@@ -41,33 +42,38 @@ export function ModelCard({
   const autoTags: ModelProviderTags[] = [];
   if (model.model.supportsVision) autoTags.push(ModelProviderTags.Vision);
   if (model.model.supportsTools) autoTags.push(ModelProviderTags.Tools);
-  if (model.model.contextLength && model.model.contextLength > 50000) {
+  if (model.model.contextLength && model.model.contextLength > 50_000) {
     autoTags.push(ModelProviderTags.LongContext);
   }
-  
+
   const allTags = [...tags, ...autoTags];
 
   return (
     <div
       className={`
         relative w-full border border-border rounded-default transition-all duration-500
-        ${disabled 
-          ? 'opacity-50 cursor-not-allowed' 
-          : hovered 
-            ? 'border-primary bg-primary bg-opacity-10 cursor-pointer shadow-sm'
-            : 'hover:shadow-sm'
+        ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed'
+            : hovered
+              ? 'border-primary bg-primary bg-opacity-10 cursor-pointer shadow-sm'
+              : 'hover:shadow-sm'
         }
         ${className}
       `}
       onMouseEnter={() => !disabled && setHovered(true)}
       onMouseLeave={() => !disabled && setHovered(false)}
-      onClick={disabled ? undefined : (e) => {
-        // Don't trigger if clicking on a link
-        if ((e.target as any).closest('a')) {
-          return;
-        }
-        onClick?.(e, model);
-      }}
+      onClick={
+        disabled
+          ? undefined
+          : (e) => {
+              // Don't trigger if clicking on a link
+              if ((e.target as any).closest('a')) {
+                return;
+              }
+              onClick?.(e, model);
+            }
+      }
     >
       <div className="px-4 py-3">
         {/* Header with icon and title */}
@@ -77,9 +83,7 @@ export function ModelCard({
               <model.provider.icon className="w-6 h-6 text-foreground" />
             </div>
           )}
-          <h3 className="text-lg font-semibold text-foreground truncate">
-            {displayTitle}
-          </h3>
+          <h3 className="text-lg font-semibold text-foreground truncate">{displayTitle}</h3>
         </div>
 
         {/* Tags */}
@@ -93,9 +97,7 @@ export function ModelCard({
 
         {/* Description */}
         {displayDescription && (
-          <p className="text-muted text-sm mb-3 leading-relaxed">
-            {displayDescription}
-          </p>
+          <p className="text-muted text-sm mb-3 leading-relaxed">{displayDescription}</p>
         )}
 
         {/* Model specifications */}
@@ -122,18 +124,18 @@ export function ModelCard({
             title="Read the documentation"
             onClick={(e) => e.stopPropagation()}
           >
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
           </a>
         )}

@@ -1,26 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  ModelSelectProps, 
-  ModelConfigWithProvider, 
-  ModelId,
-  Role 
-} from '../types';
-import { 
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from './ui/Listbox';
+import { useState, useEffect, useMemo } from 'react';
+import type { ModelSelectProps, ModelConfigWithProvider, ModelId } from '../types';
+import {
+  CubeIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  SettingsIcon,
+  PlusIcon,
+  SpinnerIcon,
+} from '../icons';
 import { AddModelForm } from './AddModelForm';
 import { Toggle } from './Toggle';
-import { 
-  CubeIcon, 
-  CheckIcon, 
-  ChevronDownIcon, 
-  SettingsIcon, 
-  PlusIcon,
-  SpinnerIcon
-} from '../icons';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
 
 interface ModelOption {
   model: ModelConfigWithProvider;
@@ -42,12 +32,12 @@ export function ModelSelect({
   onRoleChange,
   onConfigureProvider,
   onMissingConfiguration,
-  theme,
+  theme: _theme,
   className = '',
   disabled = false,
-  onSaveApiKey,
-  onLoadApiKey,
-  onSaveConfig,
+  onSaveApiKey: _onSaveApiKey,
+  onLoadApiKey: _onLoadApiKey,
+  onSaveConfig: _onSaveConfig,
 }: ModelSelectProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModelForm, setShowAddModelForm] = useState(false);
@@ -62,24 +52,24 @@ export function ModelSelect({
   useEffect(() => {
     async function loadModelOptions() {
       setIsLoading(true);
-      
+
       const options: ModelOption[] = [];
-      
+
       for (const modelWithProvider of allModels) {
         const providerId = modelWithProvider.provider.id;
         const provider = providers.getProvider(providerId);
-        
+
         // Check if provider has credentials stored
-        const storedConfig = await storage.get(`${providerId}:config`) || {};
+        const storedConfig = (await storage.get(`${providerId}:config`)) || {};
         const hasCredentials = provider.hasCredentials(storedConfig);
-        
+
         options.push({
           model: modelWithProvider,
           hasApiKey: hasCredentials,
           isAutoDetected: false, // TODO: Implement auto-detection logic
         });
       }
-      
+
       setModelOptions(options);
       setIsLoading(false);
     }
@@ -89,24 +79,24 @@ export function ModelSelect({
 
   // Sort options: those with API keys first, then alphabetically
   const sortedOptions = useMemo(() => {
-    return modelOptions.sort((a, b) => {
+    return modelOptions.toSorted((a, b) => {
       // First sort by API key availability
       if (a.hasApiKey && !b.hasApiKey) return -1;
       if (!a.hasApiKey && b.hasApiKey) return 1;
-      
+
       // Then sort alphabetically
       return a.model.model.displayName.localeCompare(b.model.model.displayName);
     });
   }, [modelOptions]);
 
   // Find selected model
-  const selectedModel = selectedModelId 
-    ? allModels.find(m => m.model.id === selectedModelId)
+  const selectedModel = selectedModelId
+    ? allModels.find((m) => m.model.id === selectedModelId)
     : null;
 
   // Handle model selection
   const handleModelSelect = async (modelId: ModelId) => {
-    const modelOption = sortedOptions.find(opt => opt.model.model.id === modelId);
+    const modelOption = sortedOptions.find((opt) => opt.model.model.id === modelId);
     if (!modelOption) return;
 
     if (!modelOption.hasApiKey) {
@@ -157,10 +147,7 @@ export function ModelSelect({
       )}
 
       {/* Model selector */}
-      <Listbox 
-        value={selectedModelId} 
-        onChange={handleModelSelect}
-      >
+      <Listbox value={selectedModelId} onChange={handleModelSelect}>
         <div className="relative flex">
           <ListboxButton
             disabled={disabled || isLoading}
@@ -180,6 +167,7 @@ export function ModelSelect({
             <div className="flex items-center justify-between gap-1 px-2 py-1 border-b border-border">
               <span className="font-semibold text-sm">Models</span>
               <button
+                type="button"
                 onClick={handleConfigureProvider}
                 className="p-1 text-muted hover:text-foreground transition-colors"
                 title="Configure provider"
@@ -196,17 +184,15 @@ export function ModelSelect({
                   <span>Loading models</span>
                 </div>
               ) : sortedOptions.length === 0 ? (
-                <div className="text-muted px-2 py-4 text-center text-sm">
-                  No models configured
-                </div>
+                <div className="text-muted px-2 py-4 text-center text-sm">No models configured</div>
               ) : (
-                sortedOptions.map((option, idx) => {
+                sortedOptions.map((option) => {
                   const isSelected = option.model.model.id === selectedModelId;
                   const showMissingKey = !option.hasApiKey;
-                  
+
                   return (
                     <ListboxOption
-                      key={idx}
+                      key={option.model.model.id}
                       value={option.model.model.id}
                       disabled={showMissingKey}
                       className="px-3 py-2"
@@ -272,3 +258,4 @@ export function ModelSelect({
 }
 
 export default ModelSelect;
+export type { ModelSelectProps };

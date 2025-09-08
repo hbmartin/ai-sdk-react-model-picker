@@ -10,24 +10,24 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./providers": {
+      "types": "./dist/providers.d.ts",
       "import": "./dist/providers.js",
-      "require": "./dist/providers.cjs",
-      "types": "./dist/providers.d.ts"
+      "require": "./dist/providers.cjs"
     },
     "./storage": {
+      "types": "./dist/storage.d.ts",
       "import": "./dist/storage.js",
-      "require": "./dist/storage.cjs",
-      "types": "./dist/storage.d.ts"
+      "require": "./dist/storage.cjs"
     },
     "./context": {
+      "types": "./dist/context.d.ts",
       "import": "./dist/context.js",
-      "require": "./dist/context.cjs",
-      "types": "./dist/context.d.ts"
+      "require": "./dist/context.cjs"
     },
     "./styles.css": "./dist/styles.css"
   },
@@ -106,6 +106,8 @@
     "ai": "^5.0.30",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",

@@ -1,14 +1,11 @@
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { 
-  AIProvider, 
-  ModelConfig, 
-  ProviderMetadata, 
-  ProviderInstanceParams, 
+import type {
+  ModelConfig,
+  ProviderMetadata,
+  ProviderInstanceParams,
   ValidationResult,
-  createProviderId,
-  createModelId,
-  ModelProviderTags
 } from '../types';
+import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { MistralIcon } from '../icons';
 
 export class MistralProvider extends AIProvider {
@@ -26,37 +23,37 @@ export class MistralProvider extends AIProvider {
     {
       id: createModelId('mistral-large-latest'),
       displayName: 'Mistral Large',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsTools: true,
       isDefault: true,
     },
     {
       id: createModelId('mistral-medium-latest'),
       displayName: 'Mistral Medium',
-      maxTokens: 32768,
-      contextLength: 32768,
+      maxTokens: 32_768,
+      contextLength: 32_768,
       supportsTools: true,
     },
     {
       id: createModelId('mistral-small-latest'),
       displayName: 'Mistral Small',
-      maxTokens: 32768,
-      contextLength: 32768,
+      maxTokens: 32_768,
+      contextLength: 32_768,
       supportsTools: true,
     },
     {
       id: createModelId('codestral-latest'),
       displayName: 'Codestral',
-      maxTokens: 32768,
-      contextLength: 32768,
+      maxTokens: 32_768,
+      contextLength: 32_768,
       supportsTools: true,
     },
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
     const apiKey = config.apiKey;
-    
+
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         isValid: false,
@@ -78,15 +75,15 @@ export class MistralProvider extends AIProvider {
     return Boolean(config.apiKey);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let mistral: any;
-    
+
     try {
-      mistral = require('@ai-sdk/mistral');
-    } catch (error) {
+      mistral = await import('@ai-sdk/mistral');
+    } catch {
       throw new Error(
         'Mistral provider requires "@ai-sdk/mistral" to be installed. ' +
-        'Please install it with: npm install @ai-sdk/mistral'
+          'Please install it with: npm install @ai-sdk/mistral'
       );
     }
 

@@ -1,14 +1,11 @@
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { 
-  AIProvider, 
-  ModelConfig, 
-  ProviderMetadata, 
-  ProviderInstanceParams, 
+import type {
+  ModelConfig,
+  ProviderMetadata,
+  ProviderInstanceParams,
   ValidationResult,
-  createProviderId,
-  createModelId,
-  ModelProviderTags
 } from '../types';
+import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { CohereIcon } from '../icons';
 
 export class CohereProvider extends AIProvider {
@@ -26,16 +23,16 @@ export class CohereProvider extends AIProvider {
     {
       id: createModelId('command-r-plus'),
       displayName: 'Command R+',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsTools: true,
       isDefault: true,
     },
     {
       id: createModelId('command-r'),
       displayName: 'Command R',
-      maxTokens: 128000,
-      contextLength: 128000,
+      maxTokens: 128_000,
+      contextLength: 128_000,
       supportsTools: true,
     },
     {
@@ -55,7 +52,7 @@ export class CohereProvider extends AIProvider {
 
   validateCredentials(config: Record<string, any>): ValidationResult {
     const apiKey = config.apiKey;
-    
+
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         isValid: false,
@@ -77,15 +74,15 @@ export class CohereProvider extends AIProvider {
     return Boolean(config.apiKey);
   }
 
-  createInstance(params: ProviderInstanceParams): LanguageModelV2 {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let cohere: any;
-    
+
     try {
-      cohere = require('@ai-sdk/cohere');
-    } catch (error) {
+      cohere = await import('@ai-sdk/cohere');
+    } catch {
       throw new Error(
         'Cohere provider requires "@ai-sdk/cohere" to be installed. ' +
-        'Please install it with: npm install @ai-sdk/cohere'
+          'Please install it with: npm install @ai-sdk/cohere'
       );
     }
 

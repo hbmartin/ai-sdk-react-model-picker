@@ -1,6 +1,6 @@
 // Main exports - only the essentials for simple usage
 export { ModelSelect } from './components/ModelSelect';
-export { ModelCard } from './components/ModelCard'; 
+export { ModelCard } from './components/ModelCard';
 export { ModelProviderTag } from './components/ModelProviderTag';
 export { Toggle } from './components/Toggle';
 

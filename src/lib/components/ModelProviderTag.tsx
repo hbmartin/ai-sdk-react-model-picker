@@ -1,4 +1,3 @@
-import React from 'react';
 import { ModelProviderTags } from '../types';
 
 export interface ModelProviderTagProps {
@@ -22,7 +21,7 @@ const TAG_STYLES: Record<ModelProviderTags, string> = {
  */
 export function ModelProviderTag({ tag, className = '' }: ModelProviderTagProps) {
   const tagStyle = TAG_STYLES[tag] || '';
-  
+
   return (
     <span
       className={`provider-tag ${tagStyle} ${className}`}
