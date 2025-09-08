@@ -1,7 +1,7 @@
-import { ModelProviderTag } from '../lib/components/ModelProviderTag';
-import { ModelProviderTags } from '../lib/types';
+import { ModelProviderTag } from '../src/lib/components/ModelProviderTag';
+import { ModelProviderTags } from '../src/lib/types';
 import type { Meta, StoryObj } from '@storybook/react';
-import '../lib/styles/globals.css';
+import '../src/lib/styles/globals.css';
 
 const meta = {
   title: 'Components/ModelProviderTag',

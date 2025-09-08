@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { fn } from 'storybook/test';
-import { Toggle, type ToggleProps } from '../lib/components/Toggle';
+import { Toggle, type ToggleProps } from '../src/lib/components/Toggle';
 import type { Meta, StoryObj } from '@storybook/react';
-import '../lib/styles/globals.css';
+import '../src/lib/styles/globals.css';
 
 const meta = {
   title: 'Components/Toggle',

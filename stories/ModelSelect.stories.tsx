@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { fn } from 'storybook/test';
-import { ModelSelect } from '../lib/components/ModelSelect';
-import { AnthropicProvider } from '../lib/providers/AnthropicProvider';
-import { GoogleProvider } from '../lib/providers/GoogleProvider';
-import { OpenAIProvider } from '../lib/providers/OpenAIProvider';
-import { ProviderRegistry } from '../lib/providers/ProviderRegistry';
-import { MemoryStorageAdapter } from '../lib/storage';
-import type { ModelId, ModelConfigWithProvider, ModelSelectProps } from '../lib/types';
+import { ModelSelect } from '../src/lib/components/ModelSelect';
+import { AnthropicProvider } from '../src/lib/providers/AnthropicProvider';
+import { GoogleProvider } from '../src/lib/providers/GoogleProvider';
+import { OpenAIProvider } from '../src/lib/providers/OpenAIProvider';
+import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
+import { MemoryStorageAdapter } from '../src/lib/storage';
+import type { ModelId, ModelConfigWithProvider, ModelSelectProps } from '../src/lib/types';
 import type { Meta, StoryObj } from '@storybook/react';
-import '../lib/styles/globals.css';
+import '../src/lib/styles/globals.css';
 
 const meta = {
   title: 'Components/ModelSelect',

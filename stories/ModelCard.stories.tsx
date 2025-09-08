@@ -1,11 +1,11 @@
 import { fn } from 'storybook/test';
-import { ModelCard } from '../lib/components/ModelCard';
-import { AnthropicProvider } from '../lib/providers/AnthropicProvider';
-import { GoogleProvider } from '../lib/providers/GoogleProvider';
-import { OpenAIProvider } from '../lib/providers/OpenAIProvider';
-import { ModelProviderTags } from '../lib/types';
+import { ModelCard } from '../src/lib/components/ModelCard';
+import { AnthropicProvider } from '../src/lib/providers/AnthropicProvider';
+import { GoogleProvider } from '../src/lib/providers/GoogleProvider';
+import { OpenAIProvider } from '../src/lib/providers/OpenAIProvider';
+import { ModelProviderTags } from '../src/lib/types';
 import type { Meta, StoryObj } from '@storybook/react';
-import '../lib/styles/globals.css';
+import '../src/lib/styles/globals.css';
 
 const meta = {
   title: 'Components/ModelCard',
