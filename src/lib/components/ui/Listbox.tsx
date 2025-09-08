@@ -41,8 +41,9 @@ export function Listbox({ value, onChange = () => {}, children, className = '' }
         isOpen &&
         buttonRef.current &&
         optionsRef.current &&
-        !buttonRef.current.contains(event.target as Node) &&
-        !optionsRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !buttonRef.current.contains(event.target) &&
+        !optionsRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }
@@ -72,6 +73,7 @@ export function Listbox({ value, onChange = () => {}, children, className = '' }
   return (
     <ListboxContext.Provider
       value={{
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         value,
         onChange,
         isOpen,
@@ -173,6 +175,7 @@ export function ListboxOption({
   onClick,
   ...props
 }: ListboxOptionProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { value: selectedValue, onChange, setIsOpen } = useListboxContext();
   const isSelected = selectedValue === value;
 

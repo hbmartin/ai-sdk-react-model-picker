@@ -1,3 +1,5 @@
+type AzureModule = typeof import('@ai-sdk/azure');
+import type { AzureOpenAIProviderSettings } from '@ai-sdk/azure';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type {
   ModelConfig,
@@ -14,7 +16,7 @@ export class AzureProvider extends AIProvider {
     name: 'Azure OpenAI',
     description: 'Use GPT-4 and other models through Azure OpenAI Service',
     icon: AzureIcon,
-    documentationUrl: 'https://docs.microsoft.com/en-us/azure/cognitive-services/openai',
+    documentationUrl: 'https://learn.microsoft.com/en-us/azure/ai-foundry/',
     apiKeyUrl: 'https://portal.azure.com',
     requiredKeys: ['apiKey', 'resourceName'],
   };
@@ -85,7 +87,7 @@ export class AzureProvider extends AIProvider {
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
-    let azure: any;
+    let azure: AzureModule;
 
     try {
       azure = await import('@ai-sdk/azure');
@@ -96,18 +98,27 @@ export class AzureProvider extends AIProvider {
       );
     }
 
-    const config: any = {
+    if (
+      (params.config?.resourceName === undefined ||
+        params.config?.resourceName === null ||
+        typeof params.config?.resourceName !== 'string') &&
+      (params.config?.baseURL === undefined ||
+        params.config?.baseURL === null ||
+        typeof params.config?.baseURL !== 'string')
+    ) {
+      throw new Error('Azure OpenAI resourceName or baseURL is required');
+    }
+
+    const config: AzureOpenAIProviderSettings = {
       apiKey: params.apiKey,
-      resourceName: params.config?.resourceName,
-      apiVersion: params.config?.apiVersion || '2024-02-15-preview',
     };
 
     if (params.options) {
       Object.assign(config, params.options);
     }
 
-    const client = azure.azure(config);
-    return client(params.model, params.config);
+    const client = azure.createAzure(config);
+    return client(params.model);
   }
 
   getTags(): ModelProviderTags[] {

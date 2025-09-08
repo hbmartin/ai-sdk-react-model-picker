@@ -26,7 +26,7 @@ export default tseslint.config([
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      ...tseslint.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
       eslintPluginUnicorn.configs.recommended,
@@ -37,7 +37,7 @@ export default tseslint.config([
       'import': importPlugin,
     },
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: 2023,
       sourceType: 'module',
       globals: {
         ...globals.browser,
@@ -76,14 +76,6 @@ export default tseslint.config([
       ],
       
       // === TypeScript CONSISTENT IMPORTS ===
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        {
-          prefer: 'type-imports',
-          disallowTypeAnnotations: true,
-          fixStyle: 'separate-type-imports',
-        },
-      ],
       '@typescript-eslint/no-import-type-side-effects': 'error',
       
       // === IMPORT ORGANIZATION ===

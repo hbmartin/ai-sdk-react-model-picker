@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import type { StorageAdapter } from '../types';
 
 /**
@@ -17,7 +18,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   async get<T>(key: string): Promise<T | undefined> {
     try {
       const item = localStorage.getItem(this.getKey(key));
-      return item ? JSON.parse(item) : undefined;
+      return item ? (JSON.parse(item) as T) : undefined;
     } catch (error) {
       console.warn(`Failed to get item from localStorage: ${key}`, error);
       return undefined;
@@ -92,7 +93,7 @@ export class MemoryStorageAdapter implements StorageAdapter {
   }
 
   async get<T>(key: string): Promise<T | undefined> {
-    return this.storage.get(this.getKey(key));
+    return this.storage.get(this.getKey(key)) as T | undefined;
   }
 
   async set<T>(key: string, value: T): Promise<void> {
@@ -169,7 +170,7 @@ export class SessionStorageAdapter implements StorageAdapter {
   async get<T>(key: string): Promise<T | undefined> {
     try {
       const item = sessionStorage.getItem(this.getKey(key));
-      return item ? JSON.parse(item) : undefined;
+      return item ? (JSON.parse(item) as T) : undefined;
     } catch (error) {
       console.warn(`Failed to get item from sessionStorage: ${key}`, error);
       return undefined;

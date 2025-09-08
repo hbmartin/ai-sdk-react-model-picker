@@ -1,3 +1,5 @@
+type MistralModule = typeof import('@ai-sdk/mistral');
+import type { MistralProviderSettings } from '@ai-sdk/mistral';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type {
   ModelConfig,
@@ -52,14 +54,17 @@ export class MistralProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    const apiKey = config.apiKey;
-
-    if (!apiKey || typeof apiKey !== 'string') {
+    if (
+      config.apiKey === undefined ||
+      config.apiKey === null ||
+      typeof config.apiKey !== 'string'
+    ) {
       return {
         isValid: false,
         error: 'Mistral API key is required',
       };
     }
+    const apiKey = config.apiKey;
 
     if (apiKey.length < 10) {
       return {
@@ -76,7 +81,7 @@ export class MistralProvider extends AIProvider {
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
-    let mistral: any;
+    let mistral: MistralModule;
 
     try {
       mistral = await import('@ai-sdk/mistral');
@@ -87,7 +92,7 @@ export class MistralProvider extends AIProvider {
       );
     }
 
-    const config: any = {
+    const config: MistralProviderSettings = {
       apiKey: params.apiKey,
     };
 
@@ -99,8 +104,8 @@ export class MistralProvider extends AIProvider {
       Object.assign(config, params.options);
     }
 
-    const client = mistral.mistral(config);
-    return client(params.model, params.config);
+    const client = mistral.createMistral(config);
+    return client(params.model);
   }
 
   getTags(): ModelProviderTags[] {

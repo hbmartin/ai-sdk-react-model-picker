@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import type {
   IProviderRegistry,
@@ -20,7 +20,7 @@ interface FormData {
   apiKey?: string;
   resourceName?: string; // For Azure
   apiBase?: string;
-  [key: string]: any;
+  [key: string]: string | undefined;
 }
 
 /**
@@ -43,7 +43,6 @@ export function AddModelForm({
     register,
     handleSubmit,
     watch,
-    reset: _reset,
     formState: { errors },
   } = useForm<FormData>();
 
@@ -68,19 +67,22 @@ export function AddModelForm({
   }, [popularProviders, selectedProvider]);
 
   // Update available models when provider changes
-  const availableModels = selectedProvider
-    ? providers.getModelsForProvider(selectedProvider.id)
-    : [];
+  const availableModels = useMemo(
+    () => (selectedProvider ? providers.getModelsForProvider(selectedProvider.id) : []),
+    [selectedProvider, providers]
+  );
 
   // Set default model when provider changes
   useEffect(() => {
     if (availableModels.length > 0) {
-      const defaultModel = availableModels.find((m) => m.model.isDefault) || availableModels[0];
+      const defaultModel =
+        availableModels.find((m: ModelConfigWithProvider) => m.model.isDefault) ||
+        availableModels[0];
       setSelectedModel(defaultModel);
     } else {
       setSelectedModel(null);
     }
-  }, [selectedProvider, availableModels]);
+  }, [availableModels]);
 
   const onSubmit = async (formData: FormData) => {
     if (!selectedProvider || !selectedModel) {
@@ -135,7 +137,7 @@ export function AddModelForm({
         ${className}
       `}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6">
+        <form onSubmit={void handleSubmit(onSubmit)} className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-foreground">Add Model</h2>
@@ -145,7 +147,13 @@ export function AddModelForm({
               className="text-muted hover:text-foreground p-1 rounded"
               aria-label="Close dialog"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -164,7 +172,7 @@ export function AddModelForm({
                 selectedItem={selectedProvider!}
                 onSelectionChange={(item) => {
                   if ('name' in item) {
-                    setSelectedProvider(item as ProviderMetadata);
+                    setSelectedProvider(item);
                   }
                 }}
                 topOptions={popularProviders}
@@ -190,7 +198,7 @@ export function AddModelForm({
                 selectedItem={selectedModel!}
                 onSelectionChange={(item) => {
                   if ('model' in item) {
-                    setSelectedModel(item as ModelConfigWithProvider);
+                    setSelectedModel(item);
                   }
                 }}
                 topOptions={availableModels}

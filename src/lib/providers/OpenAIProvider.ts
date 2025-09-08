@@ -1,3 +1,5 @@
+type OpenAIModule = typeof import('@ai-sdk/openai');
+import type { OpenAIProviderSettings } from '@ai-sdk/openai';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type {
   ModelConfig,
@@ -25,55 +27,34 @@ export class OpenAIProvider extends AIProvider {
 
   readonly models: ModelConfig[] = [
     {
-      id: createModelId('gpt-4o'),
-      displayName: 'GPT-4 Omni',
-      maxTokens: 128_000,
-      contextLength: 128_000,
+      id: createModelId('gpt-5'),
+      displayName: 'GPT-5',
+      maxTokens: 400_000,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
     },
     {
-      id: createModelId('gpt-4o-mini'),
-      displayName: 'GPT-4 Omni Mini',
-      maxTokens: 128_000,
-      contextLength: 128_000,
+      id: createModelId('gpt-5-mini'),
+      displayName: 'GPT-5 Mini',
+      maxTokens: 400_000,
       supportsVision: true,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('gpt-4-turbo'),
-      displayName: 'GPT-4 Turbo',
-      maxTokens: 128_000,
-      contextLength: 128_000,
-      supportsVision: true,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('gpt-4'),
-      displayName: 'GPT-4',
-      maxTokens: 8192,
-      contextLength: 8192,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('gpt-3.5-turbo'),
-      displayName: 'GPT-3.5 Turbo',
-      maxTokens: 4096,
-      contextLength: 16_385,
       supportsTools: true,
     },
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    const apiKey = config.apiKey;
-
-    if (!apiKey || typeof apiKey !== 'string') {
+    if (
+      config.apiKey === undefined ||
+      config.apiKey === null ||
+      typeof config.apiKey !== 'string'
+    ) {
       return {
         isValid: false,
         error: 'OpenAI API key is required',
       };
     }
+    const apiKey = config.apiKey;
 
     // Basic format validation for OpenAI API keys
     if (!apiKey.startsWith('sk-')) {
@@ -99,7 +80,7 @@ export class OpenAIProvider extends AIProvider {
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     // Dynamic import to avoid bundling if not needed
-    let openai: any;
+    let openai: OpenAIModule;
 
     try {
       // This will be a peer dependency
@@ -111,7 +92,7 @@ export class OpenAIProvider extends AIProvider {
       );
     }
 
-    const config: any = {
+    const config: OpenAIProviderSettings = {
       apiKey: params.apiKey,
     };
 
@@ -126,10 +107,10 @@ export class OpenAIProvider extends AIProvider {
     }
 
     // Create the OpenAI client
-    const client = openai.openai(config);
+    const client = openai.createOpenAI(config);
 
     // Return the specific model
-    return client(params.model, params.config);
+    return client(params.model);
   }
 
   /**
@@ -146,16 +127,11 @@ export class OpenAIProvider extends AIProvider {
     const model = this.models.find((m) => m.id === modelId);
     if (!model) return false;
 
-    switch (capability) {
-      case 'vision': {
-        return model.supportsVision === true;
-      }
-      case 'tools': {
-        return model.supportsTools === true;
-      }
-      default: {
-        return false;
-      }
-    }
+    const capabilityMap = {
+      vision: model.supportsVision,
+      tools: model.supportsTools,
+    };
+
+    return capabilityMap[capability] === true;
   }
 }

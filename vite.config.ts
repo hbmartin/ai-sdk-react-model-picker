@@ -9,7 +9,8 @@ export default defineConfig({
     react(),
     dts({
       include: ['src/lib/**/*'],
-      insertTypesEntry: true,
+      rollupTypes: true,
+      tsconfigPath: './tsconfig.app.json',
     })
   ],
   css: {

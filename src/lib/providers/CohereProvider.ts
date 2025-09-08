@@ -1,3 +1,5 @@
+type CohereModule = typeof import('@ai-sdk/cohere');
+import type { CohereProviderSettings } from '@ai-sdk/cohere';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type {
   ModelConfig,
@@ -51,14 +53,17 @@ export class CohereProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    const apiKey = config.apiKey;
-
-    if (!apiKey || typeof apiKey !== 'string') {
+    if (
+      config.apiKey === undefined ||
+      config.apiKey === null ||
+      typeof config.apiKey !== 'string'
+    ) {
       return {
         isValid: false,
         error: 'Cohere API key is required',
       };
     }
+    const apiKey = config.apiKey;
 
     if (apiKey.length < 10) {
       return {
@@ -75,7 +80,7 @@ export class CohereProvider extends AIProvider {
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
-    let cohere: any;
+    let cohere: CohereModule;
 
     try {
       cohere = await import('@ai-sdk/cohere');
@@ -86,7 +91,7 @@ export class CohereProvider extends AIProvider {
       );
     }
 
-    const config: any = {
+    const config: CohereProviderSettings = {
       apiKey: params.apiKey,
     };
 
@@ -98,8 +103,8 @@ export class CohereProvider extends AIProvider {
       Object.assign(config, params.options);
     }
 
-    const client = cohere.cohere(config);
-    return client(params.model, params.config);
+    const client = cohere.createCohere(config);
+    return client(params.model);
   }
 
   getTags(): ModelProviderTags[] {
