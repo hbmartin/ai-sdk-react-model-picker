@@ -20,6 +20,10 @@ on:
           - next
           - alpha
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   quality-checks:
     name: Pre-publish Quality Checks
@@ -52,9 +56,8 @@ jobs:
       
       - name: Check package contents
         run: |
-          npm pack --dry-run
           echo "Package contents:"
-          npm pack --dry-run 2>/dev/null | grep -E "^npm notice"
+          npm pack --dry-run
 
   publish-npm:
     name: Publish to NPM Registry
@@ -174,16 +177,6 @@ jobs:
           };
           require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-      
-      - name: Publish to GitHub Packages
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            npm publish --tag ${{ github.event.inputs.tag }}
-          else
-            npm publish
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
   create-release-pr:
