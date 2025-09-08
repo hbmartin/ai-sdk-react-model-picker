@@ -119,12 +119,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
-      - name: Create GitHub Release Assets
-        if: github.event_name == 'release'
-        run: |
-          npm pack
-          mv *.tgz ai-sdk-react-model-picker-${{ github.event.release.tag_name }}.tgz
-      
       - name: Upload Release Assets
         if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
@@ -137,52 +131,10 @@ jobs:
           asset_content_type: application/gzip
         continue-on-error: true
 
-  publish-github-packages:
-    name: Publish to GitHub Packages
-    needs: quality-checks
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js with GitHub registry
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          registry-url: 'https://npm.pkg.github.com'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build library
-        run: npm run build
-      
-      - name: Update package version (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
-        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
-      
-      - name: Configure package.json for GitHub Packages
-        run: |
-          # Update package name for GitHub packages if needed
-          node -e "
-          const pkg = require('./package.json');
-          pkg.publishConfig = {
-            registry: 'https://npm.pkg.github.com',
-            access: 'public'
-          };
-          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-        continue-on-error: true
-
   create-release-pr:
     name: Create Release Pull Request
     if: github.event_name == 'workflow_dispatch'
-    needs: [publish-npm, publish-github-packages]
+    needs: [publish-npm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
