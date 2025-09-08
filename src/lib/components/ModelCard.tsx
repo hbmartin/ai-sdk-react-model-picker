@@ -9,10 +9,7 @@ export interface ModelCardProps {
   description?: string;
   tags?: ModelProviderTags[];
   documentationUrl?: string;
-  onClick?: (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    model: ModelConfigWithProvider
-  ) => void;
+  onClick?: (e: MouseEvent<HTMLDivElement>, model: ModelConfigWithProvider) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -66,7 +63,7 @@ export function ModelCard({
       onClick={
         disabled
           ? undefined
-          : (e: MouseEvent<HTMLDivElement>) => {
+          : (e) => {
               // Don't trigger if clicking on a link
               if ((e.target as HTMLElement).closest('a')) {
                 return;
