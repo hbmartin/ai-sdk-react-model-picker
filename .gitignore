@@ -74,3 +74,6 @@ Temporary Items
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+
+*storybook.log
+storybook-static
