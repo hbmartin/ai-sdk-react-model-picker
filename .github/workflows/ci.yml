@@ -25,7 +25,7 @@ jobs:
         run: npm ci
       
       - name: Run TypeScript compiler check
-        run: npm run typecheck || npx tsc --noEmit
+        run: npm run typecheck
       
       - name: Run ESLint
         run: npm run lint

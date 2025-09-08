@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import type { ModelConfigWithProvider } from '../types';
 import { ModelProviderTags } from '../types';
 import { ModelProviderTag } from './ModelProviderTag';
@@ -46,7 +46,7 @@ export function ModelCard({
     autoTags.push(ModelProviderTags.LongContext);
   }
 
-  const allTags = [...tags, ...autoTags];
+  const allTags = [...new Set([...tags, ...autoTags])];
 
   return (
     <div
@@ -66,9 +66,9 @@ export function ModelCard({
       onClick={
         disabled
           ? undefined
-          : (e) => {
+          : (e: MouseEvent<HTMLDivElement>) => {
               // Don't trigger if clicking on a link
-              if ((e.target as any).closest('a')) {
+              if ((e.target as HTMLElement).closest('a')) {
                 return;
               }
               onClick?.(e, model);
@@ -122,6 +122,7 @@ export function ModelCard({
               transition-colors duration-200
             "
             title="Read the documentation"
+            aria-label="Read the documentation"
             onClick={(e) => e.stopPropagation()}
           >
             <svg
@@ -133,6 +134,7 @@ export function ModelCard({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />

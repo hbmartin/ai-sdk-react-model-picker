@@ -1,3 +1,5 @@
+type GoogleModule = typeof import('@ai-sdk/google');
+import type { GoogleGenerativeAIProviderSettings } from '@ai-sdk/google';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type {
   ModelConfig,
@@ -38,14 +40,17 @@ export class GoogleProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    const apiKey = config.apiKey;
-
-    if (!apiKey || typeof apiKey !== 'string') {
+    if (
+      config.apiKey === undefined ||
+      config.apiKey === null ||
+      typeof config.apiKey !== 'string'
+    ) {
       return {
         isValid: false,
         error: 'Google AI API key is required',
       };
     }
+    const apiKey = config.apiKey;
 
     if (apiKey.length < 10) {
       return {
@@ -62,7 +67,7 @@ export class GoogleProvider extends AIProvider {
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
-    let google: any;
+    let google: GoogleModule;
 
     try {
       google = await import('@ai-sdk/google');
@@ -73,7 +78,7 @@ export class GoogleProvider extends AIProvider {
       );
     }
 
-    const config: any = {
+    const config: GoogleGenerativeAIProviderSettings = {
       apiKey: params.apiKey,
     };
 
@@ -85,8 +90,8 @@ export class GoogleProvider extends AIProvider {
       Object.assign(config, params.options);
     }
 
-    const client = google.google(config);
-    return client(params.model, params.config);
+    const client = google.createGoogleGenerativeAI(config);
+    return client(params.model);
   }
 
   getTags(): ModelProviderTags[] {

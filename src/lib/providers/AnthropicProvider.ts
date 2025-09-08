@@ -1,3 +1,5 @@
+type AnthropicModule = typeof import('@ai-sdk/anthropic');
+import type { AnthropicProviderSettings } from '@ai-sdk/anthropic';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type {
   ModelConfig,
@@ -16,7 +18,7 @@ export class AnthropicProvider extends AIProvider {
   readonly metadata: ProviderMetadata = {
     id: createProviderId('anthropic'),
     name: 'Anthropic',
-    description: 'Use Claude 3.5 Sonnet, Claude 3 Opus, and other Anthropic models',
+    description: 'Use Claude Sonnet, Claude Opus, and other Anthropic models',
     icon: AnthropicIcon,
     documentationUrl: 'https://docs.anthropic.com',
     apiKeyUrl: 'https://console.anthropic.com/account/keys',
@@ -25,10 +27,17 @@ export class AnthropicProvider extends AIProvider {
 
   readonly models: ModelConfig[] = [
     {
-      id: createModelId('claude-3-5-sonnet-20241022'),
-      displayName: 'Claude 3.5 Sonnet',
+      id: createModelId('claude-sonnet-4-20250514'),
+      displayName: 'Claude Sonnet 4',
       maxTokens: 200_000,
       contextLength: 200_000,
+      supportsVision: true,
+      supportsTools: true,
+    },
+    {
+      id: createModelId('claude-opus-4-1-20250805'),
+      displayName: 'Claude Opus 4.1',
+      maxTokens: 200_000,
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
@@ -37,45 +46,24 @@ export class AnthropicProvider extends AIProvider {
       id: createModelId('claude-3-5-haiku-20241022'),
       displayName: 'Claude 3.5 Haiku',
       maxTokens: 200_000,
-      contextLength: 200_000,
-      supportsVision: true,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('claude-3-opus-20240229'),
-      displayName: 'Claude 3 Opus',
-      maxTokens: 200_000,
-      contextLength: 200_000,
-      supportsVision: true,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('claude-3-sonnet-20240229'),
-      displayName: 'Claude 3 Sonnet',
-      maxTokens: 200_000,
-      contextLength: 200_000,
-      supportsVision: true,
-      supportsTools: true,
-    },
-    {
-      id: createModelId('claude-3-haiku-20240307'),
-      displayName: 'Claude 3 Haiku',
-      maxTokens: 200_000,
-      contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
     },
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    const apiKey = config.apiKey;
-
-    if (!apiKey || typeof apiKey !== 'string') {
+    if (
+      config.apiKey === undefined ||
+      config.apiKey === null ||
+      typeof config.apiKey !== 'string'
+    ) {
       return {
         isValid: false,
         error: 'Anthropic API key is required',
       };
     }
+
+    const apiKey = config.apiKey;
 
     // Basic format validation for Anthropic API keys
     if (!apiKey.startsWith('sk-ant-')) {
@@ -101,7 +89,7 @@ export class AnthropicProvider extends AIProvider {
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     // Dynamic import to avoid bundling if not needed
-    let anthropic: any;
+    let anthropic: AnthropicModule;
 
     try {
       // This will be a peer dependency
@@ -113,7 +101,7 @@ export class AnthropicProvider extends AIProvider {
       );
     }
 
-    const config: any = {
+    const config: AnthropicProviderSettings = {
       apiKey: params.apiKey,
     };
 
@@ -128,10 +116,10 @@ export class AnthropicProvider extends AIProvider {
     }
 
     // Create the Anthropic client
-    const client = anthropic.anthropic(config);
+    const client = anthropic.createAnthropic(config);
 
     // Return the specific model
-    return client(params.model, params.config);
+    return client(params.model);
   }
 
   /**
@@ -151,7 +139,7 @@ export class AnthropicProvider extends AIProvider {
     const capabilityMap = {
       vision: model.supportsVision,
       tools: model.supportsTools,
-    } as const;
+    };
 
     return capabilityMap[capability] === true;
   }
@@ -164,7 +152,7 @@ export class AnthropicProvider extends AIProvider {
       const capabilityMap = {
         vision: model.supportsVision,
         tools: model.supportsTools,
-      } as const;
+      };
 
       return capabilityMap[capability] === true;
     });

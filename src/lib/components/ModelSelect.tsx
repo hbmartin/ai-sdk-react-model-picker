@@ -18,10 +18,13 @@ interface ModelOption {
   isAutoDetected?: boolean;
 }
 
-/**
- * Main model selection component - fully controlled
- * Migrated from Continue's ModelSelect with controlled behavior
- */
+// Typed comparator to avoid any/unknown inference in linters
+const compareModelOptions = (a: ModelOption, b: ModelOption): number => {
+  if (a.hasApiKey && !b.hasApiKey) return -1;
+  if (!a.hasApiKey && b.hasApiKey) return 1;
+  return a.model.model.displayName.localeCompare(b.model.model.displayName);
+};
+
 export function ModelSelect({
   storage,
   providers,
@@ -41,7 +44,7 @@ export function ModelSelect({
 }: ModelSelectProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const [modelOptions, setModelOptions] = useState<ModelOption[]>([]);
+  const [modelOptions, setModelOptions] = useState<readonly ModelOption[]>([]);
 
   // Get all available models from providers
   const allModels = useMemo(() => {
@@ -51,44 +54,54 @@ export function ModelSelect({
   // Load API keys and model configuration
   useEffect(() => {
     async function loadModelOptions() {
-      setIsLoading(true);
+      if (!cancelled) {
+        setIsLoading(true);
+      }
       try {
-        const options: ModelOption[] = [];
-
-        for (const modelWithProvider of allModels) {
-          const providerId = modelWithProvider.provider.id;
-          const provider = providers.getProvider(providerId);
-
-          // Check if provider has credentials stored
-          const storedConfig = (await storage.get(`${providerId}:config`)) || {};
-          const hasCredentials = provider.hasCredentials(storedConfig);
-
-          options.push({
-            model: modelWithProvider,
-            hasApiKey: hasCredentials,
-            isAutoDetected: false, // TODO: Implement auto-detection logic
-          });
+        const options: ModelOption[] = await Promise.all(
+          allModels.map(async (modelWithProvider) => {
+            const providerId = modelWithProvider.provider.id;
+            const provider = providers.getProvider(providerId);
+            try {
+              const storedConfig = (await storage.get(`${providerId}:config`)) ?? {};
+              const hasCredentials = provider?.hasCredentials
+                ? provider.hasCredentials(storedConfig)
+                : false;
+              return {
+                model: modelWithProvider,
+                hasApiKey: hasCredentials,
+                isAutoDetected: false, // TODO: Implement auto-detection logic
+              } as ModelOption;
+            } catch (error) {
+              console.warn(`Failed to load config for provider "${providerId}":`, error);
+              return {
+                model: modelWithProvider,
+                hasApiKey: false,
+                isAutoDetected: false,
+              } as ModelOption;
+            }
+          })
+        );
+        if (!cancelled) {
+          setModelOptions(options);
         }
-
-        setModelOptions(options);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
     void loadModelOptions();
+    let cancelled = false;
+    return () => {
+      cancelled = true;
+    };
   }, [allModels, storage, providers]);
 
   // Sort options: those with API keys first, then alphabetically
-  const sortedOptions = useMemo(() => {
-    return modelOptions.toSorted((a, b) => {
-      // First sort by API key availability
-      if (a.hasApiKey && !b.hasApiKey) return -1;
-      if (!a.hasApiKey && b.hasApiKey) return 1;
-
-      // Then sort alphabetically
-      return a.model.model.displayName.localeCompare(b.model.model.displayName);
-    });
+  const sortedOptions = useMemo<readonly ModelOption[]>(() => {
+    return modelOptions.toSorted(compareModelOptions);
   }, [modelOptions]);
 
   // Find selected model
@@ -97,7 +110,12 @@ export function ModelSelect({
     : null;
 
   // Handle model selection
-  const handleModelSelect = async (modelId: ModelId) => {
+  const handleModelSelect = (modelId: ModelId) => {
+    if ((modelId as unknown) === '__add_model__') {
+      setShowAddModelForm(true);
+      return;
+    }
+
     const modelOption = sortedOptions.find((opt) => opt.model.model.id === modelId);
     if (!modelOption) return;
 
@@ -109,16 +127,6 @@ export function ModelSelect({
     }
 
     onModelChange(modelOption.model);
-  };
-
-  // Handle add model button click
-  const handleAddModel = () => {
-    if (sortedOptions.length === 0) {
-      // If no models available, show form immediately
-      setShowAddModelForm(true);
-    } else {
-      setShowAddModelForm(true);
-    }
   };
 
   // Handle configuration button click
@@ -230,7 +238,7 @@ export function ModelSelect({
             {!isLoading && (
               <ListboxOption
                 value="__add_model__"
-                onClick={handleAddModel}
+                onClick={() => setShowAddModelForm(true)}
                 className="border-t border-border bg-accent"
               >
                 <div className="text-muted flex items-center py-0.5 hover:text-foreground text-xs">

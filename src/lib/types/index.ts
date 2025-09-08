@@ -28,12 +28,14 @@ export interface ModelConfigWithProvider {
   provider: ProviderMetadata;
 }
 
+export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
 // Provider metadata for display and configuration
 export interface ProviderMetadata {
   id: ProviderId;
   name: string;
   description?: string;
-  icon?: ComponentType<SVGProps<SVGSVGElement>>;
+  icon?: IconComponent;
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
@@ -81,7 +83,7 @@ export enum ModelProviderTags {
 export interface Role {
   id: string;
   label: string;
-  icon?: ComponentType<SVGProps<SVGSVGElement>>;
+  icon?: IconComponent;
 }
 
 // Theme configuration for styling
@@ -120,6 +122,7 @@ export abstract class AIProvider {
   abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;
 
   // Optional dynamic model loading
+  // eslint-disable-next-line @typescript-eslint/require-await
   async loadModels?(_storage: StorageAdapter): Promise<ModelConfig[]> {
     return this.models;
   }

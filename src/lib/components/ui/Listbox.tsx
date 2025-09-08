@@ -73,6 +73,7 @@ export function Listbox({ value, onChange = () => {}, children, className = '' }
   return (
     <ListboxContext.Provider
       value={{
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         value,
         onChange,
         isOpen,
@@ -174,6 +175,7 @@ export function ListboxOption({
   onClick,
   ...props
 }: ListboxOptionProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { value: selectedValue, onChange, setIsOpen } = useListboxContext();
   const isSelected = selectedValue === value;
 

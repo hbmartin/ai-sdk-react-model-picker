@@ -128,31 +128,6 @@ export class ProviderRegistry implements IProviderRegistry {
   }
 
   /**
-   * Get providers that have missing configuration
-   * @param storage Storage adapter to check credentials
-   * @returns Array of provider IDs with missing config
-   */
-  async getProvidersWithMissingConfig(storage: {
-    get: (key: string) => Promise<unknown>;
-  }): Promise<ProviderId[]> {
-    const missingProviders: ProviderId[] = [];
-
-    for (const [providerId, provider] of this.providers) {
-      // Check if provider has required credentials
-      if (!provider.hasCredentials({})) {
-        // Try to load from storage
-        const storedConfig = await storage.get(`${this.storagePrefix}:${providerId}:config`);
-
-        if (!storedConfig || !provider.hasCredentials(storedConfig)) {
-          missingProviders.push(providerId);
-        }
-      }
-    }
-
-    return missingProviders;
-  }
-
-  /**
    * Get all models for a specific provider
    * @param providerId The provider ID
    * @returns Array of models for the provider

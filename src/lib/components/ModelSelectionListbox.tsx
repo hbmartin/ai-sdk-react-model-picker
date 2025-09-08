@@ -64,13 +64,13 @@ export function ModelSelectionListbox({
   const selectedTitle = selectedItem ? getItemTitle(selectedItem) : placeholder;
   const SelectedIcon = selectedItem ? getItemIcon(selectedItem) : CubeIcon;
 
-  const renderOption = (item: ModelConfigWithProvider | ProviderMetadata, index: number) => {
+  const renderOption = (item: ModelConfigWithProvider | ProviderMetadata) => {
     const title = getItemTitle(item);
     const ItemIcon = getItemIcon(item) || CubeIcon;
 
     return (
       <ListboxOption
-        key={`${isProvider(item) ? 'provider' : 'model'}-${index}`}
+        key={isProvider(item) ? `provider-${item.id}` : `model-${item.model.id}`}
         value={item}
         className="flex items-center justify-between gap-2"
       >
@@ -106,7 +106,7 @@ export function ModelSelectionListbox({
                 <div className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted bg-accent">
                   Popular
                 </div>
-                {topOptions.map((option, index) => renderOption(option, index))}
+                {topOptions.map((option) => renderOption(option))}
               </div>
             )}
 
@@ -123,9 +123,7 @@ export function ModelSelectionListbox({
                     Additional Options
                   </div>
                 )}
-                {otherOptions.map((option, index) =>
-                  renderOption(option, topOptions.length + index)
-                )}
+                {otherOptions.map((option) => renderOption(option))}
               </div>
             )}
 
