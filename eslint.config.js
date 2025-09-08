@@ -3,13 +3,13 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
-import { globalIgnores } from 'eslint/config'
+import { defineConfig, globalIgnores } from 'eslint/config'
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import unusedImports from 'eslint-plugin-unused-imports';
 import importPlugin from 'eslint-plugin-import';
 
-export default tseslint.config([
+export default defineConfig([
   globalIgnores([
     'dist/**',
     'build/**', 
@@ -21,6 +21,8 @@ export default tseslint.config([
     'postcss.config.js', 
     'tailwind.config.js',
     '.github/**',
+    'storybook-static',
+    '.storybook'
   ]),
   {
     files: ['**/*.{ts,tsx}'],
@@ -31,10 +33,11 @@ export default tseslint.config([
       reactRefresh.configs.vite,
       eslintPluginUnicorn.configs.recommended,
       eslintPluginPrettierRecommended,
+      importPlugin.flatConfigs.recommended,
+      importPlugin.flatConfigs.typescript
     ],
     plugins: {
       'unused-imports': unusedImports,
-      'import': importPlugin,
     },
     languageOptions: {
       ecmaVersion: 2023,
@@ -45,7 +48,7 @@ export default tseslint.config([
         React: 'readonly',
       },
       parserOptions: {
-        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.storybook.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -152,17 +155,31 @@ export default tseslint.config([
     },
   },
   {
-    // Config files - disable some rules
-    files: ['*.config.{js,ts}', 'eslint.config.js'],
+    // Storybook files - disable some rules
+    files: ['src/stories/**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended, // Use non-type-checked config for stories
+      reactHooks.configs['recommended-latest'],
+      reactRefresh.configs.vite,
+      eslintPluginUnicorn.configs.recommended,
+      eslintPluginPrettierRecommended,
+    ],
     languageOptions: {
       parserOptions: {
-        project: null,
+        project: './tsconfig.storybook.json',
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
       '@typescript-eslint/no-var-requires': 'off',
       'unicorn/prefer-module': 'off',
+      'unicorn/filename-case': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'react-hooks/rules-of-hooks': 'off',
       'import/no-default-export': 'off',
     },
   },
-])
+],
+// eslintPluginUnicorn.configs.recommended
+);

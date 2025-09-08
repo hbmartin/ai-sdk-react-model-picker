@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-
-import { Toggle } from '../lib/components/Toggle';
+import { fn } from 'storybook/test';
+import { Toggle, type ToggleProps } from '../lib/components/Toggle';
+import type { Meta, StoryObj } from '@storybook/react';
 import '../lib/styles/globals.css';
 
 const meta = {
@@ -39,7 +39,7 @@ const meta = {
     },
   },
   args: {
-    onClick: () => console.log('Toggle clicked'),
+    onClick: () => fn(),
   },
 } satisfies Meta<typeof Toggle>;
 
@@ -47,21 +47,15 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Wrapper component to handle state
-const ToggleWrapper = (props: any) => {
+const ToggleWrapper = (props: Partial<ToggleProps>) => {
   const [selected, setSelected] = useState(props.selected ?? true);
-  
+
   const handleClick = () => {
     setSelected(!selected);
     props.onClick?.();
   };
 
-  return (
-    <Toggle
-      {...props}
-      selected={selected}
-      onClick={handleClick}
-    />
-  );
+  return <Toggle {...props} selected={selected} onClick={handleClick} />;
 };
 
 export const Default: Story = {
@@ -143,11 +137,13 @@ export const MultipleToggles: Story = {
     const [mode, setMode] = useState(true);
     const [theme, setTheme] = useState(true);
     const [feature, setFeature] = useState(false);
-    
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
-          <label style={{ marginBottom: '8px', display: 'block', fontSize: '14px', fontWeight: '600' }}>
+          <label
+            style={{ marginBottom: '8px', display: 'block', fontSize: '14px', fontWeight: '600' }}
+          >
             Model Mode
           </label>
           <Toggle
@@ -157,9 +153,11 @@ export const MultipleToggles: Story = {
             onClick={() => setMode(!mode)}
           />
         </div>
-        
+
         <div>
-          <label style={{ marginBottom: '8px', display: 'block', fontSize: '14px', fontWeight: '600' }}>
+          <label
+            style={{ marginBottom: '8px', display: 'block', fontSize: '14px', fontWeight: '600' }}
+          >
             Theme
           </label>
           <Toggle
@@ -169,9 +167,11 @@ export const MultipleToggles: Story = {
             onClick={() => setTheme(!theme)}
           />
         </div>
-        
+
         <div>
-          <label style={{ marginBottom: '8px', display: 'block', fontSize: '14px', fontWeight: '600' }}>
+          <label
+            style={{ marginBottom: '8px', display: 'block', fontSize: '14px', fontWeight: '600' }}
+          >
             Advanced Features
           </label>
           <Toggle
@@ -189,7 +189,7 @@ export const MultipleToggles: Story = {
 export const StateDisplay: Story = {
   render: () => {
     const [selected, setSelected] = useState(true);
-    
+
     return (
       <div style={{ textAlign: 'center' }}>
         <Toggle
@@ -210,30 +210,15 @@ export const Sizes: Story = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
       <div style={{ fontSize: '12px' }}>
-        <Toggle
-          optionOne="Small"
-          optionTwo="Size"
-          selected={true}
-          onClick={() => console.log('Toggle clicked')}
-        />
+        <Toggle optionOne="Small" optionTwo="Size" selected={true} onClick={() => fn()} />
       </div>
-      
+
       <div style={{ fontSize: '16px' }}>
-        <Toggle
-          optionOne="Normal"
-          optionTwo="Size"
-          selected={true}
-          onClick={() => console.log('Toggle clicked')}
-        />
+        <Toggle optionOne="Normal" optionTwo="Size" selected={true} onClick={() => fn()} />
       </div>
-      
+
       <div style={{ fontSize: '20px' }}>
-        <Toggle
-          optionOne="Large"
-          optionTwo="Size"
-          selected={true}
-          onClick={() => console.log('Toggle clicked')}
-        />
+        <Toggle optionOne="Large" optionTwo="Size" selected={true} onClick={() => fn()} />
       </div>
     </div>
   ),

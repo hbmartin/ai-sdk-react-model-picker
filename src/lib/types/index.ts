@@ -123,7 +123,7 @@ export abstract class AIProvider {
 
   // Optional dynamic model loading
   // eslint-disable-next-line @typescript-eslint/require-await
-  async loadModels?(_storage: StorageAdapter): Promise<ModelConfig[]> {
+  async loadModels?(_: StorageAdapter): Promise<ModelConfig[]> {
     return this.models;
   }
 }

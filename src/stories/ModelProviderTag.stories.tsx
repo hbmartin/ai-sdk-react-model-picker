@@ -1,7 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { ModelProviderTag } from '../lib/components/ModelProviderTag';
 import { ModelProviderTags } from '../lib/types';
+import type { Meta, StoryObj } from '@storybook/react';
 import '../lib/styles/globals.css';
 
 const meta = {
@@ -87,9 +86,7 @@ export const AllTags: Story = {
 export const TagsInContext: Story = {
   render: () => (
     <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-      <h3 style={{ marginBottom: '12px', fontSize: '18px', fontWeight: '600' }}>
-        GPT-4 Turbo
-      </h3>
+      <h3 style={{ marginBottom: '12px', fontSize: '18px', fontWeight: '600' }}>GPT-4 Turbo</h3>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <ModelProviderTag tag={ModelProviderTags.Vision} />
         <ModelProviderTag tag={ModelProviderTags.Tools} />
@@ -133,7 +130,7 @@ export const TagGroups: Story = {
           <ModelProviderTag tag={ModelProviderTags.Local} />
         </div>
       </div>
-      
+
       <div>
         <h4 style={{ marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#666' }}>
           Capabilities
@@ -144,7 +141,7 @@ export const TagGroups: Story = {
           <ModelProviderTag tag={ModelProviderTags.LongContext} />
         </div>
       </div>
-      
+
       <div>
         <h4 style={{ marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#666' }}>
           Type
