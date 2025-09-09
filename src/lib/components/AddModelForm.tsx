@@ -116,7 +116,7 @@ export function AddModelForm({
       return 'Please select a model';
     }
     const missingRequiredKeys = selectedProvider.requiredKeys.filter((key) => {
-      return typeof key === 'string' && String(watch(key)).trim().length === 0;
+      return typeof key === 'string' && watch(key).trim().length === 0;
     });
     if (missingRequiredKeys.length > 0) {
       return `Please fill in all required fields: ${missingRequiredKeys.join(', ')}`;
@@ -126,12 +126,12 @@ export function AddModelForm({
       .filter((key) => {
         return (
           key.filter(([exclusive_key, _]) => {
-            return String(watch(exclusive_key)).trim().length > 0;
-          }).length > 1
+            return watch(exclusive_key).trim().length > 0;
+          }).length !== 1
         );
       });
     if (conflictingExclusiveKeys.length > 0) {
-      return `Please fill in only one of the following fields: ${conflictingExclusiveKeys[0].map(([exclusive_key, _]) => exclusive_key).join(', ')}`;
+      return `Please fill in one and only one of the following fields: ${conflictingExclusiveKeys[0].map(([exclusive_key, _]) => exclusive_key).join(', ')}`;
     }
     // eslint-disable-next-line unicorn/no-useless-undefined
     return undefined;
