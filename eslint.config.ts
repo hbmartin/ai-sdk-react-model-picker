@@ -210,7 +210,7 @@ export default defineConfig([
       'react-hooks/exhaustive-deps': 'error',
 
       // === CODE QUALITY ===
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/ban-ts-comment': 'warn',
       '@typescript-eslint/no-unnecessary-type-parameters': 'off',
       '@typescript-eslint/no-confusing-void-expression': 'off',

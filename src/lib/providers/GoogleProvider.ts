@@ -39,7 +39,7 @@ export class GoogleProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, any>): ValidationResult {
+  validateCredentials(config: Record<string, string>): ValidationResult {
     if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
       return {
         isValid: false,
@@ -58,7 +58,7 @@ export class GoogleProvider extends AIProvider {
     return { isValid: true };
   }
 
-  hasCredentials(config: Record<string, any>): boolean {
+  hasCredentials(config: Record<string, string>): boolean {
     return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
   }
 
@@ -82,8 +82,8 @@ export class GoogleProvider extends AIProvider {
       apiKey: params.apiKey,
     };
 
-    if (params.apiBase) {
-      config.baseURL = params.apiBase;
+    if (params.baseUrl) {
+      config.baseURL = params.baseUrl;
     }
 
     if (params.options) {

@@ -57,7 +57,7 @@ function App() {
     // Ready to use with Vercel AI SDK
     const aiModel = await model.provider.createInstance({
       model: model.model.id,
-      apiKey: await storage.get(`${model.provider.id}:apiKey`)
+      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey']
     });
   };
   
@@ -120,7 +120,7 @@ Main component for model selection.
 interface ModelSelectProps {
   // Required
   storage: StorageAdapter;
-  providers: IProviderRegistry;
+  providerRegistry: IProviderRegistry;
   selectedModelId: ModelId | null;
   onModelChange: (model: ModelConfigWithProvider) => void;
   
@@ -368,7 +368,7 @@ function ChatApp() {
       
     const aiModel = await model.provider.createInstance({
       model: model.model.id,
-      apiKey: await storage.get(`${model.provider.id}:apiKey`)
+      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey']
     });
     
     const result = await streamText({
