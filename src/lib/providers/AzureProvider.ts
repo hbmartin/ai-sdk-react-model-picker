@@ -1,14 +1,10 @@
 type AzureModule = typeof import('@ai-sdk/azure');
 import type { AzureOpenAIProviderSettings } from '@ai-sdk/azure';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import type {
-  ModelConfig,
-  ProviderMetadata,
-  ProviderInstanceParams,
-  ValidationResult,
-} from '../types';
+import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { AzureIcon } from '../icons';
+import { apiKeyField, baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 
 export class AzureProvider extends AIProvider {
   readonly metadata: ProviderMetadata = {
@@ -18,13 +14,6 @@ export class AzureProvider extends AIProvider {
     icon: AzureIcon,
     documentationUrl: 'https://learn.microsoft.com/en-us/azure/ai-foundry/',
     apiKeyUrl: 'https://portal.azure.com',
-    requiredKeys: [
-      'apiKey',
-      [
-        ['resourceName', 'Resource Name'],
-        ['baseURL', 'API Base URL'],
-      ],
-    ],
   };
 
   readonly models: ModelConfig[] = [
@@ -61,41 +50,13 @@ export class AzureProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, string>): ValidationResult {
-    if (!('apiKey' in config) || config['apiKey'].trim() === '') {
-      return {
-        isValid: false,
-        error: 'Azure OpenAI API key is required',
-      };
-    }
-
-    if (
-      (typeof config['resourceName'] !== 'string' || config['resourceName'].trim() === '') &&
-      (typeof config['baseURL'] !== 'string' || config['baseURL'].trim() === '')
-    ) {
-      return {
-        isValid: false,
-        error: 'Azure OpenAI resource name is required',
-      };
-    }
-
-    if (config['apiKey'].length < 10) {
-      return {
-        isValid: false,
-        error: 'Azure OpenAI API key appears to be too short',
-      };
-    }
-
-    return { isValid: true };
-  }
-
-  hasCredentials(config: Record<string, string>): boolean {
-    return (
-      typeof config['apiKey'] === 'string' &&
-      config['apiKey'].trim() !== '' &&
-      (typeof config['resourceName'] === 'string' || typeof config['baseURL'] === 'string')
-    );
-  }
+  override readonly configuration: ConfigAPI<AzureOpenAIProviderSettings> =
+    makeConfiguration<AzureOpenAIProviderSettings>()({
+      fields: [
+        apiKeyField(10, true),
+        baseUrlField('https://{resourceName}.openai.azure.com/openai/v1{path}', true),
+      ],
+    });
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let azure: AzureModule;
@@ -108,28 +69,8 @@ export class AzureProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/azure'
       );
     }
-
-    if (params.options === undefined) {
-      throw new Error(
-        'Azure OpenAI options are required and must set either resourceName or baseURL'
-      );
-    }
-
-    if (typeof params.apiKey !== 'string' || params.apiKey.trim() === '') {
-      throw new TypeError('Azure OpenAI API key is required');
-    }
-
-    if (typeof params.options['resourceName'] !== 'string' && typeof params.baseURL !== 'string') {
-      throw new TypeError('Azure OpenAI resourceName or baseURL is required');
-    }
-
-    const config: AzureOpenAIProviderSettings = {
-      apiKey: params.apiKey,
-    };
-
-    Object.assign(config, params.options);
-
-    const client = azure.createAzure(config);
+    this.configuration.assert(params.options);
+    const client = azure.createAzure(params.options);
     return client(params.model);
   }
 

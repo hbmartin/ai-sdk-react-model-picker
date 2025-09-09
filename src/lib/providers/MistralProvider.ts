@@ -1,14 +1,10 @@
 type MistralModule = typeof import('@ai-sdk/mistral');
 import type { MistralProviderSettings } from '@ai-sdk/mistral';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import type {
-  ModelConfig,
-  ProviderMetadata,
-  ProviderInstanceParams,
-  ValidationResult,
-} from '../types';
+import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { MistralIcon } from '../icons';
+import { apiKeyField, baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 
 export class MistralProvider extends AIProvider {
   readonly metadata: ProviderMetadata = {
@@ -18,7 +14,6 @@ export class MistralProvider extends AIProvider {
     icon: MistralIcon,
     documentationUrl: 'https://docs.mistral.ai',
     apiKeyUrl: 'https://console.mistral.ai/api-keys',
-    requiredKeys: ['apiKey'],
   };
 
   readonly models: ModelConfig[] = [
@@ -53,28 +48,10 @@ export class MistralProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, string>): ValidationResult {
-    if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
-      return {
-        isValid: false,
-        error: 'Mistral API key is required',
-      };
-    }
-    const apiKey = config['apiKey'];
-
-    if (apiKey.length < 10) {
-      return {
-        isValid: false,
-        error: 'Mistral API key appears to be too short',
-      };
-    }
-
-    return { isValid: true };
-  }
-
-  hasCredentials(config: Record<string, string>): boolean {
-    return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
-  }
+  override readonly configuration: ConfigAPI<MistralProviderSettings> =
+    makeConfiguration<MistralProviderSettings>()({
+      fields: [apiKeyField(10, true), baseUrlField('https://api.mistral.ai/v1')],
+    });
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let mistral: MistralModule;
@@ -87,20 +64,8 @@ export class MistralProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/mistral'
       );
     }
-
-    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
-      throw new TypeError('Mistral API key is required');
-    }
-
-    const config: MistralProviderSettings = {
-      apiKey: params.apiKey,
-    };
-
-    if (params.options) {
-      Object.assign(config, params.options);
-    }
-
-    const client = mistral.createMistral(config);
+    this.configuration.assert(params.options);
+    const client = mistral.createMistral(params.options);
     return client(params.model);
   }
 

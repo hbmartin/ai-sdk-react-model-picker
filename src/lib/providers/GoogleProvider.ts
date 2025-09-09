@@ -1,14 +1,10 @@
 type GoogleModule = typeof import('@ai-sdk/google');
 import type { GoogleGenerativeAIProviderSettings } from '@ai-sdk/google';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import type {
-  ModelConfig,
-  ProviderMetadata,
-  ProviderInstanceParams,
-  ValidationResult,
-} from '../types';
+import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { GoogleIcon } from '../icons';
+import { apiKeyField, baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 
 export class GoogleProvider extends AIProvider {
   readonly metadata: ProviderMetadata = {
@@ -18,7 +14,6 @@ export class GoogleProvider extends AIProvider {
     icon: GoogleIcon,
     documentationUrl: 'https://ai.google.dev',
     apiKeyUrl: 'https://aistudio.google.com/app/apikey',
-    requiredKeys: ['apiKey'],
   };
 
   readonly models: ModelConfig[] = [
@@ -39,28 +34,13 @@ export class GoogleProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, string>): ValidationResult {
-    if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
-      return {
-        isValid: false,
-        error: 'Google AI API key is required',
-      };
-    }
-    const apiKey = config['apiKey'];
-
-    if (apiKey.length < 10) {
-      return {
-        isValid: false,
-        error: 'Google AI API key appears to be too short',
-      };
-    }
-
-    return { isValid: true };
-  }
-
-  hasCredentials(config: Record<string, string>): boolean {
-    return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
-  }
+  override readonly configuration: ConfigAPI<GoogleGenerativeAIProviderSettings> =
+    makeConfiguration<GoogleGenerativeAIProviderSettings>()({
+      fields: [
+        apiKeyField(10, true),
+        baseUrlField('https://generativelanguage.googleapis.com/v1beta'),
+      ],
+    });
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let google: GoogleModule;
@@ -73,20 +53,8 @@ export class GoogleProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/google'
       );
     }
-
-    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
-      throw new TypeError('Google API key is required');
-    }
-
-    const config: GoogleGenerativeAIProviderSettings = {
-      apiKey: params.apiKey,
-    };
-
-    if (params.options) {
-      Object.assign(config, params.options);
-    }
-
-    const client = google.createGoogleGenerativeAI(config);
+    this.configuration.assert(params.options);
+    const client = google.createGoogleGenerativeAI(params.options);
     return client(params.model);
   }
 

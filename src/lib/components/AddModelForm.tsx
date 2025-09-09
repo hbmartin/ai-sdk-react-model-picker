@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import {
-  type IProviderRegistry,
-  type StorageAdapter,
-  type ModelConfigWithProvider,
-  type ProviderMetadata,
-  isExclusiveKey,
+import type {
+  IProviderRegistry,
+  StorageAdapter,
+  ModelConfigWithProvider,
+  AIProvider,
+  ModelConfig,
 } from '../types';
 import { ModelSelectionListbox } from './ModelSelectionListbox';
 
@@ -17,7 +17,6 @@ export interface AddModelFormProps {
   readonly className?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FormData extends Record<string, string> {
   apiKey?: string;
   baseURL?: string;
@@ -34,7 +33,7 @@ export function AddModelForm({
   onModelAdded,
   className = '',
 }: AddModelFormProps) {
-  const [selectedProvider, setSelectedProvider] = useState<ProviderMetadata | undefined>();
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider | undefined>();
   const [selectedModel, setSelectedModel] = useState<ModelConfigWithProvider | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
@@ -47,29 +46,28 @@ export function AddModelForm({
   } = useForm<FormData>();
 
   // Set default provider
-  useEffect(() => {
-    if (providerRegistry.defaultProvider !== undefined) {
-      setSelectedProvider(providerRegistry.getProviderMetadata(providerRegistry.defaultProvider));
-    }
-  }, [providerRegistry, setSelectedProvider]);
+  const allProviders = useMemo(
+    () => providerRegistry.getAllProviders().map((provider) => provider.metadata),
+    [providerRegistry]
+  );
 
   // Update available models when provider changes
-  const availableModels = useMemo(
-    () => (selectedProvider ? providerRegistry.getModelsForProvider(selectedProvider.id) : []),
-    [selectedProvider, providerRegistry]
+  const availableModels: ModelConfig[] = useMemo(
+    () => (selectedProvider ? selectedProvider.models : []),
+    [selectedProvider]
   );
 
   // Set default model when provider changes
   useEffect(() => {
-    if (availableModels.length > 0) {
+    if (selectedProvider !== undefined && availableModels.length > 0) {
       const defaultModel =
-        availableModels.find((model: ModelConfigWithProvider) => model.model.isDefault === true) ??
+        availableModels.find((model: ModelConfig) => model.isDefault === true) ??
         availableModels[0];
-      setSelectedModel(defaultModel);
+      setSelectedModel({ model: defaultModel, provider: selectedProvider.metadata });
     } else {
       setSelectedModel(undefined);
     }
-  }, [availableModels]);
+  }, [availableModels, selectedProvider]);
 
   const onSubmit = async (formDataWithAny: FormData) => {
     const formData = Object.fromEntries(
@@ -85,16 +83,14 @@ export function AddModelForm({
     setError('');
 
     try {
-      const provider = providerRegistry.getProvider(selectedProvider.id);
-
       // Validate the form data
-      const validation = provider.validateCredentials(formData);
+      const validation = selectedProvider.validateCredentials(formData);
       if (!validation.isValid) {
         setError(validation.error ?? 'Invalid configuration');
         return;
       }
 
-      await storage.set(`${selectedProvider.id}:config`, formData);
+      await storage.set(`${selectedProvider.metadata.id}:config`, formData);
 
       // Call success callback
       onModelAdded(selectedModel);
@@ -106,8 +102,6 @@ export function AddModelForm({
     }
   };
 
-  const providerName = selectedProvider?.name ?? 'Provider';
-
   const formInvalidReason: string | undefined = useMemo(() => {
     if (selectedProvider === undefined) {
       return 'Please select a provider';
@@ -115,25 +109,11 @@ export function AddModelForm({
     if (selectedModel === undefined) {
       return 'Please select a model';
     }
-    const missingRequiredKeys = selectedProvider.requiredKeys.filter((key) => {
-      return typeof key === 'string' && watch(key).trim().length === 0;
-    });
-    if (missingRequiredKeys.length > 0) {
-      return `Please fill in all required fields: ${missingRequiredKeys.join(', ')}`;
+
+    const validation = selectedProvider.validateCredentials(watch());
+    if (!validation.isValid) {
+      return validation.error;
     }
-    const conflictingExclusiveKeys = selectedProvider.requiredKeys
-      .filter((key) => isExclusiveKey(key))
-      .filter((key) => {
-        return (
-          key.filter(([exclusive_key, _]) => {
-            return watch(exclusive_key).trim().length > 0;
-          }).length !== 1
-        );
-      });
-    if (conflictingExclusiveKeys.length > 0) {
-      return `Please fill in one and only one of the following fields: ${conflictingExclusiveKeys[0].map(([exclusive_key, _]) => exclusive_key).join(', ')}`;
-    }
-    // eslint-disable-next-line unicorn/no-useless-undefined
     return undefined;
   }, [selectedProvider, selectedModel, watch]);
   return (
@@ -178,12 +158,13 @@ export function AddModelForm({
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Provider</label>
               <ModelSelectionListbox
-                selectedItem={selectedProvider}
+                selectedItem={selectedProvider?.metadata}
                 onSelectionChange={(item) => {
                   if ('name' in item) {
-                    setSelectedProvider(item);
+                    setSelectedProvider(providerRegistry.getProvider(item.id));
                   }
                 }}
+                topOptions={allProviders}
               />
               <p className="mt-1 text-xs text-muted">
                 Don't see your provider?{' '}
@@ -208,91 +189,48 @@ export function AddModelForm({
                     setSelectedModel(item);
                   }
                 }}
-                topOptions={availableModels}
+                topOptions={
+                  selectedProvider === undefined
+                    ? []
+                    : availableModels.map((model) => ({
+                        model,
+                        provider: selectedProvider.metadata,
+                      }))
+                }
               />
             </div>
 
-            {/* Required fields (generic) */}
-            {selectedProvider?.requiredKeys.map((item) => {
-              if (typeof item === 'string') {
-                const fieldName = item;
-                return (
-                  <div key={fieldName}>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      {fieldName}
-                    </label>
-                    <input
-                      placeholder={`Enter your ${selectedProvider.name} ${fieldName}`}
-                      className="
-                        w-full px-3 py-2 border border-border rounded-default
-                        bg-background text-foreground
-                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
-                      "
-                      {...register(fieldName, { required: true })}
-                    />
-                    {errors[fieldName] && (
-                      <p className="mt-1 text-xs text-destructive">{fieldName} is required</p>
-                    )}
-                    {fieldName === 'apiKey' && selectedProvider.apiKeyUrl !== undefined && (
-                      <p className="mt-1 text-xs text-muted">
-                        <a
-                          href={selectedProvider.apiKeyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          Get your API key here
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                );
-              }
-
-              // Exclusive group: array of tuples [fieldName, label]
-              return (
-                <div key={`exclusive-${item.map((pair) => pair[0]).join('-')}`}>
-                  <div className="my-2 border-t border-border" />
-                  {item.map(([fieldName, label]) => (
-                    <div key={fieldName} className="mb-4">
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        {label}
-                      </label>
-                      <input
-                        placeholder={`Enter your ${providerName} ${label}`}
-                        className="
-                          w-full px-3 py-2 border border-border rounded-default
-                          bg-background text-foreground
-                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
-                        "
-                        {...register(fieldName)}
-                      />
-                    </div>
-                  ))}
-                  <div className="border-t border-border" />
+            {selectedProvider?.configuration.fields.map(
+              ({ label: fieldName, placeholder, required }) => (
+                <div key={fieldName}>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    {fieldName}
+                    {required === true ? ' *' : ''}
+                  </label>
+                  <input
+                    placeholder={placeholder}
+                    className="w-full px-3 py-2 border border-border rounded-default bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    {...register(fieldName, { required: required === true })}
+                  />
+                  {errors[fieldName] && (
+                    <p className="mt-1 text-xs text-destructive">{fieldName} is required</p>
+                  )}
+                  {fieldName === 'apiKey' && selectedProvider.metadata.apiKeyUrl !== undefined && (
+                    <p className="mt-1 text-xs text-muted">
+                      <a
+                        href={selectedProvider.metadata.apiKeyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Get your API key here
+                      </a>
+                    </p>
+                  )}
                 </div>
-              );
-            })}
-
-            {/* Custom API Base (optional) */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                API Base URL (Optional)
-              </label>
-              <input
-                type="url"
-                placeholder="https://api.example.com"
-                className="
-                  w-full px-3 py-2 border border-border rounded-default
-                  bg-background text-foreground
-                  focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
-                "
-                {...register('baseURL')}
-              />
-              <p className="mt-1 text-xs text-muted">Leave empty to use the default endpoint</p>
-            </div>
+              )
+            )}
           </div>
-
           {/* Error Display */}
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">

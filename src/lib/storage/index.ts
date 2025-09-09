@@ -13,11 +13,12 @@ export class MemoryStorageAdapter implements StorageAdapter {
   }
 
   async get(key: string): Promise<Record<string, string> | undefined> {
-    return this.storage.get(this.getKey(key));
+    const stored = this.storage.get(this.getKey(key));
+    return stored ? { ...stored } : undefined;
   }
 
   async set(key: string, value: Record<string, string>): Promise<void> {
-    this.storage.set(this.getKey(key), value);
+    this.storage.set(this.getKey(key), { ...value });
   }
 
   async remove(key: string): Promise<void> {
