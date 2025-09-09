@@ -4,21 +4,21 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } fro
 
 export interface ModelSelectionListboxProps {
   /** Currently selected model/provider */
-  selectedItem: ModelConfigWithProvider | ProviderMetadata;
+  readonly selectedItem: ModelConfigWithProvider | ProviderMetadata;
   /** Callback when selection changes */
-  onSelectionChange: (item: ModelConfigWithProvider | ProviderMetadata) => void;
+  readonly onSelectionChange: (item: ModelConfigWithProvider | ProviderMetadata) => void;
   /** Top/popular options to show first */
-  topOptions?: (ModelConfigWithProvider | ProviderMetadata)[];
+  readonly topOptions?: (ModelConfigWithProvider | ProviderMetadata)[];
   /** Other/additional options */
-  otherOptions?: (ModelConfigWithProvider | ProviderMetadata)[];
+  readonly otherOptions?: (ModelConfigWithProvider | ProviderMetadata)[];
   /** Custom className */
-  className?: string;
+  readonly className?: string;
   /** Placeholder text */
-  placeholder?: string;
+  readonly placeholder?: string;
   /** Loading state */
-  isLoading?: boolean;
+  readonly isLoading?: boolean;
   /** Disabled state */
-  disabled?: boolean;
+  readonly disabled?: boolean;
 }
 
 function isProvider(item: object): item is ProviderMetadata {
@@ -61,12 +61,12 @@ export function ModelSelectionListbox({
   isLoading = false,
   disabled = false,
 }: ModelSelectionListboxProps) {
-  const selectedTitle = selectedItem ? getItemTitle(selectedItem) : placeholder;
-  const SelectedIcon = selectedItem ? getItemIcon(selectedItem) : CubeIcon;
+  const selectedTitle = getItemTitle(selectedItem);
+  const SelectedIcon = getItemIcon(selectedItem);
 
   const renderOption = (item: ModelConfigWithProvider | ProviderMetadata) => {
     const title = getItemTitle(item);
-    const ItemIcon = getItemIcon(item) || CubeIcon;
+    const ItemIcon = getItemIcon(item) ?? CubeIcon;
 
     return (
       <ListboxOption

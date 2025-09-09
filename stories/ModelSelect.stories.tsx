@@ -38,7 +38,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Create providers with some having API keys
-const createProviderRegistry = (_: boolean = false) => {
+const createProviderRegistry = () => {
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
@@ -47,6 +47,7 @@ const createProviderRegistry = (_: boolean = false) => {
 };
 
 // Create storage with optional pre-configured API keys
+// eslint-disable-next-line code-complete/no-boolean-params
 const createStorage = (withApiKeys: boolean = false) => {
   const storage = new MemoryStorageAdapter();
   if (withApiKeys) {
@@ -151,6 +152,7 @@ export const Loading: Story = {
     const slowStorage = new MemoryStorageAdapter();
     const originalGet = slowStorage.get.bind(slowStorage);
     slowStorage.get = async (key: string) => {
+      // eslint-disable-next-line code-complete/no-magic-numbers-except-zero-one
       await new Promise((resolve) => setTimeout(resolve, 2000));
       return originalGet(key);
     };

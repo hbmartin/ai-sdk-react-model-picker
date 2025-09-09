@@ -1,5 +1,13 @@
-import type { ReactNode, ButtonHTMLAttributes, HTMLAttributes } from 'react';
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+  type ReactNode,
+  type ButtonHTMLAttributes,
+  type HTMLAttributes,
+} from 'react';
 
 // Types for the Listbox components
 interface ListboxContextType {
@@ -11,7 +19,7 @@ interface ListboxContextType {
   optionsRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const ListboxContext = createContext<ListboxContextType | null>(null);
+const ListboxContext = createContext<ListboxContextType | undefined>(undefined);
 
 function useListboxContext() {
   const context = useContext(ListboxContext);
@@ -23,10 +31,10 @@ function useListboxContext() {
 
 // Main Listbox component
 export interface ListboxProps {
-  value?: any;
-  onChange?: (value: any) => void;
-  children: ReactNode;
-  className?: string;
+  readonly value?: any;
+  readonly onChange?: (value: any) => void;
+  readonly children: ReactNode;
+  readonly className?: string;
 }
 
 export function Listbox({ value, onChange = () => {}, children, className = '' }: ListboxProps) {
@@ -89,23 +97,23 @@ export function Listbox({ value, onChange = () => {}, children, className = '' }
 
 // Listbox Button
 export interface ListboxButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
+  readonly children: ReactNode;
 }
 
 export function ListboxButton({ children, className = '', onClick, ...props }: ListboxButtonProps) {
   const { isOpen, setIsOpen, buttonRef } = useListboxContext();
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setIsOpen(!isOpen);
-    onClick?.(e);
+    onClick?.(event);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
       setIsOpen(!isOpen);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
       setIsOpen(true);
     }
   };
@@ -134,13 +142,15 @@ export function ListboxButton({ children, className = '', onClick, ...props }: L
 
 // Listbox Options Container
 export interface ListboxOptionsProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
+  readonly children: ReactNode;
 }
 
 export function ListboxOptions({ children, className = '', ...props }: ListboxOptionsProps) {
   const { isOpen, optionsRef } = useListboxContext();
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return;
+  }
 
   return (
     <div
@@ -162,9 +172,9 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
 
 // Listbox Option
 export interface ListboxOptionProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
-  value: any;
-  children: ReactNode | ((props: { selected: boolean }) => ReactNode);
-  disabled?: boolean;
+  readonly value: any;
+  readonly children: ReactNode | ((props: { selected: boolean }) => ReactNode);
+  readonly disabled?: boolean;
 }
 
 export function ListboxOption({
@@ -179,19 +189,23 @@ export function ListboxOption({
   const { value: selectedValue, onChange, setIsOpen } = useListboxContext();
   const isSelected = selectedValue === value;
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (disabled) return;
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled) {
+      return;
+    }
 
     onChange(value);
     setIsOpen(false);
-    onClick?.(e);
+    onClick?.(event);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (disabled) return;
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) {
+      return;
+    }
 
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
       onChange(value);
       setIsOpen(false);
     }
@@ -220,13 +234,15 @@ export function ListboxOption({
 
 // Transition component for animations (simplified)
 export interface TransitionProps {
-  show?: boolean;
-  children: ReactNode;
-  className?: string;
+  readonly show?: boolean;
+  readonly children: ReactNode;
+  readonly className?: string;
 }
 
 export function Transition({ show = true, children, className = '' }: TransitionProps) {
-  if (!show) return null;
+  if (!show) {
+    return;
+  }
 
   return <div className={`transition-all duration-150 ease-out ${className}`}>{children}</div>;
 }

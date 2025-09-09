@@ -1,5 +1,12 @@
-import type { ReactNode } from 'react';
-import React, { createContext, useContext, useReducer, useMemo, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useMemo,
+  useCallback,
+  type ReactNode,
+  createElement,
+} from 'react';
 import type {
   ModelConfigWithProvider,
   IProviderRegistry,
@@ -12,23 +19,23 @@ import type {
 
 // State interface
 interface ModelPickerState {
-  selectedModelId: ModelId | null;
+  selectedModelId: ModelId | undefined;
   selectedRole?: string;
   isLoading: boolean;
-  error: string | null;
+  error: string | undefined;
 }
 
 // Actions
 type ModelPickerAction =
-  | { type: 'SET_MODEL'; payload: ModelId | null }
+  | { type: 'SET_MODEL'; payload: ModelId | undefined }
   | { type: 'SET_ROLE'; payload: string }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string | null };
+  | { type: 'SET_ERROR'; payload: string | undefined };
 
 // Context interface
 interface ModelPickerContextValue {
   state: ModelPickerState;
-  selectedModel: ModelConfigWithProvider | null;
+  selectedModel: ModelConfigWithProvider | undefined;
   allModels: ModelConfigWithProvider[];
   providers: IProviderRegistry;
   storage: StorageAdapter;
@@ -39,14 +46,14 @@ interface ModelPickerContextValue {
   selectModel: (model: ModelConfigWithProvider) => void;
   selectRole: (roleId: string) => void;
   setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+  setError: (error: string | undefined) => void;
 
   // Callbacks
   onConfigureProvider?: (providerId: ProviderId) => void;
   onMissingConfiguration?: (keys: string[]) => void;
 }
 
-const ModelPickerContext = createContext<ModelPickerContextValue | null>(null);
+const ModelPickerContext = createContext<ModelPickerContextValue | undefined>(undefined);
 
 // Reducer
 function modelPickerReducer(state: ModelPickerState, action: ModelPickerAction): ModelPickerState {
@@ -61,7 +68,7 @@ function modelPickerReducer(state: ModelPickerState, action: ModelPickerAction):
       return { ...state, isLoading: action.payload };
     }
     case 'SET_ERROR': {
-      return { ...state, error: action.payload };
+      return { ...state, error: action.payload ?? undefined };
     }
     default: {
       return state;
@@ -98,10 +105,10 @@ export function ModelPickerProvider({
   onMissingConfiguration,
 }: ModelPickerProviderProps) {
   const [state, dispatch] = useReducer(modelPickerReducer, {
-    selectedModelId: initialModelId ?? null,
+    selectedModelId: initialModelId ?? undefined,
     selectedRole: initialRole,
     isLoading: false,
-    error: null,
+    error: undefined,
   });
 
   // Get all models from providers
@@ -111,8 +118,10 @@ export function ModelPickerProvider({
 
   // Find selected model
   const selectedModel = useMemo(() => {
-    if (!state.selectedModelId) return null;
-    return allModels.find((m) => m.model.id === state.selectedModelId) || null;
+    if (!state.selectedModelId) {
+      return;
+    }
+    return allModels.find((model) => model.model.id === state.selectedModelId) ?? undefined;
   }, [state.selectedModelId, allModels]);
 
   // Action creators
@@ -124,11 +133,12 @@ export function ModelPickerProvider({
     dispatch({ type: 'SET_ROLE', payload: roleId });
   }, []);
 
+  // eslint-disable-next-line code-complete/no-boolean-params
   const setLoading = useCallback((loading: boolean) => {
     dispatch({ type: 'SET_LOADING', payload: loading });
   }, []);
 
-  const setError = useCallback((error: string | null) => {
+  const setError = useCallback((error: string | undefined) => {
     dispatch({ type: 'SET_ERROR', payload: error });
   }, []);
 
@@ -165,7 +175,7 @@ export function ModelPickerProvider({
     ]
   );
 
-  return React.createElement(ModelPickerContext.Provider, { value: contextValue }, children);
+  return createElement(ModelPickerContext.Provider, { value: contextValue }, children);
 }
 
 /**
@@ -182,7 +192,7 @@ export function useModelPicker(): ModelPickerContextValue {
 /**
  * Hook to get the currently selected model
  */
-export function useSelectedModel(): ModelConfigWithProvider | null {
+export function useSelectedModel(): ModelConfigWithProvider | undefined {
   const { selectedModel } = useModelPicker();
   return selectedModel;
 }
