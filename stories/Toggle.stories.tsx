@@ -210,15 +210,15 @@ export const Sizes: Story = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
       <div style={{ fontSize: '12px' }}>
-        <Toggle optionOne="Small" optionTwo="Size" selected={true} onClick={fn()} />
+        <Toggle optionOne="Small" optionTwo="Size" selected onClick={fn()} />
       </div>
 
       <div style={{ fontSize: '16px' }}>
-        <Toggle optionOne="Normal" optionTwo="Size" selected={true} onClick={fn()} />
+        <Toggle optionOne="Normal" optionTwo="Size" selected onClick={fn()} />
       </div>
 
       <div style={{ fontSize: '20px' }}>
-        <Toggle optionOne="Large" optionTwo="Size" selected={true} onClick={fn()} />
+        <Toggle optionOne="Large" optionTwo="Size" selected onClick={fn()} />
       </div>
     </div>
   ),

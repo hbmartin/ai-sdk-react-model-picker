@@ -112,7 +112,14 @@ export interface ThemeConfig {
 // Abstract base class for AI providers
 export abstract class AIProvider {
   abstract readonly metadata: ProviderMetadata;
+  // TODO: require callers to use loadModels() instead
   abstract readonly models: ModelConfig[];
+
+  // Optional dynamic model loading
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async loadModels?(): Promise<ModelConfig[]> {
+    return this.models;
+  }
 
   // Validation methods
   abstract validateCredentials(config: Record<string, any>): ValidationResult;
@@ -120,12 +127,6 @@ export abstract class AIProvider {
 
   // AI SDK v5 integration - return configured model instance
   abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;
-
-  // Optional dynamic model loading
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async loadModels?(_: StorageAdapter): Promise<ModelConfig[]> {
-    return this.models;
-  }
 }
 
 // Provider registry interface
@@ -144,25 +145,25 @@ export interface IProviderRegistry {
 // Component prop interfaces
 export interface ModelSelectProps {
   // Required props
-  storage: StorageAdapter;
-  providers: IProviderRegistry;
-  selectedModelId: ModelId | null;
-  onModelChange: (model: ModelConfigWithProvider) => void;
+  readonly storage: StorageAdapter;
+  readonly providers: IProviderRegistry;
+  readonly selectedModelId: ModelId | null;
+  readonly onModelChange: (model: ModelConfigWithProvider) => void;
 
   // Optional configuration
-  roles?: Role[];
-  selectedRole?: string;
-  onRoleChange?: (roleId: string) => void;
-  onConfigureProvider?: (providerId: ProviderId) => void;
-  onMissingConfiguration?: (keys: string[]) => void;
-  theme?: ThemeConfig;
-  className?: string;
-  disabled?: boolean;
+  readonly roles?: Role[];
+  readonly selectedRole?: string;
+  readonly onRoleChange?: (roleId: string) => void;
+  readonly onConfigureProvider?: (providerId: ProviderId) => void;
+  readonly onMissingConfiguration?: (keys: string[]) => void;
+  readonly theme?: ThemeConfig;
+  readonly className?: string;
+  readonly disabled?: boolean;
 
   // Storage callbacks for credentials
-  onSaveApiKey?: (providerId: ProviderId, key: ApiKey) => Promise<void>;
-  onLoadApiKey?: (providerId: ProviderId) => Promise<ApiKey | undefined>;
-  onSaveConfig?: (config: Record<string, any>) => Promise<void>;
+  readonly onSaveApiKey?: (providerId: ProviderId, key: ApiKey) => Promise<void>;
+  readonly onLoadApiKey?: (providerId: ProviderId) => Promise<ApiKey | undefined>;
+  readonly onSaveConfig?: (config: Record<string, any>) => Promise<void>;
 }
 
 // Internal component state for forms and dialogs

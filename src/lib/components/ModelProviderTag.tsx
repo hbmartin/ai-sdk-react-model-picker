@@ -1,8 +1,8 @@
 import { ModelProviderTags } from '../types';
 
 export interface ModelProviderTagProps {
-  tag: ModelProviderTags;
-  className?: string;
+  readonly tag: ModelProviderTags;
+  readonly className?: string;
 }
 
 const TAG_STYLES: Record<ModelProviderTags, string> = {

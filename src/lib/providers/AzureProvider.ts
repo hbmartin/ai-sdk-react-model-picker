@@ -56,23 +56,21 @@ export class AzureProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    const { apiKey, resourceName } = config;
-
-    if (!apiKey || typeof apiKey !== 'string') {
+    if (config.apiKey === undefined || typeof config.apiKey !== 'string') {
       return {
         isValid: false,
         error: 'Azure OpenAI API key is required',
       };
     }
 
-    if (!resourceName || typeof resourceName !== 'string') {
+    if (config.resourceName === undefined || typeof config.resourceName !== 'string') {
       return {
         isValid: false,
         error: 'Azure OpenAI resource name is required',
       };
     }
 
-    if (apiKey.length < 10) {
+    if (config.apiKey.length < 10) {
       return {
         isValid: false,
         error: 'Azure OpenAI API key appears to be too short',
@@ -83,7 +81,7 @@ export class AzureProvider extends AIProvider {
   }
 
   hasCredentials(config: Record<string, any>): boolean {
-    return Boolean(config.apiKey && config.resourceName);
+    return config.apiKey !== undefined && config.resourceName !== undefined;
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
@@ -100,11 +98,11 @@ export class AzureProvider extends AIProvider {
 
     if (
       (params.config?.resourceName === undefined ||
-        params.config?.resourceName === null ||
-        typeof params.config?.resourceName !== 'string') &&
+        params.config.resourceName === null ||
+        typeof params.config.resourceName !== 'string') &&
       (params.config?.baseURL === undefined ||
-        params.config?.baseURL === null ||
-        typeof params.config?.baseURL !== 'string')
+        params.config.baseURL === null ||
+        typeof params.config.baseURL !== 'string')
     ) {
       throw new Error('Azure OpenAI resourceName or baseURL is required');
     }

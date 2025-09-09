@@ -133,8 +133,10 @@ export class AnthropicProvider extends AIProvider {
    * Check if model supports specific capability
    */
   modelSupportsCapability(modelId: string, capability: 'vision' | 'tools'): boolean {
-    const model = this.models.find((m) => m.id === modelId);
-    if (!model) return false;
+    const model = this.models.find((model) => model.id === modelId);
+    if (!model) {
+      return false;
+    }
 
     const capabilityMap = {
       vision: model.supportsVision,

@@ -11,14 +11,10 @@ export class LocalStorageAdapter implements StorageAdapter {
     this.namespace = namespace;
   }
 
-  private getKey(key: string): string {
-    return `${this.namespace}:${key}`;
-  }
-
   async get<T>(key: string): Promise<T | undefined> {
     try {
       const item = localStorage.getItem(this.getKey(key));
-      return item ? (JSON.parse(item) as T) : undefined;
+      return item === null ? undefined : (JSON.parse(item) as T);
     } catch (error) {
       console.warn(`Failed to get item from localStorage: ${key}`, error);
       return undefined;
@@ -51,12 +47,15 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (key?.startsWith(`${this.namespace}:`)) {
         keysToRemove.push(key);
       }
     }
 
-    for (const key of keysToRemove) localStorage.removeItem(key);
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
   }
 
   /**
@@ -68,6 +67,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (key?.startsWith(prefix)) {
         keys.push(key.slice(prefix.length));
       }
@@ -75,21 +75,21 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     return keys;
   }
+
+  private getKey(key: string): string {
+    return `${this.namespace}:${key}`;
+  }
 }
 
 /**
  * In-memory storage implementation for testing or SSR environments
  */
 export class MemoryStorageAdapter implements StorageAdapter {
-  private storage = new Map<string, any>();
+  private readonly storage = new Map<string, any>();
   private readonly namespace: string;
 
   constructor(namespace = 'ai-sdk-model-picker') {
     this.namespace = namespace;
-  }
-
-  private getKey(key: string): string {
-    return `${this.namespace}:${key}`;
   }
 
   async get<T>(key: string): Promise<T | undefined> {
@@ -117,7 +117,9 @@ export class MemoryStorageAdapter implements StorageAdapter {
       }
     }
 
-    for (const key of keysToDelete) this.storage.delete(key);
+    for (const key of keysToDelete) {
+      this.storage.delete(key);
+    }
   }
 
   /**
@@ -151,6 +153,10 @@ export class MemoryStorageAdapter implements StorageAdapter {
 
     return count;
   }
+
+  private getKey(key: string): string {
+    return `${this.namespace}:${key}`;
+  }
 }
 
 /**
@@ -163,14 +169,10 @@ export class SessionStorageAdapter implements StorageAdapter {
     this.namespace = namespace;
   }
 
-  private getKey(key: string): string {
-    return `${this.namespace}:${key}`;
-  }
-
   async get<T>(key: string): Promise<T | undefined> {
     try {
       const item = sessionStorage.getItem(this.getKey(key));
-      return item ? (JSON.parse(item) as T) : undefined;
+      return item === null ? undefined : (JSON.parse(item) as T);
     } catch (error) {
       console.warn(`Failed to get item from sessionStorage: ${key}`, error);
       return undefined;
@@ -203,12 +205,19 @@ export class SessionStorageAdapter implements StorageAdapter {
 
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (key?.startsWith(`${this.namespace}:`)) {
         keysToRemove.push(key);
       }
     }
 
-    for (const key of keysToRemove) sessionStorage.removeItem(key);
+    for (const key of keysToRemove) {
+      sessionStorage.removeItem(key);
+    }
+  }
+
+  private getKey(key: string): string {
+    return `${this.namespace}:${key}`;
   }
 }
 

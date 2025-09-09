@@ -1,25 +1,27 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import type {
-  IProviderRegistry,
-  StorageAdapter,
-  ModelConfigWithProvider,
-  ProviderMetadata,
+import {
+  type IProviderRegistry,
+  type StorageAdapter,
+  type ModelConfigWithProvider,
+  type ProviderMetadata,
+  createProviderId,
 } from '../types';
 import { ModelSelectionListbox } from './ModelSelectionListbox';
 
 export interface AddModelFormProps {
-  providers: IProviderRegistry;
-  storage: StorageAdapter;
-  onClose: () => void;
-  onModelAdded: (model: ModelConfigWithProvider) => void;
-  className?: string;
+  readonly providers: IProviderRegistry;
+  readonly storage: StorageAdapter;
+  readonly onClose: () => void;
+  readonly onModelAdded: (model: ModelConfigWithProvider) => void;
+  readonly className?: string;
 }
 
 interface FormData {
   apiKey?: string;
-  resourceName?: string; // For Azure
+  resourceName?: string; // For Azure TODO: remove this
   apiBase?: string;
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   [key: string]: string | undefined;
 }
 
@@ -34,8 +36,8 @@ export function AddModelForm({
   onModelAdded,
   className = '',
 }: AddModelFormProps) {
-  const [selectedProvider, setSelectedProvider] = useState<ProviderMetadata | null>(null);
-  const [selectedModel, setSelectedModel] = useState<ModelConfigWithProvider | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderMetadata | undefined>();
+  const [selectedModel, setSelectedModel] = useState<ModelConfigWithProvider | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -52,12 +54,12 @@ export function AddModelForm({
   // Popular providers (customize as needed)
   const popularProviderIds = new Set(['openai', 'anthropic', 'google']);
   const popularProviders = allProviders
-    .filter((p) => popularProviderIds.has(p.metadata.id))
-    .map((p) => p.metadata);
+    .filter((provider) => popularProviderIds.has(provider.metadata.id))
+    .map((provider) => provider.metadata);
 
   const otherProviders = allProviders
-    .filter((p) => !popularProviderIds.has(p.metadata.id))
-    .map((p) => p.metadata);
+    .filter((provider) => !popularProviderIds.has(provider.metadata.id))
+    .map((provider) => provider.metadata);
 
   // Set default provider
   useEffect(() => {
@@ -76,11 +78,11 @@ export function AddModelForm({
   useEffect(() => {
     if (availableModels.length > 0) {
       const defaultModel =
-        availableModels.find((m: ModelConfigWithProvider) => m.model.isDefault) ||
+        availableModels.find((model: ModelConfigWithProvider) => model.model.isDefault === true) ??
         availableModels[0];
       setSelectedModel(defaultModel);
     } else {
-      setSelectedModel(null);
+      setSelectedModel(undefined);
     }
   }, [availableModels]);
 
@@ -99,7 +101,7 @@ export function AddModelForm({
       // Validate the form data
       const validation = provider.validateCredentials(formData);
       if (!validation.isValid) {
-        setError(validation.error || 'Invalid configuration');
+        setError(validation.error ?? 'Invalid configuration');
         return;
       }
 
@@ -107,7 +109,7 @@ export function AddModelForm({
       await storage.set(`${selectedProvider.id}:config`, formData);
 
       // Store individual API key if provided (for convenience)
-      if (formData.apiKey) {
+      if (formData.apiKey !== undefined) {
         await storage.set(`${selectedProvider.id}:apiKey`, formData.apiKey);
       }
 
@@ -122,10 +124,10 @@ export function AddModelForm({
   };
 
   const isFormValid =
-    selectedProvider !== null &&
-    selectedModel !== null &&
+    selectedProvider !== undefined &&
+    selectedModel !== undefined &&
     selectedProvider.requiredKeys !== undefined
-      ? selectedProvider.requiredKeys.every((key) => watch(key))
+      ? selectedProvider.requiredKeys.every((key) => watch(key) !== undefined)
       : true;
 
   return (
@@ -157,7 +159,7 @@ export function AddModelForm({
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
+                  strokeWidth={2} // eslint-disable-line code-complete/no-magic-numbers-except-zero-one
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
@@ -169,7 +171,7 @@ export function AddModelForm({
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Provider</label>
               <ModelSelectionListbox
-                selectedItem={selectedProvider!}
+                selectedItem={selectedProvider}
                 onSelectionChange={(item) => {
                   if ('name' in item) {
                     setSelectedProvider(item);
@@ -195,7 +197,7 @@ export function AddModelForm({
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Model</label>
               <ModelSelectionListbox
-                selectedItem={selectedModel!}
+                selectedItem={selectedModel}
                 onSelectionChange={(item) => {
                   if ('model' in item) {
                     setSelectedModel(item);
@@ -206,41 +208,42 @@ export function AddModelForm({
             </div>
 
             {/* API Key Field */}
-            {selectedProvider?.requiredKeys?.includes('apiKey') && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">API Key</label>
-                <input
-                  type="password"
-                  placeholder={`Enter your ${selectedProvider.name} API key`}
-                  className="
+            {selectedProvider?.requiredKeys !== undefined &&
+              selectedProvider.requiredKeys.includes('apiKey') && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">API Key</label>
+                  <input
+                    type="password"
+                    placeholder={`Enter your ${selectedProvider.name} API key`}
+                    className="
                     w-full px-3 py-2 border border-border rounded-default
                     bg-background text-foreground
                     focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
                   "
-                  {...register('apiKey', {
-                    required: selectedProvider.requiredKeys.includes('apiKey'),
-                  })}
-                />
-                {errors.apiKey && (
-                  <p className="mt-1 text-xs text-destructive">API key is required</p>
-                )}
-                {selectedProvider.apiKeyUrl && (
-                  <p className="mt-1 text-xs text-muted">
-                    <a
-                      href={selectedProvider.apiKeyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Get your API key here
-                    </a>
-                  </p>
-                )}
-              </div>
-            )}
+                    {...register('apiKey', {
+                      required: selectedProvider.requiredKeys.includes('apiKey'),
+                    })}
+                  />
+                  {errors.apiKey && (
+                    <p className="mt-1 text-xs text-destructive">API key is required</p>
+                  )}
+                  {selectedProvider.apiKeyUrl !== undefined && (
+                    <p className="mt-1 text-xs text-muted">
+                      <a
+                        href={selectedProvider.apiKeyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Get your API key here
+                      </a>
+                    </p>
+                  )}
+                </div>
+              )}
 
-            {/* Azure-specific fields */}
-            {selectedProvider?.id === 'azure' && (
+            {/* TODO: genericize this */}
+            {selectedProvider?.id === createProviderId('azure') && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Resource Name

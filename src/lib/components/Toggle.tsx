@@ -1,10 +1,10 @@
 export interface ToggleProps {
-  optionOne: string;
-  optionTwo: string;
-  selected: boolean;
-  onClick: () => void;
-  className?: string;
-  disabled?: boolean;
+  readonly optionOne: string;
+  readonly optionTwo: string;
+  readonly selected: boolean;
+  readonly onClick: () => void;
+  readonly className?: string;
+  readonly disabled?: boolean;
 }
 
 /**
