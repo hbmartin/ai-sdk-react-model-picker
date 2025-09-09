@@ -8,6 +8,9 @@ export class LocalStorageAdapter implements StorageAdapter {
   private readonly namespace: string;
 
   constructor(namespace = 'ai-sdk-model-picker') {
+    if (import.meta.env.PROD) {
+      throw new Error('LocalStorageAdapter is not supported in production');
+    }
     this.namespace = namespace;
   }
 

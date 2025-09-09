@@ -228,7 +228,8 @@ export function useModelSelection() {
  * Hook for provider management
  */
 export function useProviders() {
-  const { providerRegistry, storage, onConfigureProvider, onMissingConfiguration } = useModelPicker();
+  const { providerRegistry, storage, onConfigureProvider, onMissingConfiguration } =
+    useModelPicker();
 
   const configureProvider = useCallback(
     (providerId: ProviderId) => {

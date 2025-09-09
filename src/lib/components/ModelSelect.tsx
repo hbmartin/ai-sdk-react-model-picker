@@ -19,6 +19,8 @@ interface ModelOption {
   isAutoDetected?: boolean;
 }
 
+const ADD_MODEL_ID = '__add_model__' as const;
+
 // Typed comparator to avoid any/unknown inference in linters
 // eslint-disable-next-line code-complete/enforce-meaningful-names
 const compareModelOptions = (a: ModelOption, b: ModelOption): number => {
@@ -117,7 +119,7 @@ export function ModelSelect({
 
   // Handle model selection
   const handleModelSelect = (modelId: ModelId) => {
-    if ((modelId as unknown) === '__add_model__') {
+    if ((modelId as unknown) === ADD_MODEL_ID) {
       setShowAddModelForm(true);
       return;
     }
@@ -206,6 +208,7 @@ export function ModelSelect({
               ) : (
                 sortedOptions.map((option) => {
                   const isSelected = option.model.model.id === selectedModelId;
+                  // TODO: this should check all required keys
                   const showMissingKey = !option.hasApiKey;
 
                   return (
@@ -245,7 +248,7 @@ export function ModelSelect({
             {/* Add model button */}
             {!isLoading && (
               <ListboxOption
-                value="__add_model__"
+                value={ADD_MODEL_ID}
                 onClick={() => setShowAddModelForm(true)}
                 className="border-t border-border bg-accent"
               >

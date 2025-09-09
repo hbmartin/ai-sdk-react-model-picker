@@ -69,6 +69,7 @@ export function Listbox({ value, onChange = () => {}, children, className = '' }
       if (event.key === 'Escape' && isOpen) {
         setIsOpen(false);
         buttonRef.current?.focus();
+        event.stopPropagation();
       }
     }
 
@@ -208,10 +209,12 @@ export function ListboxOption({
       event.preventDefault();
       onChange(value);
       setIsOpen(false);
+      event.stopPropagation();
     }
     if (event.key === 'Escape') {
       event.preventDefault();
       setIsOpen(false);
+      event.stopPropagation();
     }
   };
 

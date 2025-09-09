@@ -68,9 +68,8 @@ export class AzureProvider extends AIProvider {
     }
 
     if (
-      config['resourceName'] === undefined ||
-      typeof config['resourceName'] !== 'string' ||
-      config['resourceName'].trim() === ''
+      (typeof config['resourceName'] !== 'string' || config['resourceName'].trim() === '') &&
+      (typeof config['baseURL'] !== 'string' || config['baseURL'].trim() === '')
     ) {
       return {
         isValid: false,

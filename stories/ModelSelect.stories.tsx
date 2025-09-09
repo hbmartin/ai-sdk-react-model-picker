@@ -52,15 +52,14 @@ const createStorage = (withApiKeys: boolean = false) => {
   const storage = new MemoryStorageAdapter();
   if (withApiKeys) {
     void storage.set('openai:config', { apiKey: 'sk-test-key' });
-    void storage.set('anthropic:config', { apiKey: 'claude-test-key' });
+    void storage.set('anthropic:config', { apiKey: 'sk-ant-test-key' });
   }
   return storage;
 };
 
 // Wrapper component to handle state
 const ModelSelectWrapper = (props: Partial<ModelSelectProps>) => {
-  // eslint-disable-next-line unicorn/no-null
-  const [selectedModelId, setSelectedModelId] = useState<ModelId | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<ModelId | undefined>();
 
   const handleModelChange = (model: ModelConfigWithProvider) => {
     setSelectedModelId(model.model.id);
@@ -78,7 +77,7 @@ export const Default: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage()}
-      providers={createProviderRegistry()}
+      providerRegistry={createProviderRegistry()}
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}
@@ -90,7 +89,7 @@ export const WithApiKeys: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage(true)}
-      providers={createProviderRegistry()}
+      providerRegistry={createProviderRegistry()}
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}
@@ -161,7 +160,7 @@ export const Loading: Story = {
     return (
       <ModelSelectWrapper
         storage={slowStorage}
-        providers={createProviderRegistry()}
+        providerRegistry={createProviderRegistry()}
         onModelChange={fn()}
         onConfigureProvider={fn()}
         onMissingConfiguration={fn()}
@@ -174,7 +173,7 @@ export const EmptyProviders: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage()}
-      providers={new ProviderRegistry()}
+      providerRegistry={new ProviderRegistry()}
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}

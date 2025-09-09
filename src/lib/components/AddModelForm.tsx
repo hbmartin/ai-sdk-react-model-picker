@@ -129,7 +129,8 @@ export function AddModelForm({
         ${className}
       `}
       >
-        <form onSubmit={() => handleSubmit(onSubmit)} className="p-6">
+        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-foreground">Add Model</h2>
@@ -201,7 +202,6 @@ export function AddModelForm({
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">API Key</label>
                   <input
-                    type="password"
                     placeholder={`Enter your ${selectedProvider.name} API key`}
                     className="
                     w-full px-3 py-2 border border-border rounded-default
