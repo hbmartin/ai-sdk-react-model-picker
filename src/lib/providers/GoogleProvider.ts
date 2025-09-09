@@ -82,10 +82,6 @@ export class GoogleProvider extends AIProvider {
       apiKey: params.apiKey,
     };
 
-    if (params.baseUrl) {
-      config.baseURL = params.baseUrl;
-    }
-
     if (params.options) {
       Object.assign(config, params.options);
     }

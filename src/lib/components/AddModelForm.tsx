@@ -17,11 +17,10 @@ export interface AddModelFormProps {
   readonly className?: string;
 }
 
-interface FormData {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any; // To match FieldValues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface FormData extends Record<string, string> {
   apiKey?: string;
-  apiBase?: string;
+  baseURL?: string;
 }
 
 /**
@@ -117,7 +116,7 @@ export function AddModelForm({
       return 'Please select a model';
     }
     const missingRequiredKeys = selectedProvider.requiredKeys.filter((key) => {
-      return typeof key === 'string' && String(watch(key)).trim().length > 0;
+      return typeof key === 'string' && String(watch(key)).trim().length === 0;
     });
     if (missingRequiredKeys.length > 0) {
       return `Please fill in all required fields: ${missingRequiredKeys.join(', ')}`;
@@ -125,9 +124,11 @@ export function AddModelForm({
     const conflictingExclusiveKeys = selectedProvider.requiredKeys
       .filter((key) => isExclusiveKey(key))
       .filter((key) => {
-        return key.every(([exclusive_key, _]) => {
-          return String(watch(exclusive_key)).trim().length > 0;
-        });
+        return (
+          key.filter(([exclusive_key, _]) => {
+            return String(watch(exclusive_key)).trim().length > 0;
+          }).length > 1
+        );
       });
     if (conflictingExclusiveKeys.length > 0) {
       return `Please fill in only one of the following fields: ${conflictingExclusiveKeys[0].map(([exclusive_key, _]) => exclusive_key).join(', ')}`;
@@ -286,7 +287,7 @@ export function AddModelForm({
                   bg-background text-foreground
                   focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
                 "
-                {...register('apiBase')}
+                {...register('baseURL')}
               />
               <p className="mt-1 text-xs text-muted">Leave empty to use the default endpoint</p>
             </div>
@@ -310,7 +311,7 @@ export function AddModelForm({
             </button>
             <button
               type="submit"
-              disabled={formInvalidReason === undefined || isSubmitting}
+              disabled={formInvalidReason !== undefined || isSubmitting}
               className="
                 px-4 py-2 text-sm bg-primary text-white rounded-default
                 hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed

@@ -62,17 +62,10 @@ export class AnthropicProvider extends AIProvider {
     const apiKey = config['apiKey'];
 
     // Basic format validation for Anthropic API keys
-    if (!apiKey.startsWith('sk-ant-')) {
+    if (!apiKey.startsWith('sk-ant-') || apiKey.length < 30) {
       return {
-        isValid: false,
-        error: 'Anthropic API key must start with "sk-ant-"',
-      };
-    }
-
-    if (apiKey.length < 30) {
-      return {
-        isValid: false,
-        error: 'Anthropic API key appears to be too short',
+        isValid: true,
+        warning: 'API key format looks unusual; please double-check.',
       };
     }
 
@@ -103,11 +96,6 @@ export class AnthropicProvider extends AIProvider {
     const config: AnthropicProviderSettings = {
       apiKey: params.apiKey,
     };
-
-    // Add custom API base if provided (for custom endpoints)
-    if (params.baseUrl) {
-      config.baseURL = params.baseUrl;
-    }
 
     if (params.options) {
       Object.assign(config, params.options);

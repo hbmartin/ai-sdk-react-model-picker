@@ -86,25 +86,19 @@ export class LocalStorageAdapter implements StorageAdapter {
  * In-memory storage implementation for testing or SSR environments
  */
 export class MemoryStorageAdapter implements StorageAdapter {
-  private readonly storage = new Map<string, string>();
+  private readonly storage = new Map<string, Record<string, string>>();
   private readonly namespace: string;
 
   constructor(namespace = 'ai-sdk-model-picker') {
     this.namespace = namespace;
   }
 
-  async get(key: string): Promise<string | undefined> {
+  async get(key: string): Promise<Record<string, string> | undefined> {
     return this.storage.get(this.getKey(key));
   }
 
-  async set(key: string, value: string | Record<string, string>): Promise<void> {
-    if (typeof value === 'string') {
-      this.storage.set(this.getKey(key), value);
-    } else {
-      for (const [key, v] of Object.entries(value)) {
-        this.storage.set(this.getKey(key), v);
-      }
-    }
+  async set(key: string, value: Record<string, string>): Promise<void> {
+    this.storage.set(this.getKey(key), value);
   }
 
   async remove(key: string): Promise<void> {
@@ -176,21 +170,19 @@ export class SessionStorageAdapter implements StorageAdapter {
     this.namespace = namespace;
   }
 
-  async get(key: string): Promise<string | undefined> {
+  async get(key: string): Promise<Record<string, string> | undefined> {
     try {
-      return sessionStorage.getItem(this.getKey(key)) ?? undefined;
+      const item = sessionStorage.getItem(this.getKey(key));
+      return item === null ? undefined : (JSON.parse(item) as Record<string, string>);
     } catch (error) {
       console.warn(`Failed to get item from sessionStorage: ${key}`, error);
       return undefined;
     }
   }
 
-  async set(key: string, value: string | Record<string, string>): Promise<void> {
+  async set(key: string, value: Record<string, string>): Promise<void> {
     try {
-      sessionStorage.setItem(
-        this.getKey(key),
-        typeof value === 'string' ? value : JSON.stringify(value)
-      );
+      sessionStorage.setItem(this.getKey(key), JSON.stringify(value));
     } catch (error) {
       console.error(`Failed to set item in sessionStorage: ${key}`, error);
       throw error;

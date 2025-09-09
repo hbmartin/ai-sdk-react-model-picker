@@ -96,11 +96,6 @@ export class OpenAIProvider extends AIProvider {
       apiKey: params.apiKey,
     };
 
-    // Add custom API base if provided
-    if (params.baseUrl) {
-      config.baseURL = params.baseUrl;
-    }
-
     if (params.options) {
       Object.assign(config, params.options);
     }

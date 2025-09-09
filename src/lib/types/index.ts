@@ -49,7 +49,7 @@ export function isExclusiveKey(key: string | [string, string][]): key is [string
 export interface ProviderInstanceParams {
   model: ModelId;
   apiKey?: ApiKey;
-  baseUrl?: ApiUrl;
+  baseURL?: ApiUrl;
   options?: Record<string, string>;
 }
 
@@ -62,8 +62,8 @@ export interface ValidationResult {
 
 // Storage adapter interface for flexible storage solutions
 export interface StorageAdapter {
-  get(key: string): Promise<string | undefined>;
-  set(key: string, value: string | Record<string, string>): Promise<void>;
+  get(key: string): Promise<Record<string, string> | undefined>;
+  set(key: string, value: Record<string, string>): Promise<void>;
   remove(key: string): Promise<void>;
 }
 

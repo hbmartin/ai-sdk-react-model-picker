@@ -22,7 +22,7 @@ export class AzureProvider extends AIProvider {
       'apiKey',
       [
         ['resourceName', 'Resource Name'],
-        ['baseUrl', 'API Base URL'],
+        ['baseURL', 'API Base URL'],
       ],
     ],
   };
@@ -111,7 +111,7 @@ export class AzureProvider extends AIProvider {
 
     if (params.options === undefined) {
       throw new Error(
-        'Azure OpenAI options are required and must set either resourceName or baseUrl'
+        'Azure OpenAI options are required and must set either resourceName or baseURL'
       );
     }
 
@@ -119,7 +119,7 @@ export class AzureProvider extends AIProvider {
       throw new TypeError('Azure OpenAI API key is required');
     }
 
-    if (typeof params.options['resourceName'] !== 'string' && typeof params.baseUrl !== 'string') {
+    if (typeof params.options['resourceName'] !== 'string' && typeof params.baseURL !== 'string') {
       throw new TypeError('Azure OpenAI resourceName or baseURL is required');
     }
 
