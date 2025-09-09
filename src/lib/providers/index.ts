@@ -86,28 +86,3 @@ export function createPopularProvidersRegistry(): ProviderRegistry {
 
   return registry;
 }
-
-// Helper to check which providers are available
-export function getAvailableProviders(): string[] {
-  const available: string[] = [];
-
-  const providers = [
-    { name: 'OpenAI', class: OpenAIProvider },
-    { name: 'Anthropic', class: AnthropicProvider },
-    { name: 'Google', class: GoogleProvider },
-    { name: 'Azure', class: AzureProvider },
-    { name: 'Mistral', class: MistralProvider },
-    { name: 'Cohere', class: CohereProvider },
-  ];
-
-  for (const provider of providers) {
-    try {
-      new provider.class();
-      available.push(provider.name);
-    } catch {
-      // Provider dependencies not available
-    }
-  }
-
-  return available;
-}

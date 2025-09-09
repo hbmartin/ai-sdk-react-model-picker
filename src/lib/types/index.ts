@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { ConfigAPI } from '../providers/types';
 
 // Branded types for type safety
 export type Brand<T, B> = T & { readonly __brand: B };
@@ -36,9 +37,6 @@ export interface ProviderMetadata {
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
-  // Configuration commands or missing keys for validation
-  optionalKeys?: string[];
-  requiredKeys: (string | [string, string][])[];
 }
 
 export function isExclusiveKey(key: string | [string, string][]): key is [string, string][] {
@@ -48,8 +46,6 @@ export function isExclusiveKey(key: string | [string, string][]): key is [string
 // Provider instance parameters for AI SDK
 export interface ProviderInstanceParams {
   model: ModelId;
-  apiKey?: ApiKey;
-  baseURL?: ApiUrl;
   options?: Record<string, string>;
 }
 
@@ -109,8 +105,9 @@ export interface ThemeConfig {
 }
 
 // Abstract base class for AI providers
-export abstract class AIProvider {
+export abstract class AIProvider<ConfigObj> {
   abstract readonly metadata: ProviderMetadata;
+  abstract readonly configuration: ConfigAPI<ConfigObj>;
   // TODO: require callers to use loadModels() instead
   abstract readonly models: ModelConfig[];
 
@@ -131,9 +128,9 @@ export abstract class AIProvider {
 // Provider registry interface
 export interface IProviderRegistry {
   readonly defaultProvider: ProviderId | undefined;
-  register(provider: AIProvider): ProviderId;
-  getProvider(providerId: ProviderId): AIProvider;
-  getAllProviders(): AIProvider[];
+  register(provider: AIProvider<unknown>): ProviderId;
+  getProvider(providerId: ProviderId): AIProvider<unknown>;
+  getAllProviders(): AIProvider<unknown>[];
   getAllModels(): ModelConfigWithProvider[];
   getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[];
   getProviderMetadata(providerId: ProviderId): ProviderMetadata;

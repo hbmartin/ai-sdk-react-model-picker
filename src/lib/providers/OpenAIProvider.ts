@@ -9,23 +9,23 @@ import type {
 } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { OpenAIIcon } from '../icons';
+import { makeConfiguration, type ConfigAPI } from './types';
 
 /**
  * OpenAI provider implementation with GPT models
  * Compatible with Vercel AI SDK v5
  */
-export class OpenAIProvider extends AIProvider {
-  readonly metadata: ProviderMetadata = {
+export class OpenAIProvider extends AIProvider<OpenAIProviderSettings> {
+  override readonly metadata: ProviderMetadata = {
     id: createProviderId('openai'),
     name: 'OpenAI',
     description: 'Use GPT-4o, GPT-4, or other OpenAI models',
     icon: OpenAIIcon,
     documentationUrl: 'https://platform.openai.com/docs',
     apiKeyUrl: 'https://platform.openai.com/account/api-keys',
-    requiredKeys: ['apiKey'],
   };
 
-  readonly models: ModelConfig[] = [
+  override readonly models: ModelConfig[] = [
     {
       id: createModelId('gpt-5'),
       displayName: 'GPT-5',
@@ -42,6 +42,11 @@ export class OpenAIProvider extends AIProvider {
       supportsTools: true,
     },
   ];
+
+  override readonly configuration: ConfigAPI<OpenAIProviderSettings> =
+    makeConfiguration<OpenAIProviderSettings>()({
+      optional: ['apiKey'],
+    });
 
   validateCredentials(config: Record<string, string>): ValidationResult {
     if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
@@ -88,22 +93,8 @@ export class OpenAIProvider extends AIProvider {
       );
     }
 
-    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
-      throw new TypeError('OpenAI API key is required');
-    }
-
-    const config: OpenAIProviderSettings = {
-      apiKey: params.apiKey,
-    };
-
-    if (params.options) {
-      Object.assign(config, params.options);
-    }
-
-    // Create the OpenAI client
-    const client = openai.createOpenAI(config);
-
-    // Return the specific model
+    this.configuration.assert(params.options);
+    const client = openai.createOpenAI(params.options);
     return client(params.model);
   }
 

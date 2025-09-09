@@ -39,14 +39,14 @@ npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere
 ```tsx
 import { ModelSelect } from 'ai-sdk-react-model-picker';
 import { ProviderRegistry, OpenAIProvider, AnthropicProvider } from 'ai-sdk-react-model-picker/providers';
-import { LocalStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 import 'ai-sdk-react-model-picker/styles.css';
 
 function App() {
   const [selectedModelId, setSelectedModelId] = useState(null);
   
   // Setup providers and storage
-  const storage = new LocalStorageAdapter();
+  const storage = new MemoryStorageAdapter();
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
@@ -94,10 +94,10 @@ Built-in providers:
 Handle persistence of API keys and configuration:
 
 ```tsx
-import { LocalStorageAdapter, MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import { MemoryStorageAdapter, MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 
 // Browser localStorage (persistent)
-const storage = new LocalStorageAdapter('my-app-prefix');
+const storage = new MemoryStorageAdapter('my-app-prefix');
 
 // In-memory (testing)
 const memoryStorage = new MemoryStorageAdapter();
@@ -347,13 +347,13 @@ import { useState } from 'react';
 import { streamText } from 'ai';
 import { ModelSelect } from 'ai-sdk-react-model-picker';
 import { createDefaultRegistry } from 'ai-sdk-react-model-picker/providers';
-import { LocalStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 
 function ChatApp() {
   const [selectedModelId, setSelectedModelId] = useState(null);
   const [messages, setMessages] = useState([]);
   
-  const storage = new LocalStorageAdapter();
+  const storage = new MemoryStorageAdapter();
   const providers = createDefaultRegistry();
   
   const handleModelChange = async (model) => {
