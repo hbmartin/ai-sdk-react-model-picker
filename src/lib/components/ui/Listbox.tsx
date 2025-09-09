@@ -209,6 +209,10 @@ export function ListboxOption({
       onChange(value);
       setIsOpen(false);
     }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setIsOpen(false);
+    }
   };
 
   return (

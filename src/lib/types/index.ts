@@ -131,6 +131,7 @@ export abstract class AIProvider {
 
 // Provider registry interface
 export interface IProviderRegistry {
+  readonly defaultProvider: ProviderId | undefined;
   register(provider: AIProvider): ProviderId;
   getProvider(providerId: ProviderId): AIProvider;
   getAllProviders(): AIProvider[];
@@ -146,8 +147,8 @@ export interface IProviderRegistry {
 export interface ModelSelectProps {
   // Required props
   readonly storage: StorageAdapter;
-  readonly providers: IProviderRegistry;
-  readonly selectedModelId: ModelId | null;
+  readonly providerRegistry: IProviderRegistry;
+  readonly selectedModelId: ModelId | undefined;
   readonly onModelChange: (model: ModelConfigWithProvider) => void;
 
   // Optional configuration

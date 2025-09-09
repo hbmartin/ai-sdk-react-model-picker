@@ -1,3 +1,4 @@
+import { createProviderId } from '../types';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
 import { CohereProvider } from './CohereProvider';
@@ -22,7 +23,7 @@ export type {
 
 // Helper function to create a registry with default providers
 export function createDefaultRegistry(): ProviderRegistry {
-  const registry = new ProviderRegistry();
+  const registry = new ProviderRegistry(createProviderId('anthropic'));
 
   try {
     registry.register(new OpenAIProvider());
@@ -65,7 +66,7 @@ export function createDefaultRegistry(): ProviderRegistry {
 
 // Popular providers for quick setup
 export function createPopularProvidersRegistry(): ProviderRegistry {
-  const registry = new ProviderRegistry();
+  const registry = new ProviderRegistry(createProviderId('anthropic'));
 
   try {
     registry.register(new OpenAIProvider());

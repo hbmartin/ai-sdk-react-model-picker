@@ -34,7 +34,7 @@ export function ModelCard({
   const [hovered, setHovered] = useState(false);
 
   // Use provided title/description or fall back to model data
-  const displayTitle = title ?? model.model.displayName ?? model.model.id;
+  const displayTitle = title ?? model.model.displayName;
   const displayDescription = description ?? model.provider.description ?? '';
   const docUrl = documentationUrl ?? model.provider.documentationUrl;
 
@@ -118,7 +118,7 @@ export function ModelCard({
         </div>
 
         {/* Documentation link */}
-        {docUrl !== undefined && (
+        {typeof docUrl === 'string' && docUrl.trim() !== '' && (
           <a
             href={docUrl}
             target="_blank"

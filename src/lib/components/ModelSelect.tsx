@@ -34,7 +34,7 @@ const compareModelOptions = (a: ModelOption, b: ModelOption): number => {
 // eslint-disable-next-line sonarjs/prefer-read-only-props
 export function ModelSelect({
   storage,
-  providers,
+  providerRegistry,
   selectedModelId,
   onModelChange,
   roles,
@@ -55,10 +55,11 @@ export function ModelSelect({
 
   // Get all available models from providers
   const allModels = useMemo(() => {
-    return providers.getAllModels();
-  }, [providers]);
+    return providerRegistry.getAllModels();
+  }, [providerRegistry]);
 
   // Load API keys and model configuration
+  // TODO: optimize this to only load for currently selected provider
   useEffect(() => {
     async function loadModelOptions() {
       if (!cancelled) {
@@ -68,7 +69,7 @@ export function ModelSelect({
         const options: ModelOption[] = await Promise.all(
           allModels.map(async (modelWithProvider) => {
             const providerId = modelWithProvider.provider.id;
-            const provider = providers.getProvider(providerId);
+            const provider = providerRegistry.getProvider(providerId);
             try {
               const storedConfig = (await storage.get(`${providerId}:config`)) ?? {};
               const hasCredentials = provider.hasCredentials(storedConfig);
@@ -97,12 +98,12 @@ export function ModelSelect({
       }
     }
 
-    void loadModelOptions();
     let cancelled = false;
+    void loadModelOptions();
     return () => {
       cancelled = true;
     };
-  }, [allModels, storage, providers]);
+  }, [allModels, storage, providerRegistry]);
 
   // Sort options: those with API keys first, then alphabetically
   const sortedOptions = useMemo<readonly ModelOption[]>(() => {
@@ -261,7 +262,7 @@ export function ModelSelect({
       {/* Add Model Form Dialog */}
       {showAddModelForm && (
         <AddModelForm
-          providers={providers}
+          providerRegistry={providerRegistry}
           storage={storage}
           onClose={() => setShowAddModelForm(false)}
           onModelAdded={(model) => {

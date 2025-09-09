@@ -20,7 +20,7 @@ import type {
 // State interface
 interface ModelPickerState {
   selectedModelId: ModelId | undefined;
-  selectedRole?: string;
+  selectedRole: string | undefined;
   isLoading: boolean;
   error: string | undefined;
 }
@@ -37,10 +37,10 @@ interface ModelPickerContextValue {
   state: ModelPickerState;
   selectedModel: ModelConfigWithProvider | undefined;
   allModels: ModelConfigWithProvider[];
-  providers: IProviderRegistry;
+  providerRegistry: IProviderRegistry;
   storage: StorageAdapter;
-  roles?: Role[];
-  theme?: ThemeConfig;
+  roles: Role[] | undefined;
+  theme: ThemeConfig | undefined;
 
   // Actions
   selectModel: (model: ModelConfigWithProvider) => void;
@@ -49,8 +49,8 @@ interface ModelPickerContextValue {
   setError: (error: string | undefined) => void;
 
   // Callbacks
-  onConfigureProvider?: (providerId: ProviderId) => void;
-  onMissingConfiguration?: (keys: string[]) => void;
+  onConfigureProvider: (providerId: ProviderId) => void;
+  onMissingConfiguration: (keys: string[]) => void;
 }
 
 const ModelPickerContext = createContext<ModelPickerContextValue | undefined>(undefined);
@@ -79,14 +79,14 @@ function modelPickerReducer(state: ModelPickerState, action: ModelPickerAction):
 // Provider props
 export interface ModelPickerProviderProps {
   children: ReactNode;
-  providers: IProviderRegistry;
+  providerRegistry: IProviderRegistry;
   storage: StorageAdapter;
   initialModelId?: ModelId;
   initialRole?: string;
   roles?: Role[];
   theme?: ThemeConfig;
-  onConfigureProvider?: (providerId: ProviderId) => void;
-  onMissingConfiguration?: (keys: string[]) => void;
+  onConfigureProvider: (providerId: ProviderId) => void;
+  onMissingConfiguration: (keys: string[]) => void;
 }
 
 /**
@@ -95,7 +95,7 @@ export interface ModelPickerProviderProps {
  */
 export function ModelPickerProvider({
   children,
-  providers,
+  providerRegistry,
   storage,
   initialModelId,
   initialRole,
@@ -113,12 +113,12 @@ export function ModelPickerProvider({
 
   // Get all models from providers
   const allModels = useMemo(() => {
-    return providers.getAllModels();
-  }, [providers]);
+    return providerRegistry.getAllModels();
+  }, [providerRegistry]);
 
   // Find selected model
   const selectedModel = useMemo(() => {
-    if (!state.selectedModelId) {
+    if (state.selectedModelId === undefined) {
       return;
     }
     return allModels.find((model) => model.model.id === state.selectedModelId) ?? undefined;
@@ -147,7 +147,7 @@ export function ModelPickerProvider({
       state,
       selectedModel,
       allModels,
-      providers,
+      providerRegistry,
       storage,
       roles,
       theme,
@@ -162,7 +162,7 @@ export function ModelPickerProvider({
       state,
       selectedModel,
       allModels,
-      providers,
+      providerRegistry,
       storage,
       roles,
       theme,
@@ -228,24 +228,24 @@ export function useModelSelection() {
  * Hook for provider management
  */
 export function useProviders() {
-  const { providers, storage, onConfigureProvider, onMissingConfiguration } = useModelPicker();
+  const { providerRegistry, storage, onConfigureProvider, onMissingConfiguration } = useModelPicker();
 
   const configureProvider = useCallback(
     (providerId: ProviderId) => {
-      onConfigureProvider?.(providerId);
+      onConfigureProvider(providerId);
     },
     [onConfigureProvider]
   );
 
   const handleMissingConfiguration = useCallback(
     (keys: string[]) => {
-      onMissingConfiguration?.(keys);
+      onMissingConfiguration(keys);
     },
     [onMissingConfiguration]
   );
 
   return {
-    providers,
+    providerRegistry,
     storage,
     configureProvider,
     handleMissingConfiguration,
