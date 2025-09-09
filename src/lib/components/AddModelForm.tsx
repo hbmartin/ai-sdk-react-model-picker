@@ -10,7 +10,7 @@ import {
 import { ModelSelectionListbox } from './ModelSelectionListbox';
 
 export interface AddModelFormProps {
-  readonly providers: IProviderRegistry;
+  readonly providerRegistry: IProviderRegistry;
   readonly storage: StorageAdapter;
   readonly onClose: () => void;
   readonly onModelAdded: (model: ModelConfigWithProvider) => void;
@@ -30,7 +30,7 @@ interface FormData {
  * Integrated dialog that manages its own state internally
  */
 export function AddModelForm({
-  providers,
+  providerRegistry,
   storage,
   onClose,
   onModelAdded,
@@ -48,30 +48,17 @@ export function AddModelForm({
     formState: { errors },
   } = useForm<FormData>();
 
-  // Get all providers
-  const allProviders = providers.getAllProviders();
-
-  // Popular providers (customize as needed)
-  const popularProviderIds = new Set(['openai', 'anthropic', 'google']);
-  const popularProviders = allProviders
-    .filter((provider) => popularProviderIds.has(provider.metadata.id))
-    .map((provider) => provider.metadata);
-
-  const otherProviders = allProviders
-    .filter((provider) => !popularProviderIds.has(provider.metadata.id))
-    .map((provider) => provider.metadata);
-
   // Set default provider
   useEffect(() => {
-    if (popularProviders.length > 0 && !selectedProvider) {
-      setSelectedProvider(popularProviders[0]);
+    if (providerRegistry.defaultProvider !== undefined) {
+      setSelectedProvider(providerRegistry.getProviderMetadata(providerRegistry.defaultProvider));
     }
-  }, [popularProviders, selectedProvider]);
+  }, [providerRegistry, setSelectedProvider]);
 
   // Update available models when provider changes
   const availableModels = useMemo(
-    () => (selectedProvider ? providers.getModelsForProvider(selectedProvider.id) : []),
-    [selectedProvider, providers]
+    () => (selectedProvider ? providerRegistry.getModelsForProvider(selectedProvider.id) : []),
+    [selectedProvider, providerRegistry]
   );
 
   // Set default model when provider changes
@@ -96,7 +83,7 @@ export function AddModelForm({
     setError('');
 
     try {
-      const provider = providers.getProvider(selectedProvider.id);
+      const provider = providerRegistry.getProvider(selectedProvider.id);
 
       // Validate the form data
       const validation = provider.validateCredentials(formData);
@@ -109,7 +96,7 @@ export function AddModelForm({
       await storage.set(`${selectedProvider.id}:config`, formData);
 
       // Store individual API key if provided (for convenience)
-      if (formData.apiKey !== undefined) {
+      if (typeof formData.apiKey === 'string' && formData.apiKey.trim() !== '') {
         await storage.set(`${selectedProvider.id}:apiKey`, formData.apiKey);
       }
 
@@ -127,7 +114,10 @@ export function AddModelForm({
     selectedProvider !== undefined &&
     selectedModel !== undefined &&
     selectedProvider.requiredKeys !== undefined
-      ? selectedProvider.requiredKeys.every((key) => watch(key) !== undefined)
+      ? selectedProvider.requiredKeys.every((key) => {
+          const value = watch(key);
+          return typeof value === 'string' && value.trim().length > 0;
+        })
       : true;
 
   return (
@@ -139,7 +129,8 @@ export function AddModelForm({
         ${className}
       `}
       >
-        <form onSubmit={void handleSubmit(onSubmit)} className="p-6">
+        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-foreground">Add Model</h2>
@@ -177,8 +168,6 @@ export function AddModelForm({
                     setSelectedProvider(item);
                   }
                 }}
-                topOptions={popularProviders}
-                otherOptions={otherProviders}
               />
               <p className="mt-1 text-xs text-muted">
                 Don't see your provider?{' '}
@@ -213,7 +202,6 @@ export function AddModelForm({
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">API Key</label>
                   <input
-                    type="password"
                     placeholder={`Enter your ${selectedProvider.name} API key`}
                     className="
                     w-full px-3 py-2 border border-border rounded-default

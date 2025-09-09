@@ -8,6 +8,9 @@ export class LocalStorageAdapter implements StorageAdapter {
   private readonly namespace: string;
 
   constructor(namespace = 'ai-sdk-model-picker') {
+    if (import.meta.env.PROD) {
+      throw new Error('LocalStorageAdapter is not supported in production');
+    }
     this.namespace = namespace;
   }
 
@@ -47,8 +50,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-      if (key?.startsWith(`${this.namespace}:`)) {
+      if (typeof key === 'string' && key.startsWith(`${this.namespace}:`)) {
         keysToRemove.push(key);
       }
     }
@@ -67,8 +69,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-      if (key?.startsWith(prefix)) {
+      if (typeof key === 'string' && key.startsWith(prefix)) {
         keys.push(key.slice(prefix.length));
       }
     }
@@ -205,8 +206,7 @@ export class SessionStorageAdapter implements StorageAdapter {
 
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-      if (key?.startsWith(`${this.namespace}:`)) {
+      if (typeof key === 'string' && key.startsWith(`${this.namespace}:`)) {
         keysToRemove.push(key);
       }
     }

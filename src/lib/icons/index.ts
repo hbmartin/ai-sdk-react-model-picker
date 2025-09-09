@@ -1,8 +1,9 @@
 /* eslint-disable code-complete/enforce-meaningful-names */
-import { createElement, type SVGProps } from 'react';
+import { createElement } from 'react';
+import type { IconComponent } from '../types';
 
 // OpenAI Icon
-export const OpenAIIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const OpenAIIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -16,7 +17,7 @@ export const OpenAIIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Anthropic Icon
-export const AnthropicIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const AnthropicIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -30,7 +31,7 @@ export const AnthropicIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Google Icon
-export const GoogleIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const GoogleIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -57,7 +58,7 @@ export const GoogleIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Azure Icon
-export const AzureIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const AzureIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -82,7 +83,7 @@ export const AzureIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Mistral Icon
-export const MistralIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const MistralIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -96,7 +97,7 @@ export const MistralIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Cohere Icon
-export const CohereIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const CohereIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -110,7 +111,7 @@ export const CohereIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Generic AI Model Icon (fallback)
-export const ModelIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const ModelIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -124,7 +125,7 @@ export const ModelIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Cube Icon for models
-export const CubeIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const CubeIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -142,7 +143,7 @@ export const CubeIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Check Icon
-export const CheckIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const CheckIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -160,7 +161,7 @@ export const CheckIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // ChevronDown Icon
-export const ChevronDownIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const ChevronDownIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -178,7 +179,7 @@ export const ChevronDownIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Settings Icon
-export const SettingsIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const SettingsIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -197,7 +198,7 @@ export const SettingsIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Plus Icon
-export const PlusIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const PlusIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
@@ -214,7 +215,7 @@ export const PlusIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
   );
 
 // Loading Spinner Icon
-export const SpinnerIcon: React.FC<SVGProps<SVGSVGElement>> = (props) =>
+export const SpinnerIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {

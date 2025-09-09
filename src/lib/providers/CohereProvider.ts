@@ -53,17 +53,13 @@ export class CohereProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    if (
-      config.apiKey === undefined ||
-      config.apiKey === null ||
-      typeof config.apiKey !== 'string'
-    ) {
+    if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
       return {
         isValid: false,
         error: 'Cohere API key is required',
       };
     }
-    const apiKey = config.apiKey;
+    const apiKey = config['apiKey'];
 
     if (apiKey.length < 10) {
       return {
@@ -76,7 +72,7 @@ export class CohereProvider extends AIProvider {
   }
 
   hasCredentials(config: Record<string, any>): boolean {
-    return Boolean(config.apiKey);
+    return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
@@ -89,6 +85,10 @@ export class CohereProvider extends AIProvider {
         'Cohere provider requires "@ai-sdk/cohere" to be installed. ' +
           'Please install it with: npm install @ai-sdk/cohere'
       );
+    }
+
+    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
+      throw new TypeError('Cohere API key is required');
     }
 
     const config: CohereProviderSettings = {

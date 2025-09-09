@@ -13,6 +13,7 @@ import type {
 export class ProviderRegistry implements IProviderRegistry {
   private readonly providers = new Map<ProviderId, AIProvider>();
   private storagePrefix = 'model-picker';
+  constructor(readonly defaultProvider: ProviderId | undefined) {}
 
   /**
    * Register a new AI provider

@@ -64,7 +64,7 @@ function App() {
   return (
     <ModelSelect
       storage={storage}
-      providers={registry}
+      providerRegistry={registry}
       selectedModelId={selectedModelId}
       onModelChange={handleModelChange}
     />
@@ -212,7 +212,7 @@ function App() {
   return (
     <ModelPickerProvider 
       storage={storage} 
-      providers={registry}
+      providerRegistry={registry}
       onConfigureProvider={(id) => console.log('Configure', id)}
     >
       <ModelSelect />
@@ -276,7 +276,7 @@ function VSCodePanel() {
   return (
     <ModelSelect
       storage={storage}
-      providers={registry}
+      providerRegistry={registry}
       selectedModelId={selectedModelId}
       onModelChange={handleModelChange}
       // Theme automatically adapts to VSCode dark/light mode
@@ -383,7 +383,7 @@ function ChatApp() {
     <div className="chat-app">
       <ModelSelect
         storage={storage}
-        providers={providers}
+        providerRegistry={providers}
         selectedModelId={selectedModelId}
         onModelChange={handleModelChange}
       />

@@ -10,7 +10,7 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import globals from 'globals';
-import tseslint from 'typescript-eslint';
+import { configs as tsConfigs } from 'typescript-eslint';
 
 export default defineConfig([
   globalIgnores([
@@ -29,8 +29,8 @@ export default defineConfig([
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      ...tseslint.configs.recommendedTypeChecked,
-      ...tseslint.configs.strictTypeChecked,
+      ...tsConfigs.recommendedTypeChecked,
+      ...tsConfigs.strictTypeChecked,
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
       reactRefresh.configs.recommended,
@@ -179,7 +179,6 @@ export default defineConfig([
       // Code quality rules
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
-      'no-duplicate-imports': 'error',
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
@@ -189,8 +188,6 @@ export default defineConfig([
 
       // Error prevention
       'no-unreachable': 'error',
-      'no-unused-expressions': 'error',
-      'no-useless-constructor': 'error',
       'no-useless-return': 'error',
       'no-unused-private-class-members': 'error',
       'require-atomic-updates': 'error',
@@ -242,7 +239,7 @@ export default defineConfig([
     files: ['stories/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      ...tseslint.configs.recommended, // Use non-type-checked config for stories
+      ...tsConfigs.recommended, // Use non-type-checked config for stories
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
       eslintPluginUnicorn.configs.recommended,

@@ -39,7 +39,7 @@ type Story = StoryObj<typeof meta>;
 
 // Create providers with some having API keys
 const createProviderRegistry = () => {
-  const registry = new ProviderRegistry();
+  const registry = new ProviderRegistry(undefined);
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
   registry.register(new GoogleProvider());
@@ -52,15 +52,14 @@ const createStorage = (withApiKeys: boolean = false) => {
   const storage = new MemoryStorageAdapter();
   if (withApiKeys) {
     void storage.set('openai:config', { apiKey: 'sk-test-key' });
-    void storage.set('anthropic:config', { apiKey: 'claude-test-key' });
+    void storage.set('anthropic:config', { apiKey: 'sk-ant-test-key' });
   }
   return storage;
 };
 
 // Wrapper component to handle state
 const ModelSelectWrapper = (props: Partial<ModelSelectProps>) => {
-  // eslint-disable-next-line unicorn/no-null
-  const [selectedModelId, setSelectedModelId] = useState<ModelId | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<ModelId | undefined>();
 
   const handleModelChange = (model: ModelConfigWithProvider) => {
     setSelectedModelId(model.model.id);
@@ -78,7 +77,7 @@ export const Default: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage()}
-      providers={createProviderRegistry()}
+      providerRegistry={createProviderRegistry()}
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}
@@ -90,7 +89,7 @@ export const WithApiKeys: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage(true)}
-      providers={createProviderRegistry()}
+      providerRegistry={createProviderRegistry()}
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}
@@ -105,7 +104,7 @@ export const WithRoles: Story = {
     return (
       <ModelSelectWrapper
         storage={createStorage(true)}
-        providers={createProviderRegistry()}
+        providerRegistry={createProviderRegistry()}
         roles={[
           { id: 'chat', label: 'Chat' },
           { id: 'edit', label: 'Edit' },
@@ -124,8 +123,8 @@ export const Disabled: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage()}
-      providers={createProviderRegistry()}
-      disabled={true}
+      providerRegistry={createProviderRegistry()}
+      disabled
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}
@@ -137,7 +136,7 @@ export const CustomClassName: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage(true)}
-      providers={createProviderRegistry()}
+      providerRegistry={createProviderRegistry()}
       className="custom-model-select"
       onModelChange={fn()}
       onConfigureProvider={fn()}
@@ -153,14 +152,15 @@ export const Loading: Story = {
     const originalGet = slowStorage.get.bind(slowStorage);
     slowStorage.get = async (key: string) => {
       // eslint-disable-next-line code-complete/no-magic-numbers-except-zero-one
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const LOAD_DELAY_MS = 2000;
+      await new Promise((resolve) => setTimeout(resolve, LOAD_DELAY_MS));
       return originalGet(key);
     };
 
     return (
       <ModelSelectWrapper
         storage={slowStorage}
-        providers={createProviderRegistry()}
+        providerRegistry={createProviderRegistry()}
         onModelChange={fn()}
         onConfigureProvider={fn()}
         onMissingConfiguration={fn()}
@@ -173,7 +173,7 @@ export const EmptyProviders: Story = {
   render: () => (
     <ModelSelectWrapper
       storage={createStorage()}
-      providers={new ProviderRegistry()}
+      providerRegistry={new ProviderRegistry()}
       onModelChange={fn()}
       onConfigureProvider={fn()}
       onMissingConfiguration={fn()}

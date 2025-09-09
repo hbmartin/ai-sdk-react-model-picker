@@ -52,18 +52,14 @@ export class AnthropicProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    if (
-      config.apiKey === undefined ||
-      config.apiKey === null ||
-      typeof config.apiKey !== 'string'
-    ) {
+    if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
       return {
         isValid: false,
         error: 'Anthropic API key is required',
       };
     }
 
-    const apiKey = config.apiKey;
+    const apiKey = config['apiKey'];
 
     // Basic format validation for Anthropic API keys
     if (!apiKey.startsWith('sk-ant-')) {
@@ -84,7 +80,7 @@ export class AnthropicProvider extends AIProvider {
   }
 
   hasCredentials(config: Record<string, any>): boolean {
-    return Boolean(config.apiKey);
+    return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
@@ -99,6 +95,9 @@ export class AnthropicProvider extends AIProvider {
         'Anthropic provider requires "@ai-sdk/anthropic" to be installed. ' +
           'Please install it with: npm install @ai-sdk/anthropic'
       );
+    }
+    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
+      throw new TypeError('Anthropic API key is required');
     }
 
     const config: AnthropicProviderSettings = {

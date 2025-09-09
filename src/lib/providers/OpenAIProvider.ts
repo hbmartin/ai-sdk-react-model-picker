@@ -44,17 +44,13 @@ export class OpenAIProvider extends AIProvider {
   ];
 
   validateCredentials(config: Record<string, any>): ValidationResult {
-    if (
-      config.apiKey === undefined ||
-      config.apiKey === null ||
-      typeof config.apiKey !== 'string'
-    ) {
+    if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
       return {
         isValid: false,
         error: 'OpenAI API key is required',
       };
     }
-    const apiKey = config.apiKey;
+    const apiKey = config['apiKey'];
 
     // Basic format validation for OpenAI API keys
     if (!apiKey.startsWith('sk-')) {
@@ -75,7 +71,7 @@ export class OpenAIProvider extends AIProvider {
   }
 
   hasCredentials(config: Record<string, any>): boolean {
-    return Boolean(config.apiKey);
+    return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
   }
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
@@ -90,6 +86,10 @@ export class OpenAIProvider extends AIProvider {
         'OpenAI provider requires "@ai-sdk/openai" to be installed. ' +
           'Please install it with: npm install @ai-sdk/openai'
       );
+    }
+
+    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
+      throw new TypeError('OpenAI API key is required');
     }
 
     const config: OpenAIProviderSettings = {
