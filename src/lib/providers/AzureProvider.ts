@@ -18,7 +18,13 @@ export class AzureProvider extends AIProvider {
     icon: AzureIcon,
     documentationUrl: 'https://learn.microsoft.com/en-us/azure/ai-foundry/',
     apiKeyUrl: 'https://portal.azure.com',
-    requiredKeys: ['apiKey', 'resourceName'],
+    requiredKeys: [
+      'apiKey',
+      [
+        ['resourceName', 'Resource Name'],
+        ['baseURL', 'API Base URL'],
+      ],
+    ],
   };
 
   readonly models: ModelConfig[] = [
@@ -55,12 +61,8 @@ export class AzureProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, any>): ValidationResult {
-    if (
-      config['apiKey'] === undefined ||
-      typeof config['apiKey'] !== 'string' ||
-      config['apiKey'].trim() === ''
-    ) {
+  validateCredentials(config: Record<string, string>): ValidationResult {
+    if (!('apiKey' in config) || config['apiKey'].trim() === '') {
       return {
         isValid: false,
         error: 'Azure OpenAI API key is required',
@@ -87,7 +89,7 @@ export class AzureProvider extends AIProvider {
     return { isValid: true };
   }
 
-  hasCredentials(config: Record<string, any>): boolean {
+  hasCredentials(config: Record<string, string>): boolean {
     return (
       typeof config['apiKey'] === 'string' &&
       config['apiKey'].trim() !== '' &&
@@ -107,22 +109,17 @@ export class AzureProvider extends AIProvider {
       );
     }
 
-    if (params.config === undefined) {
-      throw new Error('Azure OpenAI config is required');
+    if (params.options === undefined) {
+      throw new Error(
+        'Azure OpenAI options are required and must set either resourceName or baseURL'
+      );
     }
 
-    if (
-      params.apiKey === undefined ||
-      typeof params.apiKey !== 'string' ||
-      params.apiKey.trim() === ''
-    ) {
+    if (typeof params.apiKey !== 'string' || params.apiKey.trim() === '') {
       throw new TypeError('Azure OpenAI API key is required');
     }
 
-    if (
-      typeof params.config['resourceName'] !== 'string' &&
-      typeof params.config['baseURL'] !== 'string'
-    ) {
+    if (typeof params.options['resourceName'] !== 'string' && typeof params.baseURL !== 'string') {
       throw new TypeError('Azure OpenAI resourceName or baseURL is required');
     }
 
@@ -130,9 +127,7 @@ export class AzureProvider extends AIProvider {
       apiKey: params.apiKey,
     };
 
-    if (params.options) {
-      Object.assign(config, params.options);
-    }
+    Object.assign(config, params.options);
 
     const client = azure.createAzure(config);
     return client(params.model);

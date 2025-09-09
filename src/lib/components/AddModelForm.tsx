@@ -5,7 +5,7 @@ import {
   type StorageAdapter,
   type ModelConfigWithProvider,
   type ProviderMetadata,
-  createProviderId,
+  isExclusiveKey,
 } from '../types';
 import { ModelSelectionListbox } from './ModelSelectionListbox';
 
@@ -17,12 +17,10 @@ export interface AddModelFormProps {
   readonly className?: string;
 }
 
-interface FormData {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface FormData extends Record<string, string> {
   apiKey?: string;
-  resourceName?: string; // For Azure TODO: remove this
-  apiBase?: string;
-  // eslint-disable-next-line @typescript-eslint/member-ordering
-  [key: string]: string | undefined;
+  baseURL?: string;
 }
 
 /**
@@ -73,7 +71,11 @@ export function AddModelForm({
     }
   }, [availableModels]);
 
-  const onSubmit = async (formData: FormData) => {
+  const onSubmit = async (formDataWithAny: FormData) => {
+    const formData = Object.fromEntries(
+      Object.entries(formDataWithAny).filter(([_, value]) => typeof value === 'string')
+    ) as Record<string, string>;
+
     if (!selectedProvider || !selectedModel) {
       setError('Please select a provider and model');
       return;
@@ -92,13 +94,7 @@ export function AddModelForm({
         return;
       }
 
-      // Store the configuration
       await storage.set(`${selectedProvider.id}:config`, formData);
-
-      // Store individual API key if provided (for convenience)
-      if (typeof formData.apiKey === 'string' && formData.apiKey.trim() !== '') {
-        await storage.set(`${selectedProvider.id}:apiKey`, formData.apiKey);
-      }
 
       // Call success callback
       onModelAdded(selectedModel);
@@ -110,16 +106,36 @@ export function AddModelForm({
     }
   };
 
-  const isFormValid =
-    selectedProvider !== undefined &&
-    selectedModel !== undefined &&
-    selectedProvider.requiredKeys !== undefined
-      ? selectedProvider.requiredKeys.every((key) => {
-          const value = watch(key);
-          return typeof value === 'string' && value.trim().length > 0;
-        })
-      : true;
+  const providerName = selectedProvider?.name ?? 'Provider';
 
+  const formInvalidReason: string | undefined = useMemo(() => {
+    if (selectedProvider === undefined) {
+      return 'Please select a provider';
+    }
+    if (selectedModel === undefined) {
+      return 'Please select a model';
+    }
+    const missingRequiredKeys = selectedProvider.requiredKeys.filter((key) => {
+      return typeof key === 'string' && watch(key).trim().length === 0;
+    });
+    if (missingRequiredKeys.length > 0) {
+      return `Please fill in all required fields: ${missingRequiredKeys.join(', ')}`;
+    }
+    const conflictingExclusiveKeys = selectedProvider.requiredKeys
+      .filter((key) => isExclusiveKey(key))
+      .filter((key) => {
+        return (
+          key.filter(([exclusive_key, _]) => {
+            return watch(exclusive_key).trim().length > 0;
+          }).length !== 1
+        );
+      });
+    if (conflictingExclusiveKeys.length > 0) {
+      return `Please fill in one and only one of the following fields: ${conflictingExclusiveKeys[0].map(([exclusive_key, _]) => exclusive_key).join(', ')}`;
+    }
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    return undefined;
+  }, [selectedProvider, selectedModel, watch]);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
@@ -196,61 +212,67 @@ export function AddModelForm({
               />
             </div>
 
-            {/* API Key Field */}
-            {selectedProvider?.requiredKeys !== undefined &&
-              selectedProvider.requiredKeys.includes('apiKey') && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">API Key</label>
-                  <input
-                    placeholder={`Enter your ${selectedProvider.name} API key`}
-                    className="
-                    w-full px-3 py-2 border border-border rounded-default
-                    bg-background text-foreground
-                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
-                  "
-                    {...register('apiKey', {
-                      required: selectedProvider.requiredKeys.includes('apiKey'),
-                    })}
-                  />
-                  {errors.apiKey && (
-                    <p className="mt-1 text-xs text-destructive">API key is required</p>
-                  )}
-                  {selectedProvider.apiKeyUrl !== undefined && (
-                    <p className="mt-1 text-xs text-muted">
-                      <a
-                        href={selectedProvider.apiKeyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Get your API key here
-                      </a>
-                    </p>
-                  )}
-                </div>
-              )}
+            {/* Required fields (generic) */}
+            {selectedProvider?.requiredKeys.map((item) => {
+              if (typeof item === 'string') {
+                const fieldName = item;
+                return (
+                  <div key={fieldName}>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {fieldName}
+                    </label>
+                    <input
+                      placeholder={`Enter your ${selectedProvider.name} ${fieldName}`}
+                      className="
+                        w-full px-3 py-2 border border-border rounded-default
+                        bg-background text-foreground
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+                      "
+                      {...register(fieldName, { required: true })}
+                    />
+                    {errors[fieldName] && (
+                      <p className="mt-1 text-xs text-destructive">{fieldName} is required</p>
+                    )}
+                    {fieldName === 'apiKey' && selectedProvider.apiKeyUrl !== undefined && (
+                      <p className="mt-1 text-xs text-muted">
+                        <a
+                          href={selectedProvider.apiKeyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Get your API key here
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                );
+              }
 
-            {/* TODO: genericize this */}
-            {selectedProvider?.id === createProviderId('azure') && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Resource Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your Azure OpenAI resource name"
-                  className="
-                    w-full px-3 py-2 border border-border rounded-default
-                    bg-background text-foreground
-                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
-                  "
-                  {...register('resourceName', { required: true })}
-                />
-                {errors.resourceName && (
-                  <p className="mt-1 text-xs text-destructive">Resource name is required</p>
-                )}
-              </div>
-            )}
+              // Exclusive group: array of tuples [fieldName, label]
+              return (
+                <div key={`exclusive-${item.map((pair) => pair[0]).join('-')}`}>
+                  <div className="my-2 border-t border-border" />
+                  {item.map(([fieldName, label]) => (
+                    <div key={fieldName} className="mb-4">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        {label}
+                      </label>
+                      <input
+                        placeholder={`Enter your ${providerName} ${label}`}
+                        className="
+                          w-full px-3 py-2 border border-border rounded-default
+                          bg-background text-foreground
+                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+                        "
+                        {...register(fieldName)}
+                      />
+                    </div>
+                  ))}
+                  <div className="border-t border-border" />
+                </div>
+              );
+            })}
 
             {/* Custom API Base (optional) */}
             <div>
@@ -265,7 +287,7 @@ export function AddModelForm({
                   bg-background text-foreground
                   focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
                 "
-                {...register('apiBase')}
+                {...register('baseURL')}
               />
               <p className="mt-1 text-xs text-muted">Leave empty to use the default endpoint</p>
             </div>
@@ -289,7 +311,7 @@ export function AddModelForm({
             </button>
             <button
               type="submit"
-              disabled={!isFormValid || isSubmitting}
+              disabled={formInvalidReason !== undefined || isSubmitting}
               className="
                 px-4 py-2 text-sm bg-primary text-white rounded-default
                 hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed

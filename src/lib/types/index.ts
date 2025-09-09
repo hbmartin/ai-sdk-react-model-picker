@@ -17,9 +17,6 @@ export interface ModelConfig {
   supportsVision?: boolean;
   supportsTools?: boolean;
   contextLength?: number;
-  metadata?: Record<string, any>;
-  // Additional provider-specific parameters
-  parameters?: Record<string, any>;
 }
 
 // Model with provider metadata attached
@@ -40,18 +37,20 @@ export interface ProviderMetadata {
   documentationUrl?: string;
   apiKeyUrl?: string;
   // Configuration commands or missing keys for validation
-  configurationKeys?: string[];
-  requiredKeys?: string[];
+  optionalKeys?: string[];
+  requiredKeys: (string | [string, string][])[];
+}
+
+export function isExclusiveKey(key: string | [string, string][]): key is [string, string][] {
+  return typeof key !== 'string';
 }
 
 // Provider instance parameters for AI SDK
 export interface ProviderInstanceParams {
   model: ModelId;
   apiKey?: ApiKey;
-  apiBase?: ApiUrl;
-  // Additional provider-specific configuration
-  config?: Record<string, any>;
-  options?: Record<string, any>;
+  baseURL?: ApiUrl;
+  options?: Record<string, string>;
 }
 
 // Validation result for credentials and configuration
@@ -63,8 +62,8 @@ export interface ValidationResult {
 
 // Storage adapter interface for flexible storage solutions
 export interface StorageAdapter {
-  get<T>(key: string): Promise<T | undefined>;
-  set<T>(key: string, value: T): Promise<void>;
+  get(key: string): Promise<Record<string, string> | undefined>;
+  set(key: string, value: Record<string, string>): Promise<void>;
   remove(key: string): Promise<void>;
 }
 
@@ -122,8 +121,8 @@ export abstract class AIProvider {
   }
 
   // Validation methods
-  abstract validateCredentials(config: Record<string, any>): ValidationResult;
-  abstract hasCredentials(config: Record<string, any>): boolean;
+  abstract validateCredentials(config: Record<string, string>): ValidationResult;
+  abstract hasCredentials(config: Record<string, string>): boolean;
 
   // AI SDK v5 integration - return configured model instance
   abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;
@@ -164,14 +163,14 @@ export interface ModelSelectProps {
   // Storage callbacks for credentials
   readonly onSaveApiKey?: (providerId: ProviderId, key: ApiKey) => Promise<void>;
   readonly onLoadApiKey?: (providerId: ProviderId) => Promise<ApiKey | undefined>;
-  readonly onSaveConfig?: (config: Record<string, any>) => Promise<void>;
+  readonly onSaveConfig?: (config: Record<string, string>) => Promise<void>;
 }
 
 // Internal component state for forms and dialogs
 export interface AddModelFormState {
   isOpen: boolean;
   selectedProvider?: ProviderMetadata;
-  formData: Record<string, any>;
+  formData: Record<string, string>;
   isSubmitting: boolean;
   errors: Record<string, string>;
 }

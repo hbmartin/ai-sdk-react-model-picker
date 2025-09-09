@@ -43,7 +43,6 @@ export function ModelSelect({
   selectedRole,
   onRoleChange,
   onConfigureProvider,
-  onMissingConfiguration,
   theme: _theme,
   className = '',
   disabled = false,
@@ -129,12 +128,13 @@ export function ModelSelect({
       return;
     }
 
-    if (!modelOption.hasApiKey) {
-      // Handle missing API key
-      const requiredKeys = modelOption.model.provider.requiredKeys ?? ['apiKey'];
-      onMissingConfiguration?.(requiredKeys);
-      return;
-    }
+    // eslint-disable-next-line sonarjs/no-commented-code
+    // if (!modelOption.hasApiKey) {
+    //   // Handle missing API key
+    //   const requiredKeys = modelOption.model.provider.requiredKeys ?? ['apiKey'];
+    //   onMissingConfiguration?.(requiredKeys);
+    //   return;
+    // }
 
     onModelChange(modelOption.model);
   };

@@ -1,9 +1,9 @@
 {
   "name": "ai-sdk-react-model-picker",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
-  "author": "Harold Martin & Continue Dev, Inc",
+  "author": "Harold Martin",
   "license": "Apache-2.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -55,12 +55,12 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "@ai-sdk/anthropic": ">=0.0.1",
-    "@ai-sdk/azure": ">=0.0.1",
-    "@ai-sdk/cohere": ">=0.0.1",
-    "@ai-sdk/google": ">=0.0.1",
-    "@ai-sdk/mistral": ">=0.0.1",
-    "@ai-sdk/openai": ">=0.0.1",
+    "@ai-sdk/anthropic": ">=2.0.0",
+    "@ai-sdk/azure": ">=2.0.0",
+    "@ai-sdk/cohere": ">=2.0.0",
+    "@ai-sdk/google": ">=2.0.0",
+    "@ai-sdk/mistral": ">=2.0.0",
+    "@ai-sdk/openai": ">=2.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-hook-form": "^7.62.0"
@@ -89,7 +89,7 @@
     "@heroicons/react": "^2.2.0"
   },
   "devDependencies": {
-    "@ai-sdk/anthropic": "^2.0.14",
+    "@ai-sdk/anthropic": "^2.0.15",
     "@ai-sdk/azure": "^2.0.27",
     "@ai-sdk/cohere": "^2.0.0",
     "@ai-sdk/google": "^2.0.13",

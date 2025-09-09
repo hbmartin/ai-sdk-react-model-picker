@@ -51,7 +51,7 @@ export class AnthropicProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, any>): ValidationResult {
+  validateCredentials(config: Record<string, string>): ValidationResult {
     if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
       return {
         isValid: false,
@@ -62,24 +62,17 @@ export class AnthropicProvider extends AIProvider {
     const apiKey = config['apiKey'];
 
     // Basic format validation for Anthropic API keys
-    if (!apiKey.startsWith('sk-ant-')) {
+    if (!apiKey.startsWith('sk-ant-') || apiKey.length < 30) {
       return {
-        isValid: false,
-        error: 'Anthropic API key must start with "sk-ant-"',
-      };
-    }
-
-    if (apiKey.length < 30) {
-      return {
-        isValid: false,
-        error: 'Anthropic API key appears to be too short',
+        isValid: true,
+        warning: 'API key format looks unusual; please double-check.',
       };
     }
 
     return { isValid: true };
   }
 
-  hasCredentials(config: Record<string, any>): boolean {
+  hasCredentials(config: Record<string, string>): boolean {
     return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
   }
 
@@ -104,12 +97,6 @@ export class AnthropicProvider extends AIProvider {
       apiKey: params.apiKey,
     };
 
-    // Add custom API base if provided (for custom endpoints)
-    if (params.apiBase) {
-      config.baseURL = params.apiBase;
-    }
-
-    // Add any additional options
     if (params.options) {
       Object.assign(config, params.options);
     }
