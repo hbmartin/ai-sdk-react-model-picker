@@ -1,10 +1,44 @@
-// Main exports - only the essentials for simple usage
+// Components
 export { ModelSelect } from './components/ModelSelect';
 export { ModelCard } from './components/ModelCard';
 export { ModelProviderTag } from './components/ModelProviderTag';
 export { Toggle } from './components/Toggle';
+export { AddModelForm } from './components/AddModelForm';
+export { ModelSelectionListbox } from './components/ModelSelectionListbox';
 
-// Essential types
+// Context and hooks
+export {
+  ModelPickerProvider,
+  useModelPicker,
+  useSelectedModel,
+  useAllModels,
+  useModelSelection,
+  useProviders,
+  type ModelPickerProviderProps,
+} from './context';
+
+// Providers
+export { createDefaultRegistry, createPopularProvidersRegistry } from './providers';
+export { ProviderRegistry } from './providers/ProviderRegistry';
+export { AnthropicProvider } from './providers/AnthropicProvider';
+export { OpenAIProvider } from './providers/OpenAIProvider';
+export { AzureProvider } from './providers/AzureProvider';
+export { GoogleProvider } from './providers/GoogleProvider';
+export { MistralProvider } from './providers/MistralProvider';
+export { CohereProvider } from './providers/CohereProvider';
+export {
+  makeConfiguration,
+  apiKeyField,
+  baseUrlField,
+  type ConfigAPI,
+  type ConfigurationField,
+  type ConfigTypeValidationResult,
+} from './providers/configuration';
+
+// Storage
+export { MemoryStorageAdapter } from './storage';
+
+// Types
 export type {
   ModelSelectProps,
   ModelConfig,
@@ -18,6 +52,10 @@ export type {
   ModelId,
   ApiKey,
   ApiUrl,
+  AIProvider,
+  IProviderRegistry,
+  ProviderInstanceParams,
+  ValidationResult,
 } from './types';
 
 // Core CSS - users must import this

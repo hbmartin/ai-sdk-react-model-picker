@@ -18,16 +18,11 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: {
-        index: resolve(__dirname, 'src/lib/index.ts'),
-        providers: resolve(__dirname, 'src/lib/providers/index.ts'),
-        storage: resolve(__dirname, 'src/lib/storage/index.ts'),
-        context: resolve(__dirname, 'src/lib/context/index.ts'),
-      },
+      entry: resolve(__dirname, 'src/lib/index.ts'),
       name: 'AISDKReactModelPicker',
-      fileName: (format, entryName) => {
+      fileName: (format) => {
         const extension = format === 'es' ? 'js' : 'cjs'
-        return `${entryName}.${extension}`
+        return `index.${extension}`
       },
     },
     rollupOptions: {
