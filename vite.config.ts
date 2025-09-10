@@ -19,6 +19,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/lib/index.ts'),
+      formats: ['es', 'cjs'],
       name: 'AISDKReactModelPicker',
       fileName: (format) => {
         const extension = format === 'es' ? 'js' : 'cjs'
@@ -48,6 +49,9 @@ export default defineConfig({
           'react-dom': 'ReactDOM',
           'react/jsx-runtime': 'jsxRuntime',
           'react-hook-form': 'ReactHookForm',
+        },
+        assetFileNames: (assetInfo) => {
+          return assetInfo.name?.endsWith('.css') ? 'styles.css' : 'assets/[name][extname]'
         },
       },
     },

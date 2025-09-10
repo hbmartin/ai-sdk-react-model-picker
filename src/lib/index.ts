@@ -4,7 +4,6 @@ export { ModelCard } from './components/ModelCard';
 export { ModelProviderTag } from './components/ModelProviderTag';
 export { Toggle } from './components/Toggle';
 export { AddModelForm } from './components/AddModelForm';
-export { ModelSelectionListbox } from './components/ModelSelectionListbox';
 
 // Context and hooks
 export {
@@ -14,8 +13,8 @@ export {
   useAllModels,
   useModelSelection,
   useProviders,
-  type ModelPickerProviderProps,
 } from './context';
+export type { ModelPickerProviderProps } from './context';
 
 // Providers
 export { createDefaultRegistry, createPopularProvidersRegistry } from './providers';
@@ -26,13 +25,11 @@ export { AzureProvider } from './providers/AzureProvider';
 export { GoogleProvider } from './providers/GoogleProvider';
 export { MistralProvider } from './providers/MistralProvider';
 export { CohereProvider } from './providers/CohereProvider';
-export {
-  makeConfiguration,
-  apiKeyField,
-  baseUrlField,
-  type ConfigAPI,
-  type ConfigurationField,
-  type ConfigTypeValidationResult,
+export { makeConfiguration, apiKeyField, baseUrlField } from './providers/configuration';
+export type {
+  ConfigAPI,
+  ConfigurationField,
+  ConfigTypeValidationResult,
 } from './providers/configuration';
 
 // Storage
