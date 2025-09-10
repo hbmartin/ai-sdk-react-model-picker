@@ -60,7 +60,7 @@ function formatMessage(
     lines.push(`• Extraneous: ${extraneous.join(', ')}`);
   }
   if (unmetMinimumRequiredKeys && unmetMinimumRequiredKeys.length > 0) {
-    lines.push(`• One of these keys are required: ${unmetMinimumRequiredKeys.join(', ')}`);
+    lines.push(`• One of these keys is required: ${unmetMinimumRequiredKeys.join(', ')}`);
   }
   return lines.join('\n');
 }
