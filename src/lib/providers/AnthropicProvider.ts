@@ -6,10 +6,6 @@ import { AIProvider, createProviderId, createModelId } from '../types';
 import { AnthropicIcon } from '../icons';
 import { apiKeyField, baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 
-/**
- * Anthropic provider implementation with Claude models
- * Compatible with Vercel AI SDK v5
- */
 export class AnthropicProvider extends AIProvider {
   readonly metadata: ProviderMetadata = {
     id: createProviderId('anthropic'),

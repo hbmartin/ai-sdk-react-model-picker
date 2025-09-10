@@ -118,18 +118,6 @@ jobs:
           npm publish --access public --tag ${{ github.event.inputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Upload Release Assets
-        if: github.event_name == 'release'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./ai-sdk-react-model-picker-${{ github.event.release.tag_name }}.tgz
-          asset_name: ai-sdk-react-model-picker-${{ github.event.release.tag_name }}.tgz
-          asset_content_type: application/gzip
-        continue-on-error: true
 
   create-release-pr:
     name: Create Release Pull Request

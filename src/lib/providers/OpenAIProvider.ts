@@ -6,10 +6,6 @@ import { AIProvider, createProviderId, createModelId } from '../types';
 import { OpenAIIcon } from '../icons';
 import { baseUrlField, makeConfiguration, apiKeyField, type ConfigAPI } from './configuration';
 
-/**
- * OpenAI provider implementation with GPT models
- * Compatible with Vercel AI SDK v5
- */
 export class OpenAIProvider extends AIProvider {
   override readonly metadata: ProviderMetadata = {
     id: createProviderId('openai'),
