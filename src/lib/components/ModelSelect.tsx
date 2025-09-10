@@ -15,7 +15,7 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/List
 
 interface ModelOption {
   model: ModelConfigWithProvider;
-  hasApiKey: boolean;
+  hasCredentials: boolean;
   isAutoDetected?: boolean;
 }
 
@@ -24,10 +24,10 @@ const ADD_MODEL_ID = '__add_model__' as const;
 // Typed comparator to avoid any/unknown inference in linters
 // eslint-disable-next-line code-complete/enforce-meaningful-names
 const compareModelOptions = (a: ModelOption, b: ModelOption): number => {
-  if (a.hasApiKey && !b.hasApiKey) {
+  if (a.hasCredentials && !b.hasCredentials) {
     return -1;
   }
-  if (!a.hasApiKey && b.hasApiKey) {
+  if (!a.hasCredentials && b.hasCredentials) {
     return 1;
   }
   return a.model.model.displayName.localeCompare(b.model.model.displayName);
@@ -76,14 +76,14 @@ export function ModelSelect({
               const hasCredentials = provider.hasCredentials(storedConfig);
               return {
                 model: modelWithProvider,
-                hasApiKey: hasCredentials,
+                hasCredentials: hasCredentials,
                 isAutoDetected: false, // TODO: Implement auto-detection logic
               } as ModelOption;
             } catch (error) {
               console.warn(`Failed to load config for provider "${providerId}":`, error);
               return {
                 model: modelWithProvider,
-                hasApiKey: false,
+                hasCredentials: false,
                 isAutoDetected: false,
               } as ModelOption;
             }
@@ -117,8 +117,8 @@ export function ModelSelect({
     : undefined;
 
   // Handle model selection
-  const handleModelSelect = (modelId: ModelId) => {
-    if ((modelId as unknown) === ADD_MODEL_ID) {
+  const handleModelSelect = (modelId: ModelId | typeof ADD_MODEL_ID) => {
+    if (modelId === ADD_MODEL_ID) {
       setShowAddModelForm(true);
       return;
     }
@@ -209,13 +209,11 @@ export function ModelSelect({
                 sortedOptions.map((option) => {
                   const isSelected = option.model.model.id === selectedModelId;
                   // TODO: this should check all required keys
-                  const showMissingKey = !option.hasApiKey;
 
                   return (
                     <ListboxOption
                       key={option.model.model.id}
                       value={option.model.model.id}
-                      disabled={showMissingKey}
                       className="px-3 py-2"
                     >
                       <div className="flex w-full items-center justify-between">
@@ -226,11 +224,6 @@ export function ModelSelect({
                             {option.isAutoDetected === true && (
                               <span className="text-muted ml-1.5 text-[10px] italic">
                                 (autodetected)
-                              </span>
-                            )}
-                            {showMissingKey && (
-                              <span className="ml-1.5 text-[10px] italic text-destructive">
-                                (Missing API key)
                               </span>
                             )}
                           </span>

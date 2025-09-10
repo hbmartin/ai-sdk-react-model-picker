@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { ConfigAPI } from '../providers/configuration';
 
 // Branded types for type safety
 export type Brand<T, B> = T & { readonly __brand: B };
@@ -36,20 +37,11 @@ export interface ProviderMetadata {
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
-  // Configuration commands or missing keys for validation
-  optionalKeys?: string[];
-  requiredKeys: (string | [string, string][])[];
-}
-
-export function isExclusiveKey(key: string | [string, string][]): key is [string, string][] {
-  return typeof key !== 'string';
 }
 
 // Provider instance parameters for AI SDK
 export interface ProviderInstanceParams {
   model: ModelId;
-  apiKey?: ApiKey;
-  baseURL?: ApiUrl;
   options?: Record<string, string>;
 }
 
@@ -111,18 +103,46 @@ export interface ThemeConfig {
 // Abstract base class for AI providers
 export abstract class AIProvider {
   abstract readonly metadata: ProviderMetadata;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  abstract readonly configuration: ConfigAPI<any>;
   // TODO: require callers to use loadModels() instead
   abstract readonly models: ModelConfig[];
+
+  hasCredentials(config: Record<string, string>): boolean {
+    return this.configuration.validateConfig(config).ok;
+  }
+
+  validateCredentials(config: Record<string, string>): ValidationResult {
+    const results = this.configuration.validateConfig(config);
+    if (!results.ok) {
+      return {
+        isValid: false,
+        error: results.message ?? `${this.metadata.name} configuration is invalid`,
+      };
+    }
+    if (!this.hasCredentials(config)) {
+      return {
+        isValid: false,
+        error: this.configuration.requiresAtLeastOneOf
+          ? `${this.metadata.name} requires at least one of the following keys: ${this.configuration.requiresAtLeastOneOf.join(', ')}`
+          : `${this.metadata.name} failed credentials validation`,
+      };
+    }
+    if (results.fieldValidationWarnings.length > 0) {
+      return {
+        isValid: true,
+        warning: results.fieldValidationWarnings.join('\n'),
+      };
+    }
+
+    return { isValid: true };
+  }
 
   // Optional dynamic model loading
   // eslint-disable-next-line @typescript-eslint/require-await
   async loadModels?(): Promise<ModelConfig[]> {
     return this.models;
   }
-
-  // Validation methods
-  abstract validateCredentials(config: Record<string, string>): ValidationResult;
-  abstract hasCredentials(config: Record<string, string>): boolean;
 
   // AI SDK v5 integration - return configured model instance
   abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;

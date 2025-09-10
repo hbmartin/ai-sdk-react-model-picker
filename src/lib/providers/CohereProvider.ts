@@ -1,14 +1,10 @@
 type CohereModule = typeof import('@ai-sdk/cohere');
 import type { CohereProviderSettings } from '@ai-sdk/cohere';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import type {
-  ModelConfig,
-  ProviderMetadata,
-  ProviderInstanceParams,
-  ValidationResult,
-} from '../types';
+import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { CohereIcon } from '../icons';
+import { apiKeyField, baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 
 export class CohereProvider extends AIProvider {
   readonly metadata: ProviderMetadata = {
@@ -18,7 +14,6 @@ export class CohereProvider extends AIProvider {
     icon: CohereIcon,
     documentationUrl: 'https://docs.cohere.com',
     apiKeyUrl: 'https://dashboard.cohere.com/api-keys',
-    requiredKeys: ['apiKey'],
   };
 
   readonly models: ModelConfig[] = [
@@ -52,28 +47,10 @@ export class CohereProvider extends AIProvider {
     },
   ];
 
-  validateCredentials(config: Record<string, string>): ValidationResult {
-    if (typeof config['apiKey'] !== 'string' || config['apiKey'].trim() === '') {
-      return {
-        isValid: false,
-        error: 'Cohere API key is required',
-      };
-    }
-    const apiKey = config['apiKey'];
-
-    if (apiKey.length < 10) {
-      return {
-        isValid: false,
-        error: 'Cohere API key appears to be too short',
-      };
-    }
-
-    return { isValid: true };
-  }
-
-  hasCredentials(config: Record<string, string>): boolean {
-    return typeof config['apiKey'] === 'string' && config['apiKey'].trim() !== '';
-  }
+  override readonly configuration: ConfigAPI<CohereProviderSettings> =
+    makeConfiguration<CohereProviderSettings>()({
+      fields: [apiKeyField(10, true), baseUrlField('https://api.cohere.com/v2')],
+    });
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     let cohere: CohereModule;
@@ -86,20 +63,8 @@ export class CohereProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/cohere'
       );
     }
-
-    if (typeof params['apiKey'] !== 'string' || params['apiKey'].trim() === '') {
-      throw new TypeError('Cohere API key is required');
-    }
-
-    const config: CohereProviderSettings = {
-      apiKey: params.apiKey,
-    };
-
-    if (params.options) {
-      Object.assign(config, params.options);
-    }
-
-    const client = cohere.createCohere(config);
+    this.configuration.assert(params.options);
+    const client = cohere.createCohere(params.options);
     return client(params.model);
   }
 
