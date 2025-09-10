@@ -44,7 +44,7 @@ export function AddModelForm({
     watch,
     formState: { errors },
   } = useForm<FormData>();
-
+  const watchedValues = watch();
   // Set default provider
   const allProviders = useMemo(
     () => providerRegistry.getAllProviders().map((provider) => provider.metadata),
@@ -110,12 +110,12 @@ export function AddModelForm({
       return 'Please select a model';
     }
 
-    const validation = selectedProvider.validateCredentials(watch());
+    const validation = selectedProvider.validateCredentials(watchedValues);
     if (!validation.isValid) {
       return validation.error;
     }
     return undefined;
-  }, [selectedProvider, selectedModel, watch]);
+  }, [selectedProvider, selectedModel, watchedValues]);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
@@ -201,8 +201,8 @@ export function AddModelForm({
             </div>
 
             {selectedProvider?.configuration.fields.map(
-              ({ label: fieldName, placeholder, required }) => (
-                <div key={fieldName}>
+              ({ key, label: fieldName, placeholder, required }) => (
+                <div key={key}>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     {fieldName}
                     {required === true ? ' *' : ''}
@@ -210,12 +210,12 @@ export function AddModelForm({
                   <input
                     placeholder={placeholder}
                     className="w-full px-3 py-2 border border-border rounded-default bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                    {...register(fieldName, { required: required === true })}
+                    {...register(key, { required: required === true })}
                   />
-                  {errors[fieldName] && (
+                  {errors[key] && (
                     <p className="mt-1 text-xs text-destructive">{fieldName} is required</p>
                   )}
-                  {fieldName === 'apiKey' && selectedProvider.metadata.apiKeyUrl !== undefined && (
+                  {key === 'apiKey' && selectedProvider.metadata.apiKeyUrl !== undefined && (
                     <p className="mt-1 text-xs text-muted">
                       <a
                         href={selectedProvider.metadata.apiKeyUrl}

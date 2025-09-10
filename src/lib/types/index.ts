@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { hasAny, type ConfigAPI } from '../providers/configuration';
+import type { ConfigAPI } from '../providers/configuration';
 
 // Branded types for type safety
 export type Brand<T, B> = T & { readonly __brand: B };
@@ -109,7 +109,7 @@ export abstract class AIProvider {
   abstract readonly models: ModelConfig[];
 
   hasCredentials(config: Record<string, string>): boolean {
-    return hasAny(config, this.configuration.requiresAtLeastOneOf);
+    return this.configuration.validateConfig(config).ok;
   }
 
   validateCredentials(config: Record<string, string>): ValidationResult {

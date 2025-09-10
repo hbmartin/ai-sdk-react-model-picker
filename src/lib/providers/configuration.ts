@@ -60,7 +60,7 @@ function formatMessage(
     lines.push(`• Extraneous: ${extraneous.join(', ')}`);
   }
   if (unmetMinimumRequiredKeys && unmetMinimumRequiredKeys.length > 0) {
-    lines.push(`• One of these keys is required: ${unmetMinimumRequiredKeys.join(', ')}`);
+    lines.push(`• At least one of these keys is required: ${unmetMinimumRequiredKeys.join(', ')}`);
   }
   return lines.join('\n');
 }
@@ -93,7 +93,7 @@ export function makeConfiguration<ConfigObj extends object>(
     function validateConfig(record: Record<string, string>): ConfigTypeValidationResult<ConfigObj> {
       const missingRequired: string[] = [];
       for (const k of required) {
-        if (!(k in record)) {
+        if (!(k in record) || record[String(k)].trim().length === 0) {
           missingRequired.push(String(k));
         }
       }
@@ -118,8 +118,8 @@ export function makeConfiguration<ConfigObj extends object>(
           }
         }
       }
-      const hasMinimumRequiredKeys: boolean =
-        requiresAtLeastOneOf?.some((key) => record[String(key)]?.trim() !== '') ?? true;
+
+      const hasMinimumRequiredKeys = hasAny(record, requiresAtLeastOneOf);
 
       const ok =
         missingRequired.length === 0 &&
@@ -161,6 +161,11 @@ export function makeConfiguration<ConfigObj extends object>(
             `Configuration is undefined, but required keys are: ${[...required].join(', ')}`
           );
         }
+        if (requiresAtLeastOneOf !== undefined && requiresAtLeastOneOf.length > 0) {
+          throw new Error(
+            `Configuration is undefined, but at least one of these keys is required: ${requiresAtLeastOneOf.join(', ')}`
+          );
+        }
         return;
       }
 
@@ -192,13 +197,13 @@ export interface ConfigurationField<T extends object> {
   validation?: (value: string) => FieldValidationProblem | undefined;
 }
 
-export function hasAny(
+function hasAny<T extends object>(
   config: Record<string, string>,
-  requiresAtLeastOneOf: string[] | undefined
+  requiresAtLeastOneOf: (RequiredStringKeys<T> | OptionalStringKeys<T>)[] | undefined
 ): boolean {
   return (
     requiresAtLeastOneOf?.some(
-      (key) => typeof config[key] === 'string' && config[key].trim().length > 0
+      (key) => typeof config[String(key)] === 'string' && config[String(key)].trim().length > 0
     ) ?? true
   );
 }
@@ -222,7 +227,7 @@ export function baseUrlField<T extends { baseURL?: string }>(
   };
 }
 
-export function apiKeyField<T extends { baseURL?: string }>(
+export function apiKeyField<T extends { apiKey?: string }>(
   requirement: string | number,
   // eslint-disable-next-line code-complete/no-boolean-params
   required: boolean = false

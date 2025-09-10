@@ -117,8 +117,8 @@ export function ModelSelect({
     : undefined;
 
   // Handle model selection
-  const handleModelSelect = (modelId: ModelId) => {
-    if ((modelId as unknown) === ADD_MODEL_ID) {
+  const handleModelSelect = (modelId: ModelId | typeof ADD_MODEL_ID) => {
+    if (modelId === ADD_MODEL_ID) {
       setShowAddModelForm(true);
       return;
     }
@@ -209,13 +209,11 @@ export function ModelSelect({
                 sortedOptions.map((option) => {
                   const isSelected = option.model.model.id === selectedModelId;
                   // TODO: this should check all required keys
-                  const showMissingKey = !option.hasCredentials;
 
                   return (
                     <ListboxOption
                       key={option.model.model.id}
                       value={option.model.model.id}
-                      disabled={showMissingKey}
                       className="px-3 py-2"
                     >
                       <div className="flex w-full items-center justify-between">
@@ -226,11 +224,6 @@ export function ModelSelect({
                             {option.isAutoDetected === true && (
                               <span className="text-muted ml-1.5 text-[10px] italic">
                                 (autodetected)
-                              </span>
-                            )}
-                            {showMissingKey && (
-                              <span className="ml-1.5 text-[10px] italic text-destructive">
-                                (Missing API key)
                               </span>
                             )}
                           </span>
