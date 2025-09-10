@@ -119,7 +119,7 @@ export function makeConfiguration<ConfigObj extends object>(
         }
       }
       const hasMinimumRequiredKeys: boolean =
-        requiresAtLeastOneOf?.some((key) => key in record) ?? true;
+        requiresAtLeastOneOf?.some((key) => record[String(key)]?.trim() !== '') ?? true;
 
       const ok =
         missingRequired.length === 0 &&
