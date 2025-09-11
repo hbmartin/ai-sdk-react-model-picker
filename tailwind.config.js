@@ -122,6 +122,9 @@ export default {
       });
     },
   ],
+  // Note: Prefix disabled for now to avoid breaking existing components
+  // Consider adding 'mp-' prefix in future major version
+  // prefix: 'mp-',
   // Allow CSS variables to work even if Tailwind classes aren't used
   corePlugins: {
     preflight: false, // Don't reset styles in library mode
