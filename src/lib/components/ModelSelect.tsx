@@ -189,7 +189,10 @@ export function ModelSelect({
               <button
                 type="button"
                 onClick={handleConfigureProvider}
-                className="p-1 text-muted hover:text-foreground transition-colors"
+                className="p-1  bg-background border border-border rounded-default
+        text-foreground hover:bg-accent
+        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1
+        transition-colors duration-150"
                 title="Configure provider"
               >
                 <SettingsIcon className="h-3 w-3" />
@@ -238,7 +241,6 @@ export function ModelSelect({
               )}
             </div>
 
-            {/* Add model button */}
             {!isLoading && (
               <ListboxOption
                 value={ADD_MODEL_ID}
@@ -255,7 +257,6 @@ export function ModelSelect({
         </div>
       </Listbox>
 
-      {/* Add Model Form Dialog */}
       {showAddModelForm && (
         <AddModelForm
           providerRegistry={providerRegistry}

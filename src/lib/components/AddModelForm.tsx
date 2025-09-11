@@ -169,12 +169,12 @@ export function AddModelForm({
               <p className="mt-1 text-xs text-muted">
                 Don't see your provider?{' '}
                 <a
-                  href="https://docs.anthropic.com/en/api/getting-started"
+                  href="https://github.com/hbmartin/ai-sdk-react-model-picker/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  View the full list
+                  Request one here
                 </a>
               </p>
             </div>

@@ -6,6 +6,35 @@ export default {
     'vscode-dark',
     'vscode-light',
     'vscode-high-contrast',
+    // Core semantic utilities used by the library (ensure presence without Tailwind in consumer app)
+    'bg-background',
+    'bg-background/50',
+    'bg-accent',
+    'bg-accent/50',
+    'bg-primary',
+    'text-foreground',
+    'text-muted',
+    'text-accent-foreground',
+    'text-destructive',
+    'border-border',
+    'rounded-default',
+    'focus:ring-2',
+    'focus:ring-primary',
+    'focus:border-primary',
+    'ring-primary',
+    'hover:bg-accent',
+    'hover:text-foreground',
+    // Status colors used in error state UI
+    'bg-red-50',
+    'border-red-200',
+    'text-red-700',
+    // Provider tag semantic colors
+    'bg-warning/5',
+    'text-warning',
+    'bg-success/10',
+    'text-success',
+    'bg-destructive/10',
+    'text-destructive',
     // Ensure provider tag styles are included
     'provider-tag-requires-key',
     'provider-tag-local',
@@ -18,6 +47,9 @@ export default {
     { pattern: /^(bg|text|border)-vscode-/ },
     { pattern: /^hover:(bg|text|border)-vscode-/ },
     { pattern: /^focus:(bg|text|border|ring)-vscode-/ },
+    // Semantic color utilities and their variants
+    { pattern: /^(bg|text|border|ring)-(background|foreground|primary|accent|border|muted|destructive|success|warning)(?:-foreground)?$/ },
+    { pattern: /^(hover|focus):(?:bg|text|border|ring)-(background|foreground|primary|accent|border|muted|destructive|success|warning)(?:-foreground)?$/ },
   ],
   theme: {
     extend: {

@@ -1,3 +1,6 @@
+// Styles (ensure CSS is emitted for consumers who rely on the exported styles.css)
+import './styles/globals.css';
+
 // Components
 export { ModelSelect } from './components/ModelSelect';
 export { ModelCard } from './components/ModelCard';

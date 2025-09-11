@@ -21,15 +21,23 @@ export function VSCodeThemeAdapter({
   useEffect(() => {
     if (!enableAutoDetection) return;
 
-    // Apply environment-specific classes to the root element
+    // Apply environment-specific classes/attributes to the document body so
+    // they match CSS selectors used across the library (and VSCode webviews).
     const rootElement = document.documentElement;
+    const bodyEl = document.body;
 
     if (isVSCodeEnv) {
       rootElement.classList.add('vscode-environment');
 
-      // Apply theme-specific classes
+      // Apply theme-specific attribute/class on <body> to align with
+      // CSS rules (body[data-vscode-theme-kind], body.vscode-dark, ...)
       if (themeKind) {
-        rootElement.setAttribute('data-vscode-theme', themeKind);
+        // Keep data attribute for selectors
+        bodyEl.setAttribute('data-vscode-theme-kind', themeKind);
+
+        // Ensure mutually exclusive theme classes
+        bodyEl.classList.remove('vscode-dark', 'vscode-light', 'vscode-high-contrast');
+        bodyEl.classList.add(themeKind);
       }
 
       // Ensure VSCode CSS variables are accessible
@@ -52,7 +60,9 @@ export function VSCodeThemeAdapter({
     return () => {
       // Cleanup classes on unmount
       rootElement.classList.remove('vscode-environment', 'jetbrains-environment');
-      rootElement.removeAttribute('data-vscode-theme');
+      // Remove body-level VSCode attributes/classes
+      bodyEl.removeAttribute('data-vscode-theme-kind');
+      bodyEl.classList.remove('vscode-dark', 'vscode-light', 'vscode-high-contrast');
       rootElement.removeAttribute('data-theme');
     };
   }, [isVSCodeEnv, themeKind, isJetBrainsEnv, enableAutoDetection]);

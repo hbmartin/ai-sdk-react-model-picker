@@ -4,7 +4,8 @@
       "Bash(npm run lint:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []

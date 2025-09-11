@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 
 export interface VSCodeContext {
   isVSCodeEnv: boolean;
-  vsCodeApi: any | null;
   themeKind: 'vscode-dark' | 'vscode-light' | 'vscode-high-contrast' | null;
   isJetBrainsEnv: boolean;
 }
@@ -19,16 +18,9 @@ export function useVSCodeContext(): VSCodeContext {
       document.body.hasAttribute('data-ide') &&
       document.body.getAttribute('data-ide') === 'jetbrains';
 
-    let vsCodeApi = null;
     let themeKind: VSCodeContext['themeKind'] = null;
 
     if (isVSCodeEnv) {
-      try {
-        vsCodeApi = (window as any).acquireVsCodeApi();
-      } catch (error) {
-        console.warn('Failed to acquire VSCode API:', error);
-      }
-
       // Get initial theme
       const bodyClasses = document.body.className;
       if (bodyClasses.includes('vscode-dark')) {
@@ -52,7 +44,6 @@ export function useVSCodeContext(): VSCodeContext {
 
     return {
       isVSCodeEnv,
-      vsCodeApi,
       themeKind,
       isJetBrainsEnv,
     };

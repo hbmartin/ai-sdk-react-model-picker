@@ -32,7 +32,6 @@ export default defineConfig({
         'react-dom',
         'react/jsx-runtime',
         'react-hook-form',
-        '@heroicons/react',
         '@ai-sdk/openai',
         '@ai-sdk/anthropic',
         '@ai-sdk/google',

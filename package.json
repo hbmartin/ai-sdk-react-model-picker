@@ -76,9 +76,6 @@
       "optional": true
     }
   },
-  "dependencies": {
-    "@heroicons/react": "^2.2.0"
-  },
   "devDependencies": {
     "@ai-sdk/anthropic": "^2.0.15",
     "@ai-sdk/azure": "^2.0.27",
