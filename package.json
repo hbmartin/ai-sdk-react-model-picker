@@ -19,6 +19,10 @@
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "**/*.css",
+    "**/styles/**"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
