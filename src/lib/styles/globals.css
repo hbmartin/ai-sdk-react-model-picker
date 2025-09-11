@@ -16,22 +16,25 @@
 
 /* Auto-detect VSCode environment and apply appropriate variables */
 body[data-vscode-theme-kind='vscode-dark'],
-body[data-vscode-theme-kind='vscode-high-contrast'] {
-  --mp-background: var(--vscode-editor-background, #1e1e1e);
-  --mp-foreground: var(--vscode-editor-foreground, #d4d4d4);
-  --mp-primary: var(--vscode-button-background, #0e639c);
-  --mp-border: var(--vscode-panel-border, #464647);
-  --mp-muted: var(--vscode-descriptionForeground, #ccccccaa);
-  --mp-accent: var(--vscode-input-background, #3c3c3c);
+body[data-vscode-theme-kind='vscode-high-contrast'],
+body.vscode-dark,
+body.vscode-high-contrast {
+  --mp-background: var(--vscode-editor-background, #1e1e1e) !important;
+  --mp-foreground: var(--vscode-editor-foreground, #d4d4d4) !important;
+  --mp-primary: var(--vscode-button-background, #0e639c) !important;
+  --mp-border: var(--vscode-panel-border, #464647) !important;
+  --mp-muted: var(--vscode-descriptionForeground, #ccccccaa) !important;
+  --mp-accent: var(--vscode-input-background, #3c3c3c) !important;
 }
 
-body[data-vscode-theme-kind='vscode-light'] {
-  --mp-background: var(--vscode-editor-background, #ffffff);
-  --mp-foreground: var(--vscode-editor-foreground, #000000);
-  --mp-primary: var(--vscode-button-background, #0066cc);
-  --mp-border: var(--vscode-panel-border, #e0e0e0);
-  --mp-muted: var(--vscode-descriptionForeground, #6b7280);
-  --mp-accent: var(--vscode-input-background, #f8f8f8);
+body[data-vscode-theme-kind='vscode-light'],
+body.vscode-light {
+  --mp-background: var(--vscode-editor-background, #ffffff) !important;
+  --mp-foreground: var(--vscode-editor-foreground, #000000) !important;
+  --mp-primary: var(--vscode-button-background, #0066cc) !important;
+  --mp-border: var(--vscode-panel-border, #e0e0e0) !important;
+  --mp-muted: var(--vscode-descriptionForeground, #6b7280) !important;
+  --mp-accent: var(--vscode-input-background, #f8f8f8) !important;
 }
 
 /* JetBrains IDEs support */
