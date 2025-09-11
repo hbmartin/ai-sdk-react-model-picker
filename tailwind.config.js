@@ -34,6 +34,7 @@ export default {
         primary: {
           DEFAULT: 'rgb(var(--mp-primary, 59 130 246) / <alpha-value>)',
           hover: 'rgb(var(--mp-primary-hover, 37 99 235) / <alpha-value>)',
+          foreground: 'rgb(var(--mp-primary-foreground, 255 255 255) / <alpha-value>)',
         },
         border: {
           DEFAULT: 'rgb(var(--mp-border, 224 224 224) / <alpha-value>)',
@@ -43,10 +44,22 @@ export default {
         destructive: {
           DEFAULT: 'rgb(var(--mp-destructive, 239 68 68) / <alpha-value>)',
           hover: 'rgb(var(--mp-destructive-hover, 220 38 38) / <alpha-value>)',
+          foreground: 'rgb(var(--mp-destructive-foreground, 255 255 255) / <alpha-value>)',
+        },
+        success: {
+          DEFAULT: 'rgb(var(--mp-success, 34 197 94) / <alpha-value>)',
+          hover: 'rgb(var(--mp-success-hover, 22 163 74) / <alpha-value>)',
+          foreground: 'rgb(var(--mp-success-foreground, 255 255 255) / <alpha-value>)',
+        },
+        warning: {
+          DEFAULT: 'rgb(var(--mp-warning, 245 158 11) / <alpha-value>)',
+          hover: 'rgb(var(--mp-warning-hover, 217 119 6) / <alpha-value>)',
+          foreground: 'rgb(var(--mp-warning-foreground, 255 255 255) / <alpha-value>)',
         },
         accent: {
           DEFAULT: 'rgb(var(--mp-accent, 243 244 246) / <alpha-value>)',
           hover: 'rgb(var(--mp-accent-hover, 229 231 235) / <alpha-value>)',
+          foreground: 'rgb(var(--mp-accent-foreground, 55 65 81) / <alpha-value>)',
         },
         
         // VSCode specific mappings with alpha support
