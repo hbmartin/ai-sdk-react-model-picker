@@ -4,6 +4,8 @@ export { ModelCard } from './components/ModelCard';
 export { ModelProviderTag } from './components/ModelProviderTag';
 export { Toggle } from './components/Toggle';
 export { AddModelForm } from './components/AddModelForm';
+export { VSCodeThemeAdapter } from './components/VSCodeThemeAdapter';
+export type { VSCodeThemeAdapterProps } from './components/VSCodeThemeAdapter';
 
 // Context and hooks
 export {

@@ -1,6 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./src/lib/**/*.{js,ts,jsx,tsx}'],
+  safelist: [
+    // VSCode theme variants
+    'vscode-dark',
+    'vscode-light',
+    'vscode-high-contrast',
+    // Ensure provider tag styles are included
+    'provider-tag-requires-key',
+    'provider-tag-local',
+    'provider-tag-free',
+    'provider-tag-open-source',
+    'provider-tag-vision',
+    'provider-tag-tools',
+    'provider-tag-long-context',
+    // VSCode-specific utilities that might be dynamically applied
+    { pattern: /^(bg|text|border)-vscode-/ },
+    { pattern: /^hover:(bg|text|border)-vscode-/ },
+    { pattern: /^focus:(bg|text|border|ring)-vscode-/ },
+  ],
   theme: {
     extend: {
       colors: {
