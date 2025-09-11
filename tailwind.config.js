@@ -43,6 +43,8 @@ export default {
     },
   },
   plugins: [
+    // VSCode-specific utility classes
+    require('./src/lib/tailwind/vscode-plugin'),
     // Plugin to handle VSCode environment detection
     function({ addBase, theme }) {
       addBase({
