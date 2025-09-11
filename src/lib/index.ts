@@ -65,6 +65,3 @@ export type {
   ProviderInstanceParams,
   ValidationResult,
 } from './types';
-
-// Core CSS - users must import this
-import './styles/globals.css';

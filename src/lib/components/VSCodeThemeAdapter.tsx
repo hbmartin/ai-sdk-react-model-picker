@@ -1,4 +1,4 @@
-import { useEffect, ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useVSCodeContext } from '../hooks/useVSCodeContext';
 
 export interface VSCodeThemeAdapterProps {

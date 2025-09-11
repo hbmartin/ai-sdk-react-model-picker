@@ -34,6 +34,232 @@ npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
 npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere
 ```
 
+### Important: CSS Import
+
+The library's CSS must be imported separately in your application:
+
+```tsx
+// Import at the top of your app or entry file
+import 'ai-sdk-react-model-picker/styles.css';
+```
+
+## Setup by Environment
+
+### Web Applications
+
+#### Standard React App Setup
+
+```tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { ModelSelect } from 'ai-sdk-react-model-picker';
+import { ProviderRegistry, OpenAIProvider, AnthropicProvider } from 'ai-sdk-react-model-picker/providers';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import 'ai-sdk-react-model-picker/styles.css'; // Required!
+
+function App() {
+  const [selectedModelId, setSelectedModelId] = useState(null);
+  
+  // Setup providers and storage
+  const storage = new MemoryStorageAdapter();
+  const registry = new ProviderRegistry();
+  registry.register(new OpenAIProvider());
+  registry.register(new AnthropicProvider());
+  
+  const handleModelChange = async (model) => {
+    setSelectedModelId(model.model.id);
+    // Ready to use with Vercel AI SDK
+  };
+  
+  return (
+    <ModelSelect
+      storage={storage}
+      providerRegistry={registry}
+      selectedModelId={selectedModelId}
+      onModelChange={handleModelChange}
+    />
+  );
+}
+
+// Mount to DOM
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(<App />);
+```
+
+#### Next.js Setup
+
+```tsx
+// app/layout.tsx or pages/_app.tsx
+import 'ai-sdk-react-model-picker/styles.css';
+
+// components/ModelPicker.tsx
+'use client'; // For Next.js App Router
+
+import { ModelSelect } from 'ai-sdk-react-model-picker';
+import { createDefaultRegistry } from 'ai-sdk-react-model-picker/providers';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+
+export function ModelPicker() {
+  // Component implementation...
+}
+```
+
+### VSCode Extension Setup
+
+#### Webview Panel Implementation
+
+```typescript
+// extension.ts
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand('extension.showModelPicker', () => {
+    const panel = vscode.window.createWebviewPanel(
+      'modelPicker',
+      'AI Model Picker',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    
+    panel.webview.html = getWebviewContent(panel.webview, context.extensionUri);
+  });
+  
+  context.subscriptions.push(disposable);
+}
+
+function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri) {
+  // Get URIs for resources
+  const scriptUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'dist', 'webview.js')
+  );
+  const styleUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'node_modules', 'ai-sdk-react-model-picker', 'dist', 'styles.css')
+  );
+  
+  return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="${styleUri}" rel="stylesheet">
+      <title>Model Picker</title>
+    </head>
+    <body>
+      <div id="root"></div>
+      <script src="${scriptUri}"></script>
+    </body>
+    </html>`;
+}
+```
+
+#### Webview React Component
+
+```tsx
+// webview/index.tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { ModelSelect } from 'ai-sdk-react-model-picker';
+import { createDefaultRegistry } from 'ai-sdk-react-model-picker/providers';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+
+// VSCode API is available globally in webview
+declare const acquireVsCodeApi: () => any;
+const vscode = acquireVsCodeApi();
+
+function WebviewApp() {
+  const [selectedModelId, setSelectedModelId] = React.useState(null);
+  const storage = React.useMemo(() => new MemoryStorageAdapter(), []);
+  const registry = React.useMemo(() => createDefaultRegistry(), []);
+  
+  const handleModelChange = React.useCallback((model) => {
+    setSelectedModelId(model.model.id);
+    
+    // Send message to extension
+    vscode.postMessage({
+      command: 'modelSelected',
+      model: model
+    });
+  }, []);
+  
+  return (
+    <div style={{ padding: '20px' }}>
+      <ModelSelect
+        storage={storage}
+        providerRegistry={registry}
+        selectedModelId={selectedModelId}
+        onModelChange={handleModelChange}
+      />
+    </div>
+  );
+}
+
+// Ensure DOM is loaded before mounting
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mount);
+} else {
+  mount();
+}
+
+function mount() {
+  const container = document.getElementById('root');
+  if (container) {
+    const root = createRoot(container);
+    root.render(<WebviewApp />);
+  }
+}
+```
+
+#### Webpack Configuration for VSCode Extension
+
+```javascript
+// webpack.config.js
+module.exports = [
+  // Extension config
+  {
+    target: 'node',
+    entry: './src/extension.ts',
+    // ... extension config
+  },
+  // Webview config
+  {
+    target: 'web',
+    entry: './src/webview/index.tsx',
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: 'webview.js'
+    },
+    externals: {
+      vscode: 'commonjs vscode'
+    },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
+      alias: {
+        // Ensure single React instance
+        react: path.resolve('./node_modules/react'),
+        'react-dom': path.resolve('./node_modules/react-dom')
+      }
+    },
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/
+        },
+        {
+          test: /\.css$/,
+          use: ['style-loader', 'css-loader']
+        }
+      ]
+    }
+  }
+];
+```
+
 ## Quick Start
 
 ```tsx
@@ -287,6 +513,82 @@ CSS variables are automatically mapped:
 - `--vscode-button-background` → `--mp-primary`
 - And more...
 
+## Troubleshooting
+
+### Invalid Hook Call Error
+
+This error typically occurs when:
+
+1. **React is duplicated in your bundle**
+   ```bash
+   # Check for duplicate React instances
+   npm ls react
+   
+   # If using npm link for development
+   cd your-library
+   npm link ../your-app/node_modules/react
+   npm link ../your-app/node_modules/react-dom
+   ```
+
+2. **Component is not properly mounted in React tree**
+   ```tsx
+   // ❌ Wrong - calling component as function
+   const picker = ModelSelect({ ...props });
+   
+   // ✅ Correct - using as JSX element
+   const picker = <ModelSelect {...props} />;
+   ```
+
+3. **Missing React DOM root (especially in VSCode)**
+   ```tsx
+   // ❌ Wrong - direct render
+   ReactDOM.render(<App />, container);
+   
+   // ✅ Correct - using createRoot (React 18+)
+   const root = createRoot(container);
+   root.render(<App />);
+   ```
+
+### CSS Not Loading
+
+**Ensure you import the CSS file:**
+```tsx
+import 'ai-sdk-react-model-picker/styles.css';
+```
+
+**For VSCode extensions, include CSS in webview:**
+```typescript
+const styleUri = webview.asWebviewUri(
+  vscode.Uri.joinPath(extensionUri, 'node_modules', 'ai-sdk-react-model-picker', 'dist', 'styles.css')
+);
+```
+
+### TypeScript Errors
+
+**Cannot find module './styles/globals.css':**
+```typescript
+// Add to your global.d.ts or types file
+declare module '*.css' {
+  const content: Record<string, string>;
+  export default content;
+}
+```
+
+### VSCode Webview Not Updating
+
+**Enable retainContextWhenHidden:**
+```typescript
+const panel = vscode.window.createWebviewPanel(
+  'modelPicker',
+  'Model Picker',
+  vscode.ViewColumn.One,
+  {
+    enableScripts: true,
+    retainContextWhenHidden: true // Keeps state when hidden
+  }
+);
+```
+
 ## Styling
 
 ### Default Styles
@@ -406,37 +708,50 @@ function ChatApp() {
 }
 ```
 
-### VSCode Extension
+### VSCode Extension with Context API
 
 ```tsx
-import * as vscode from 'vscode';
-import { ModelSelect } from 'ai-sdk-react-model-picker';
+// For complex VSCode extensions using multiple components
+import { ModelPickerProvider, useModelSelection } from 'ai-sdk-react-model-picker';
 
-// VSCode Webview Panel
-function createModelPickerPanel() {
-  const panel = vscode.window.createWebviewPanel(
-    'modelPicker',
-    'AI Model Picker',
-    vscode.ViewColumn.One,
-    { enableScripts: true }
-  );
+function VSCodeExtensionApp() {
+  const storage = useMemo(() => new VSCodeStorageAdapter(), []);
+  const registry = useMemo(() => createDefaultRegistry(), []);
   
-  panel.webview.html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Model Picker</title>
-      </head>
-      <body data-vscode-theme-kind="${vscode.window.activeColorTheme.kind}">
-        <div id="root"></div>
-        <script>
-          // ModelSelect component automatically detects VSCode environment
-          // and applies appropriate theming
-        </script>
-      </body>
-    </html>
-  `;
+  return (
+    <ModelPickerProvider
+      storage={storage}
+      providerRegistry={registry}
+      initialModelId={savedModelId}
+    >
+      <Header />
+      <ChatInterface />
+      <Settings />
+    </ModelPickerProvider>
+  );
+}
+
+function ChatInterface() {
+  const { selectedModel, selectModel } = useModelSelection();
+  
+  // Use selected model for chat...
+}
+
+// Custom storage adapter for VSCode state
+class VSCodeStorageAdapter implements StorageAdapter {
+  constructor(private state: vscode.Memento) {}
+  
+  async get<T>(key: string): Promise<T | undefined> {
+    return this.state.get(key);
+  }
+  
+  async set<T>(key: string, value: T): Promise<void> {
+    await this.state.update(key, value);
+  }
+  
+  async remove(key: string): Promise<void> {
+    await this.state.update(key, undefined);
+  }
 }
 ```
 
