@@ -221,6 +221,74 @@ function VSCodeExtension() {
 export default VSCodeExtension;
 ```
 
+## Preventing Flash of Unstyled Content (FOUC)
+
+For web applications (not needed in VSCode), include the FOUC prevention script:
+
+### Option 1: Inline Script (Recommended)
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>My App</title>
+  
+  <!-- FOUC Prevention - Include before any React rendering -->
+  <script>
+    // Copy content from src/lib/scripts/fouc-prevention.js and paste here
+    (function() {
+      // ... script content ...
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
+```
+
+### Option 2: Manual Theme Management
+
+```typescript
+// For apps that need manual theme control
+declare global {
+  interface Window {
+    ModelPickerTheme: {
+      setTheme: (theme: 'light' | 'dark') => void;
+      getTheme: () => string;
+      clearTheme: () => void;
+    };
+  }
+}
+
+// Usage
+window.ModelPickerTheme.setTheme('dark');
+const currentTheme = window.ModelPickerTheme.getTheme();
+```
+
+### Option 3: Next.js Integration
+
+```tsx
+// In your _document.tsx
+import { Html, Head, Main, NextScript } from 'next/document'
+import foucPreventionScript from 'ai-sdk-react-model-picker/src/lib/scripts/fouc-prevention.js'
+
+export default function Document() {
+  return (
+    <Html>
+      <Head>
+        <script dangerouslySetInnerHTML={{ __html: foucPreventionScript }} />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  )
+}
+```
+
 ## Support
 
 For issues or questions about VSCode integration, please open an issue on GitHub with the `vscode` label.
