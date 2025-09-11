@@ -8,7 +8,7 @@ export interface UniversalTheme {
 /**
  * Universal theme hook that detects environment and theme automatically
  * Follows the pattern recommended in the multi-environment guide
- * 
+ *
  * @returns {UniversalTheme} Current theme and environment
  */
 export function useUniversalTheme(): UniversalTheme {
@@ -23,7 +23,7 @@ export function useUniversalTheme(): UniversalTheme {
       setTheme(vsTheme);
       return;
     }
-    
+
     // Check data attributes as fallback
     const bodyDataTheme = document.body.getAttribute('data-vscode-theme-kind');
     if (bodyDataTheme && bodyDataTheme.includes('vscode-')) {
@@ -32,14 +32,17 @@ export function useUniversalTheme(): UniversalTheme {
       setTheme(vsTheme);
       return;
     }
-    
+
     // JetBrains detection
-    if (document.body.hasAttribute('data-ide') && 
-        document.body.getAttribute('data-ide') === 'jetbrains') {
+    if (
+      document.body.hasAttribute('data-ide') &&
+      document.body.getAttribute('data-ide') === 'jetbrains'
+    ) {
       setEnvironment('jetbrains');
       // For JetBrains, check for dark theme indicators
-      const isDark = document.body.classList.contains('dark') ||
-                     document.documentElement.getAttribute('data-theme') === 'dark';
+      const isDark =
+        document.body.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark';
       setTheme(isDark ? 'dark' : 'light');
       return;
     }
@@ -48,9 +51,9 @@ export function useUniversalTheme(): UniversalTheme {
     setEnvironment('web');
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     setTheme(mediaQuery.matches ? 'dark' : 'light');
-    
+
     const handleChange = (e: MediaQueryListEvent) => setTheme(e.matches ? 'dark' : 'light');
-    
+
     // Use modern API if available
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange);

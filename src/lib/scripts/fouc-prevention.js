@@ -1,15 +1,15 @@
 /**
  * Flash of Unstyled Content (FOUC) Prevention Script
- * 
+ *
  * This script should be included as an inline script in the <head> of your document
  * BEFORE any React components are rendered. It sets up theme detection and CSS variables
  * immediately to prevent visual flashing when the component library loads.
- * 
+ *
  * Usage:
  * 1. For VSCode extensions: Not needed - VSCode handles its own theming
  * 2. For web applications: Include this script inline in your HTML head
  * 3. For React apps: Include in index.html or use a helmet/head manager
- * 
+ *
  * @example
  * <!-- In your HTML head -->
  * <script>
@@ -17,53 +17,54 @@
  * </script>
  */
 
-(function() {
+(function () {
   'use strict';
-  
+
   // Early VSCode detection - if we're in VSCode, let it handle theming
   const isVSCode = typeof acquireVsCodeApi === 'function';
   if (isVSCode) {
     // VSCode webview handles its own theming, no FOUC prevention needed
     return;
   }
-  
-  // Early JetBrains detection  
-  const isJetBrains = document.documentElement.hasAttribute('data-jetbrains-ide') ||
-                      (typeof window !== 'undefined' && window.JetBrainsIde);
+
+  // Early JetBrains detection
+  const isJetBrains =
+    document.documentElement.hasAttribute('data-jetbrains-ide') ||
+    (typeof window !== 'undefined' && window.JetBrainsIde);
   if (isJetBrains) {
     document.body.setAttribute('data-ide', 'jetbrains');
     return;
   }
-  
+
   // For standard web environments, detect and apply theme immediately
   const detectAndApplyTheme = () => {
     // Check for stored theme preference
     let theme = 'light';
-    
+
     try {
       const storedTheme = localStorage.getItem('theme');
       if (storedTheme && (storedTheme === 'dark' || storedTheme === 'light')) {
         theme = storedTheme;
       } else {
         // Fall back to system preference
-        const prefersDark = window.matchMedia && 
-                           window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersDark =
+          window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         theme = prefersDark ? 'dark' : 'light';
       }
     } catch (e) {
       // localStorage might not be available, fall back to system preference
-      const prefersDark = window.matchMedia && 
-                         window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark =
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       theme = prefersDark ? 'dark' : 'light';
     }
-    
+
     // Apply theme to document root immediately
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.classList.add(theme);
-    
+
     // Set CSS variables for immediate styling
     const root = document.documentElement;
-    
+
     if (theme === 'dark') {
       // Dark theme variables
       root.style.setProperty('--mp-background', '30 30 30');
@@ -96,18 +97,18 @@
       root.style.setProperty('--mp-accent-hover', '229 231 235');
     }
   };
-  
+
   // Apply theme immediately if DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', detectAndApplyTheme);
   } else {
     detectAndApplyTheme();
   }
-  
+
   // Listen for system theme changes
   if (window.matchMedia) {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleSystemThemeChange = (e) => {
       // Only auto-switch if user hasn't set a manual preference
       try {
@@ -120,7 +121,7 @@
         detectAndApplyTheme();
       }
     };
-    
+
     // Use modern API if available
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleSystemThemeChange);
@@ -129,36 +130,35 @@
       mediaQuery.addListener(handleSystemThemeChange);
     }
   }
-  
+
   // Expose theme management functions for manual control
   window.ModelPickerTheme = {
-    setTheme: function(newTheme) {
+    setTheme: function (newTheme) {
       if (newTheme !== 'light' && newTheme !== 'dark') {
         console.warn('ModelPickerTheme.setTheme: Invalid theme. Use "light" or "dark".');
         return;
       }
-      
+
       try {
         localStorage.setItem('theme', newTheme);
       } catch (e) {
         console.warn('ModelPickerTheme.setTheme: Could not save theme preference.');
       }
-      
+
       detectAndApplyTheme();
     },
-    
-    getTheme: function() {
+
+    getTheme: function () {
       return document.documentElement.getAttribute('data-theme') || 'light';
     },
-    
-    clearTheme: function() {
+
+    clearTheme: function () {
       try {
         localStorage.removeItem('theme');
       } catch (e) {
         console.warn('ModelPickerTheme.clearTheme: Could not clear theme preference.');
       }
       detectAndApplyTheme();
-    }
+    },
   };
-  
 })();
