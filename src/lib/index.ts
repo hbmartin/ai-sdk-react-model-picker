@@ -19,8 +19,8 @@ export {
 export type { ModelPickerProviderProps } from './context';
 
 // VSCode/IDE integration hooks
-export { useVSCodeContext, getVSCodeThemeColor, getEnvironmentClasses } from './hooks';
-export type { VSCodeContext } from './hooks';
+export { useVSCodeContext, getVSCodeThemeColor, getEnvironmentClasses, useUniversalTheme } from './hooks';
+export type { VSCodeContext, UniversalTheme } from './hooks';
 
 // Providers
 export { createDefaultRegistry, createPopularProvidersRegistry } from './providers';
