@@ -22,26 +22,44 @@ export default {
   theme: {
     extend: {
       colors: {
-        // CSS variables for theme integration
-        background: 'var(--mp-background, #ffffff)',
-        foreground: 'var(--mp-foreground, #000000)',
-        primary: 'var(--mp-primary, #0066cc)',
-        border: 'var(--mp-border, #e0e0e0)',
-        muted: 'var(--mp-muted, #6b7280)',
-        destructive: 'var(--mp-destructive, #ef4444)',
-        accent: 'var(--mp-accent, #f3f4f6)',
+        // Modern Tailwind CSS variables with alpha support
+        background: {
+          DEFAULT: 'rgb(var(--mp-background, 255 255 255) / <alpha-value>)',
+          secondary: 'rgb(var(--mp-background-secondary, 249 250 251) / <alpha-value>)',
+        },
+        foreground: {
+          DEFAULT: 'rgb(var(--mp-foreground, 0 0 0) / <alpha-value>)',
+          secondary: 'rgb(var(--mp-foreground-secondary, 107 114 128) / <alpha-value>)',
+        },
+        primary: {
+          DEFAULT: 'rgb(var(--mp-primary, 59 130 246) / <alpha-value>)',
+          hover: 'rgb(var(--mp-primary-hover, 37 99 235) / <alpha-value>)',
+        },
+        border: {
+          DEFAULT: 'rgb(var(--mp-border, 224 224 224) / <alpha-value>)',
+          muted: 'rgb(var(--mp-border-muted, 229 231 235) / <alpha-value>)',
+        },
+        muted: 'rgb(var(--mp-muted, 107 114 128) / <alpha-value>)',
+        destructive: {
+          DEFAULT: 'rgb(var(--mp-destructive, 239 68 68) / <alpha-value>)',
+          hover: 'rgb(var(--mp-destructive-hover, 220 38 38) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--mp-accent, 243 244 246) / <alpha-value>)',
+          hover: 'rgb(var(--mp-accent-hover, 229 231 235) / <alpha-value>)',
+        },
         
-        // VSCode specific mappings
-        'vscode-editor-background': 'var(--vscode-editor-background, #1e1e1e)',
-        'vscode-editor-foreground': 'var(--vscode-editor-foreground, #d4d4d4)',
-        'vscode-button-background': 'var(--vscode-button-background, #0e639c)',
-        'vscode-button-foreground': 'var(--vscode-button-foreground, #ffffff)',
-        'vscode-panel-border': 'var(--vscode-panel-border, #464647)',
-        'vscode-input-background': 'var(--vscode-input-background, #3c3c3c)',
-        'vscode-input-foreground': 'var(--vscode-input-foreground, #cccccc)',
-        'vscode-list-activeBackground': 'var(--vscode-list-activeBackground, #094771)',
-        'vscode-list-activeForeground': 'var(--vscode-list-activeForeground, #ffffff)',
-        'vscode-dropdown-background': 'var(--vscode-dropdown-background, #3c3c3c)',
+        // VSCode specific mappings with alpha support
+        'vscode-editor-bg': 'rgb(var(--vscode-editor-background, 30 30 30) / <alpha-value>)',
+        'vscode-editor-fg': 'rgb(var(--vscode-editor-foreground, 212 212 212) / <alpha-value>)',
+        'vscode-button-bg': 'rgb(var(--vscode-button-background, 14 99 156) / <alpha-value>)',
+        'vscode-button-fg': 'rgb(var(--vscode-button-foreground, 255 255 255) / <alpha-value>)',
+        'vscode-panel-border': 'rgb(var(--vscode-panel-border, 70 70 71) / <alpha-value>)',
+        'vscode-input-bg': 'rgb(var(--vscode-input-background, 60 60 60) / <alpha-value>)',
+        'vscode-input-fg': 'rgb(var(--vscode-input-foreground, 204 204 204) / <alpha-value>)',
+        'vscode-list-active-bg': 'rgb(var(--vscode-list-activeBackground, 9 71 113) / <alpha-value>)',
+        'vscode-list-active-fg': 'rgb(var(--vscode-list-activeForeground, 255 255 255) / <alpha-value>)',
+        'vscode-dropdown-bg': 'rgb(var(--vscode-dropdown-background, 60 60 60) / <alpha-value>)',
       },
       borderRadius: {
         'default': 'var(--mp-border-radius, 0.375rem)',

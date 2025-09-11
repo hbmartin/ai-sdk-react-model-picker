@@ -2,15 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Default CSS variables for the model picker */
+/* Default CSS variables for the model picker - RGB format for alpha support */
 :root {
-  --mp-background: #ffffff;
-  --mp-foreground: #000000;
-  --mp-primary: #0066cc;
-  --mp-border: #e0e0e0;
-  --mp-muted: #6b7280;
-  --mp-destructive: #ef4444;
-  --mp-accent: #f3f4f6;
+  --mp-background: 255 255 255;
+  --mp-background-secondary: 249 250 251;
+  --mp-foreground: 0 0 0;
+  --mp-foreground-secondary: 107 114 128;
+  --mp-primary: 59 130 246;
+  --mp-primary-hover: 37 99 235;
+  --mp-border: 224 224 224;
+  --mp-border-muted: 229 231 235;
+  --mp-muted: 107 114 128;
+  --mp-destructive: 239 68 68;
+  --mp-destructive-hover: 220 38 38;
+  --mp-accent: 243 244 246;
+  --mp-accent-hover: 229 231 235;
   --mp-border-radius: 0.375rem;
 }
 
@@ -19,22 +25,33 @@ body[data-vscode-theme-kind='vscode-dark'],
 body[data-vscode-theme-kind='vscode-high-contrast'],
 body.vscode-dark,
 body.vscode-high-contrast {
-  --mp-background: var(--vscode-editor-background, #1e1e1e) !important;
-  --mp-foreground: var(--vscode-editor-foreground, #d4d4d4) !important;
-  --mp-primary: var(--vscode-button-background, #0e639c) !important;
-  --mp-border: var(--vscode-panel-border, #464647) !important;
-  --mp-muted: var(--vscode-descriptionForeground, #ccccccaa) !important;
-  --mp-accent: var(--vscode-input-background, #3c3c3c) !important;
+  /* Convert VSCode hex values to RGB for alpha support */
+  --mp-background: 30 30 30 !important; /* approximates #1e1e1e */
+  --mp-background-secondary: 37 37 37 !important;
+  --mp-foreground: 212 212 212 !important; /* approximates #d4d4d4 */
+  --mp-foreground-secondary: 156 163 175 !important;
+  --mp-primary: 14 99 156 !important; /* approximates #0e639c */
+  --mp-primary-hover: 37 99 235 !important;
+  --mp-border: 70 70 71 !important; /* approximates #464647 */
+  --mp-border-muted: 55 55 55 !important;
+  --mp-muted: 153 153 153 !important; /* approximates #999999 */
+  --mp-accent: 60 60 60 !important; /* approximates #3c3c3c */
+  --mp-accent-hover: 75 75 75 !important;
 }
 
 body[data-vscode-theme-kind='vscode-light'],
 body.vscode-light {
-  --mp-background: var(--vscode-editor-background, #ffffff) !important;
-  --mp-foreground: var(--vscode-editor-foreground, #000000) !important;
-  --mp-primary: var(--vscode-button-background, #0066cc) !important;
-  --mp-border: var(--vscode-panel-border, #e0e0e0) !important;
-  --mp-muted: var(--vscode-descriptionForeground, #6b7280) !important;
-  --mp-accent: var(--vscode-input-background, #f8f8f8) !important;
+  --mp-background: 255 255 255 !important; /* #ffffff */
+  --mp-background-secondary: 249 250 251 !important;
+  --mp-foreground: 0 0 0 !important; /* #000000 */
+  --mp-foreground-secondary: 107 114 128 !important;
+  --mp-primary: 0 102 204 !important; /* approximates #0066cc */
+  --mp-primary-hover: 37 99 235 !important;
+  --mp-border: 224 224 224 !important; /* approximates #e0e0e0 */
+  --mp-border-muted: 229 231 235 !important;
+  --mp-muted: 107 114 128 !important; /* approximates #6b7280 */
+  --mp-accent: 248 248 248 !important; /* approximates #f8f8f8 */
+  --mp-accent-hover: 229 231 235 !important;
 }
 
 /* JetBrains IDEs support */
