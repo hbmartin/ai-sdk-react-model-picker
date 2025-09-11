@@ -117,7 +117,7 @@ module.exports = {
     },
   },
   plugins: [
-    // Include the VSCode plugin
-    require('./dist/tailwind-vscode-plugin'),
+    // VSCode plugin will be available after build
+    // Consumers can optionally include: require('ai-sdk-react-model-picker/dist/tailwind-vscode-plugin')
   ],
 };
