@@ -128,7 +128,6 @@ export function ModelSelect({
       return;
     }
 
-    // eslint-disable-next-line sonarjs/no-commented-code
     // if (!modelOption.hasApiKey) {
     //   // Handle missing API key
     //   const requiredKeys = modelOption.model.provider.requiredKeys ?? ['apiKey'];

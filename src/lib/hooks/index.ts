@@ -1,4 +1,4 @@
-export { useVSCodeContext, getVSCodeThemeColor, getEnvironmentClasses } from './useVSCodeContext';
+export { useVSCodeContext, getEnvironmentClasses } from './useVSCodeContext';
 export type { VSCodeContext } from './useVSCodeContext';
 
 export { useUniversalTheme } from './useUniversalTheme';

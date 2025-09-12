@@ -19,7 +19,6 @@ export function ModelProviderTag({ tag, className = '' }: ModelProviderTagProps)
   // Environment-aware color variants
   const getTagClasses = () => {
     if (environment === 'vscode') {
-      // VSCode-specific tag styles using utility classes
       return {
         [ModelProviderTags.RequiresApiKey]:
           'bg-vscode-error/20 text-vscode-error border border-vscode-error/30',
@@ -36,19 +35,18 @@ export function ModelProviderTag({ tag, className = '' }: ModelProviderTagProps)
         [ModelProviderTags.LongContext]:
           'bg-vscode-warning/15 text-vscode-warning border border-vscode-warning/25',
       };
-    } else {
-      // Standard web environment using semantic color classes
-      return {
-        [ModelProviderTags.RequiresApiKey]:
-          'bg-destructive/10 text-destructive border border-destructive/20',
-        [ModelProviderTags.Local]: 'bg-success/10 text-success border border-success/20',
-        [ModelProviderTags.Free]: 'bg-warning/10 text-warning border border-warning/20',
-        [ModelProviderTags.OpenSource]: 'bg-primary/10 text-primary border border-primary/20',
-        [ModelProviderTags.Vision]: 'bg-primary/15 text-primary border border-primary/25',
-        [ModelProviderTags.Tools]: 'bg-accent/50 text-accent-foreground border border-border',
-        [ModelProviderTags.LongContext]: 'bg-warning/5 text-warning border border-warning/15',
-      };
     }
+    // Standard web environment using semantic color classes
+    return {
+      [ModelProviderTags.RequiresApiKey]:
+        'bg-destructive/10 text-destructive border border-destructive/20',
+      [ModelProviderTags.Local]: 'bg-success/10 text-success border border-success/20',
+      [ModelProviderTags.Free]: 'bg-warning/10 text-warning border border-warning/20',
+      [ModelProviderTags.OpenSource]: 'bg-primary/10 text-primary border border-primary/20',
+      [ModelProviderTags.Vision]: 'bg-primary/15 text-primary border border-primary/25',
+      [ModelProviderTags.Tools]: 'bg-accent/50 text-accent-foreground border border-border',
+      [ModelProviderTags.LongContext]: 'bg-warning/5 text-warning border border-warning/15',
+    };
   };
 
   const tagClasses =

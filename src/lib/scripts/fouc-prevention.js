@@ -32,7 +32,7 @@
     document.documentElement.hasAttribute('data-jetbrains-ide') ||
     (typeof window !== 'undefined' && window.JetBrainsIde);
   if (isJetBrains) {
-    document.body.setAttribute('data-ide', 'jetbrains');
+    document.documentElement.setAttribute('data-ide', 'jetbrains');
     return;
   }
 
@@ -59,8 +59,10 @@
     }
 
     // Apply theme to document root immediately
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.classList.add(theme);
+    const rootEl = document.documentElement;
+    rootEl.setAttribute('data-theme', theme);
+    rootEl.classList.remove('light', 'dark');
+    rootEl.classList.add(theme);
 
     // Set CSS variables for immediate styling
     const root = document.documentElement;

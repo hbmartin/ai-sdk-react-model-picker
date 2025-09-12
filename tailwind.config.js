@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import vscodePlugin from './vscode-plugin';
 export default {
   content: ['./src/lib/**/*.{js,ts,jsx,tsx}'],
   safelist: [
@@ -8,16 +9,16 @@ export default {
     'vscode-high-contrast',
     // Core semantic utilities used by the library (ensure presence without Tailwind in consumer app)
     'bg-background',
-    'bg-background/50',
     'bg-accent',
-    'bg-accent/50',
     'bg-primary',
     'text-foreground',
     'text-muted',
     'text-accent-foreground',
     'text-destructive',
     'border-border',
+    'rounded',
     'rounded-default',
+    'rounded-lg',
     'focus:ring-2',
     'focus:ring-primary',
     'focus:border-primary',
@@ -29,11 +30,8 @@ export default {
     'border-red-200',
     'text-red-700',
     // Provider tag semantic colors
-    'bg-warning/5',
     'text-warning',
-    'bg-success/10',
     'text-success',
-    'bg-destructive/10',
     'text-destructive',
     // Ensure provider tag styles are included
     'provider-tag-requires-key',
@@ -54,60 +52,60 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Modern Tailwind CSS variables with alpha support
+        // Simplified color system using CSS variables directly
         background: {
-          DEFAULT: 'rgb(var(--mp-background, 255 255 255) / <alpha-value>)',
-          secondary: 'rgb(var(--mp-background-secondary, 249 250 251) / <alpha-value>)',
+          DEFAULT: 'var(--mp-background)',
+          secondary: 'var(--mp-background-secondary)',
         },
         foreground: {
-          DEFAULT: 'rgb(var(--mp-foreground, 0 0 0) / <alpha-value>)',
-          secondary: 'rgb(var(--mp-foreground-secondary, 107 114 128) / <alpha-value>)',
+          DEFAULT: 'var(--mp-foreground)',
+          secondary: 'var(--mp-foreground-secondary)',
         },
         primary: {
-          DEFAULT: 'rgb(var(--mp-primary, 59 130 246) / <alpha-value>)',
-          hover: 'rgb(var(--mp-primary-hover, 37 99 235) / <alpha-value>)',
-          foreground: 'rgb(var(--mp-primary-foreground, 255 255 255) / <alpha-value>)',
+          DEFAULT: 'var(--mp-primary)',
+          hover: 'var(--mp-primary-hover)',
+          foreground: 'var(--mp-primary-foreground)',
         },
         border: {
-          DEFAULT: 'rgb(var(--mp-border, 224 224 224) / <alpha-value>)',
-          muted: 'rgb(var(--mp-border-muted, 229 231 235) / <alpha-value>)',
+          DEFAULT: 'var(--mp-border)',
+          muted: 'var(--mp-border-muted)',
         },
-        muted: 'rgb(var(--mp-muted, 107 114 128) / <alpha-value>)',
+        muted: 'var(--mp-muted)',
         destructive: {
-          DEFAULT: 'rgb(var(--mp-destructive, 239 68 68) / <alpha-value>)',
-          hover: 'rgb(var(--mp-destructive-hover, 220 38 38) / <alpha-value>)',
-          foreground: 'rgb(var(--mp-destructive-foreground, 255 255 255) / <alpha-value>)',
+          DEFAULT: 'var(--mp-destructive)',
+          hover: 'var(--mp-destructive-hover)',
+          foreground: 'var(--mp-destructive-foreground)',
         },
         success: {
-          DEFAULT: 'rgb(var(--mp-success, 34 197 94) / <alpha-value>)',
-          hover: 'rgb(var(--mp-success-hover, 22 163 74) / <alpha-value>)',
-          foreground: 'rgb(var(--mp-success-foreground, 255 255 255) / <alpha-value>)',
+          DEFAULT: 'var(--mp-success)',
+          hover: 'var(--mp-success-hover)',
+          foreground: 'var(--mp-success-foreground)',
         },
         warning: {
-          DEFAULT: 'rgb(var(--mp-warning, 245 158 11) / <alpha-value>)',
-          hover: 'rgb(var(--mp-warning-hover, 217 119 6) / <alpha-value>)',
-          foreground: 'rgb(var(--mp-warning-foreground, 255 255 255) / <alpha-value>)',
+          DEFAULT: 'var(--mp-warning)',
+          hover: 'var(--mp-warning-hover)',
+          foreground: 'var(--mp-warning-foreground)',
         },
         accent: {
-          DEFAULT: 'rgb(var(--mp-accent, 243 244 246) / <alpha-value>)',
-          hover: 'rgb(var(--mp-accent-hover, 229 231 235) / <alpha-value>)',
-          foreground: 'rgb(var(--mp-accent-foreground, 55 65 81) / <alpha-value>)',
+          DEFAULT: 'var(--mp-accent)',
+          hover: 'var(--mp-accent-hover)',
+          foreground: 'var(--mp-accent-foreground)',
         },
         
-        // VSCode specific mappings with alpha support
-        'vscode-editor-bg': 'rgb(var(--vscode-editor-background, 30 30 30) / <alpha-value>)',
-        'vscode-editor-fg': 'rgb(var(--vscode-editor-foreground, 212 212 212) / <alpha-value>)',
-        'vscode-button-bg': 'rgb(var(--vscode-button-background, 14 99 156) / <alpha-value>)',
-        'vscode-button-fg': 'rgb(var(--vscode-button-foreground, 255 255 255) / <alpha-value>)',
-        'vscode-panel-border': 'rgb(var(--vscode-panel-border, 70 70 71) / <alpha-value>)',
-        'vscode-input-bg': 'rgb(var(--vscode-input-background, 60 60 60) / <alpha-value>)',
-        'vscode-input-fg': 'rgb(var(--vscode-input-foreground, 204 204 204) / <alpha-value>)',
-        'vscode-list-active-bg': 'rgb(var(--vscode-list-activeBackground, 9 71 113) / <alpha-value>)',
-        'vscode-list-active-fg': 'rgb(var(--vscode-list-activeForeground, 255 255 255) / <alpha-value>)',
-        'vscode-dropdown-bg': 'rgb(var(--vscode-dropdown-background, 60 60 60) / <alpha-value>)',
+        // VSCode specific mappings
+        'vscode-editor-bg': 'var(--vscode-editor-background)',
+        'vscode-editor-fg': 'var(--vscode-editor-foreground)',
+        'vscode-button-bg': 'var(--vscode-button-background)',
+        'vscode-button-fg': 'var(--vscode-button-foreground)',
+        'vscode-panel-border': 'var(--vscode-panel-border)',
+        'vscode-input-bg': 'var(--vscode-input-background)',
+        'vscode-input-fg': 'var(--vscode-input-foreground)',
+        'vscode-list-active-bg': 'var(--vscode-list-activeBackground)',
+        'vscode-list-active-fg': 'var(--vscode-list-activeForeground)',
+        'vscode-dropdown-bg': 'var(--vscode-dropdown-background)',
       },
       borderRadius: {
-        'default': 'var(--mp-border-radius, 0.375rem)',
+        DEFAULT: 'var(--mp-border-radius, 0.375rem)',
       },
       fontSize: {
         'xs': '0.75rem',
@@ -125,37 +123,84 @@ export default {
   },
   plugins: [
     // VSCode-specific utility classes
-    require('./src/lib/tailwind/vscode-plugin'),
+    vscodePlugin,
     // Plugin to handle VSCode environment detection
-    function({ addBase, theme }) {
+    function({ addBase }) {
       addBase({
         ':root': {
-          // Default theme values (light mode)
+          // Default theme values using hex colors directly
           '--mp-background': '#ffffff',
+          '--mp-background-secondary': '#f9fafb',
           '--mp-foreground': '#000000',
-          '--mp-primary': '#0066cc',
+          '--mp-foreground-secondary': '#6b7280',
+          '--mp-primary': '#3b82f6',
+          '--mp-primary-hover': '#2563eb',
+          '--mp-primary-foreground': '#ffffff',
           '--mp-border': '#e0e0e0',
+          '--mp-border-muted': '#e5e7eb',
           '--mp-muted': '#6b7280',
           '--mp-destructive': '#ef4444',
+          '--mp-destructive-hover': '#dc2626',
+          '--mp-destructive-foreground': '#ffffff',
+          '--mp-success': '#22c55e',
+          '--mp-success-hover': '#16a34a',
+          '--mp-success-foreground': '#ffffff',
+          '--mp-warning': '#f59e0b',
+          '--mp-warning-hover': '#d97706',
+          '--mp-warning-foreground': '#ffffff',
           '--mp-accent': '#f3f4f6',
+          '--mp-accent-hover': '#e5e7eb',
+          '--mp-accent-foreground': '#374151',
           '--mp-border-radius': '0.375rem',
         },
         // VSCode environment detection and mapping
         'body[data-vscode-theme-kind="vscode-dark"], body[data-vscode-theme-kind="vscode-high-contrast"]': {
           '--mp-background': 'var(--vscode-editor-background, #1e1e1e)',
+          '--mp-background-secondary': 'var(--vscode-panel-background, #1f1f1f)',
           '--mp-foreground': 'var(--vscode-editor-foreground, #d4d4d4)',
+          '--mp-foreground-secondary': 'var(--vscode-descriptionForeground, #cccccc)',
           '--mp-primary': 'var(--vscode-button-background, #0e639c)',
+          '--mp-primary-hover': 'var(--vscode-button-hoverBackground, #1177bb)',
+          '--mp-primary-foreground': 'var(--vscode-button-foreground, #ffffff)',
           '--mp-border': 'var(--vscode-panel-border, #464647)',
-          '--mp-muted': 'var(--vscode-descriptionForeground, #ccccccaa)',
+          '--mp-border-muted': 'var(--vscode-dropdown-border, #2a2a2b)',
+          '--mp-muted': 'var(--vscode-descriptionForeground, #cccccc)',
+          '--mp-destructive': 'var(--vscode-errorForeground, #f14c4c)',
+          '--mp-destructive-hover': 'var(--vscode-errorForeground, #f14c4c)',
+          '--mp-destructive-foreground': '#ffffff',
+          '--mp-success': 'var(--vscode-terminal-ansiGreen, #23d18b)',
+          '--mp-success-hover': 'var(--vscode-terminal-ansiGreen, #23d18b)',
+          '--mp-success-foreground': '#ffffff',
+          '--mp-warning': 'var(--vscode-editorWarning-foreground, #cca700)',
+          '--mp-warning-hover': 'var(--vscode-editorWarning-foreground, #cca700)',
+          '--mp-warning-foreground': 'var(--vscode-editor-background, #1e1e1e)',
           '--mp-accent': 'var(--vscode-input-background, #3c3c3c)',
+          '--mp-accent-hover': 'var(--vscode-dropdown-background, #2a2d2e)',
+          '--mp-accent-foreground': 'var(--vscode-input-foreground, #cccccc)',
         },
         'body[data-vscode-theme-kind="vscode-light"]': {
           '--mp-background': 'var(--vscode-editor-background, #ffffff)',
+          '--mp-background-secondary': 'var(--vscode-panel-background, #f3f3f3)',
           '--mp-foreground': 'var(--vscode-editor-foreground, #000000)',
+          '--mp-foreground-secondary': 'var(--vscode-descriptionForeground, #6b7280)',
           '--mp-primary': 'var(--vscode-button-background, #0066cc)',
+          '--mp-primary-hover': 'var(--vscode-button-hoverBackground, #1a74d1)',
+          '--mp-primary-foreground': 'var(--vscode-button-foreground, #ffffff)',
           '--mp-border': 'var(--vscode-panel-border, #e0e0e0)',
+          '--mp-border-muted': 'var(--vscode-dropdown-border, #e5e7eb)',
           '--mp-muted': 'var(--vscode-descriptionForeground, #6b7280)',
+          '--mp-destructive': 'var(--vscode-errorForeground, #e51400)',
+          '--mp-destructive-hover': 'var(--vscode-errorForeground, #e51400)',
+          '--mp-destructive-foreground': '#ffffff',
+          '--mp-success': 'var(--vscode-terminal-ansiGreen, #107c10)',
+          '--mp-success-hover': 'var(--vscode-terminal-ansiGreen, #107c10)',
+          '--mp-success-foreground': '#ffffff',
+          '--mp-warning': 'var(--vscode-editorWarning-foreground, #996f00)',
+          '--mp-warning-hover': 'var(--vscode-editorWarning-foreground, #996f00)',
+          '--mp-warning-foreground': 'var(--vscode-editor-background, #ffffff)',
           '--mp-accent': 'var(--vscode-input-background, #f8f8f8)',
+          '--mp-accent-hover': 'var(--vscode-dropdown-background, #f3f3f3)',
+          '--mp-accent-foreground': 'var(--vscode-input-foreground, #333333)',
         },
         // JetBrains IDEs support
         'body[data-ide="jetbrains"]': {
@@ -167,11 +212,8 @@ export default {
       });
     },
   ],
-  // Note: Prefix disabled for now to avoid breaking existing components
-  // Consider adding 'mp-' prefix in future major version
-  // prefix: 'mp-',
   // Allow CSS variables to work even if Tailwind classes aren't used
   corePlugins: {
     preflight: false, // Don't reset styles in library mode
   },
-}
+};

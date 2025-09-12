@@ -171,7 +171,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
     }
 
     // Calculate horizontal position (align with trigger)
-    let left = triggerRect.left;
+    const left = triggerRect.left;
 
     // Ensure modal doesn't go off-screen horizontally
     // const rightEdge = left + modalWidth;

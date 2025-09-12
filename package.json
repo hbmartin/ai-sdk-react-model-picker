@@ -15,11 +15,15 @@
       "require": "./dist/index.cjs"
     },
     "./styles.css": "./dist/styles.css",
-    "./tailwind-preset": "./tailwind-preset.js"
+    "./tailwind-preset": {
+      "import": "./tailwind-preset.js",
+      "require": "./tailwind-preset.cjs"
+    }
   },
   "files": [
     "dist",
-    "tailwind-preset.js"
+    "tailwind-preset.js",
+    "tailwind-preset.cjs"
   ],
   "sideEffects": [
     "**/*.css",

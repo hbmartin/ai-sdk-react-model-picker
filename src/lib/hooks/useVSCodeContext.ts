@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 export interface VSCodeContext {
   isVSCodeEnv: boolean;
-  themeKind: 'vscode-dark' | 'vscode-light' | 'vscode-high-contrast' | null;
+  themeKind: 'vscode-dark' | 'vscode-light' | 'vscode-high-contrast' | undefined;
   isJetBrainsEnv: boolean;
 }
 
@@ -12,13 +12,18 @@ export interface VSCodeContext {
  */
 export function useVSCodeContext(): VSCodeContext {
   const [context, setContext] = useState<VSCodeContext>(() => {
-    // Initial detection
-    const isVSCodeEnv = typeof (window as any).acquireVsCodeApi === 'function';
-    const isJetBrainsEnv =
-      document.body.hasAttribute('data-ide') &&
-      document.body.getAttribute('data-ide') === 'jetbrains';
+    if (typeof document === 'undefined') {
+      return {
+        isVSCodeEnv: false,
+        themeKind: undefined,
+        isJetBrainsEnv: false,
+      };
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    const isVSCodeEnv = typeof (globalThis.window as any)['acquireVsCodeApi'] === 'function';
+    const isJetBrainsEnv = document.body.dataset['ide'] === 'jetbrains';
 
-    let themeKind: VSCodeContext['themeKind'] = null;
+    let themeKind: VSCodeContext['themeKind'] = undefined;
 
     if (isVSCodeEnv) {
       // Get initial theme
@@ -31,7 +36,7 @@ export function useVSCodeContext(): VSCodeContext {
         themeKind = 'vscode-high-contrast';
       } else {
         // Check data attribute as fallback
-        const dataTheme = document.body.getAttribute('data-vscode-theme-kind');
+        const dataTheme = document.body.dataset['vscodeThemeKind'];
         if (
           dataTheme === 'vscode-dark' ||
           dataTheme === 'vscode-light' ||
@@ -49,17 +54,19 @@ export function useVSCodeContext(): VSCodeContext {
     };
   });
 
-  const observerRef = useRef<MutationObserver | null>(null);
+  const observerRef = useRef<MutationObserver | undefined>(undefined);
 
   useEffect(() => {
-    if (!context.isVSCodeEnv) return;
+    if (!context.isVSCodeEnv) {
+      return;
+    }
 
     // Setup MutationObserver for theme changes
     const handleThemeChange = () => {
       const bodyClasses = document.body.className;
-      const dataTheme = document.body.getAttribute('data-vscode-theme-kind');
+      const dataTheme = document.body.dataset['vscodeThemeKind'];
 
-      let newThemeKind: VSCodeContext['themeKind'] = null;
+      let newThemeKind: VSCodeContext['themeKind'] = undefined;
 
       if (bodyClasses.includes('vscode-dark') || dataTheme === 'vscode-dark') {
         newThemeKind = 'vscode-dark';
@@ -87,42 +94,29 @@ export function useVSCodeContext(): VSCodeContext {
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
-        observerRef.current = null;
+        observerRef.current = undefined;
       }
     };
   }, [context.isVSCodeEnv, context.themeKind]);
 
   // Also listen for system theme changes when not in VSCode
   useEffect(() => {
-    if (context.isVSCodeEnv || context.isJetBrainsEnv) return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      // This will trigger CSS variable updates via our CSS rules
-      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-    };
-
-    // Check for addEventListener support (modern browsers)
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
+    if (context.isVSCodeEnv || context.isJetBrainsEnv) {
+      return;
     }
 
-    return undefined;
+    const mediaQuery = globalThis.matchMedia('(prefers-color-scheme: dark)');
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      // This will trigger CSS variable updates via our CSS rules
+      document.documentElement.dataset['theme'] = event.matches ? 'dark' : 'light';
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, [context.isVSCodeEnv, context.isJetBrainsEnv]);
 
   return context;
-}
-
-/**
- * Utility to get a VSCode theme color at runtime
- * Returns the computed value or fallback
- */
-export function getVSCodeThemeColor(colorKey: string, fallback?: string): string | null {
-  const cssVar = `--vscode-${colorKey}`;
-  const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar);
-  return value || fallback || null;
 }
 
 /**
@@ -133,16 +127,19 @@ export function getEnvironmentClasses(
   vsCodeClasses?: string,
   jetBrainsClasses?: string
 ): string {
-  const isVSCode = typeof (window as any).acquireVsCodeApi === 'function';
+  if (typeof document === 'undefined') {
+    return baseClasses;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+  const isVSCode = typeof (globalThis.window as any).acquireVsCodeApi === 'function';
   const isJetBrains =
-    document.body.hasAttribute('data-ide') &&
-    document.body.getAttribute('data-ide') === 'jetbrains';
+    Object.hasOwn(document.body.dataset, 'ide') && document.body.dataset['ide'] === 'jetbrains';
 
-  if (isVSCode && vsCodeClasses) {
+  if (isVSCode && vsCodeClasses !== undefined) {
     return `${baseClasses} ${vsCodeClasses}`;
   }
 
-  if (isJetBrains && jetBrainsClasses) {
+  if (isJetBrains && jetBrainsClasses !== undefined) {
     return `${baseClasses} ${jetBrainsClasses}`;
   }
 

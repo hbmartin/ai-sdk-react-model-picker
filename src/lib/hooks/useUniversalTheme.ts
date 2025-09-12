@@ -16,6 +16,9 @@ export function useUniversalTheme(): UniversalTheme {
   const [environment, setEnvironment] = useState<'web' | 'vscode' | 'jetbrains'>('web');
 
   useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
     // VSCode detection takes priority
     if (document.body.className.includes('vscode-')) {
       setEnvironment('vscode');
@@ -25,8 +28,8 @@ export function useUniversalTheme(): UniversalTheme {
     }
 
     // Check data attributes as fallback
-    const bodyDataTheme = document.body.getAttribute('data-vscode-theme-kind');
-    if (bodyDataTheme && bodyDataTheme.includes('vscode-')) {
+    const bodyDataTheme = document.body.dataset['vscode-theme-kind'];
+    if (bodyDataTheme?.includes('vscode-') === true) {
       setEnvironment('vscode');
       const vsTheme = bodyDataTheme.includes('dark') ? 'dark' : 'light';
       setTheme(vsTheme);
@@ -35,34 +38,27 @@ export function useUniversalTheme(): UniversalTheme {
 
     // JetBrains detection
     if (
-      document.body.hasAttribute('data-ide') &&
-      document.body.getAttribute('data-ide') === 'jetbrains'
+      document.body.dataset['ide'] !== undefined &&
+      document.body.dataset['ide'] === 'jetbrains'
     ) {
       setEnvironment('jetbrains');
       // For JetBrains, check for dark theme indicators
       const isDark =
         document.body.classList.contains('dark') ||
-        document.documentElement.getAttribute('data-theme') === 'dark';
+        document.documentElement.dataset['theme'] === 'dark';
       setTheme(isDark ? 'dark' : 'light');
       return;
     }
 
     // Fall back to system preference for web environment
     setEnvironment('web');
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = globalThis.window.matchMedia('(prefers-color-scheme: dark)');
     setTheme(mediaQuery.matches ? 'dark' : 'light');
 
-    const handleChange = (e: MediaQueryListEvent) => setTheme(e.matches ? 'dark' : 'light');
+    const handleChange = (event: MediaQueryListEvent) => setTheme(event.matches ? 'dark' : 'light');
 
-    // Use modern API if available
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else {
-      // Fallback for older browsers
-      mediaQuery.addListener(handleChange);
-      return () => mediaQuery.removeListener(handleChange);
-    }
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   return { theme, environment };

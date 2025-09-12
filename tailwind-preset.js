@@ -17,50 +17,50 @@ module.exports = {
           800: 'rgb(var(--mp-primary-800, 30 64 175) / <alpha-value>)',
           900: 'rgb(var(--mp-primary-900, 30 58 138) / <alpha-value>)',
           950: 'rgb(var(--mp-primary-950, 23 37 84) / <alpha-value>)',
-          DEFAULT: 'rgb(var(--mp-primary, 59 130 246) / <alpha-value>)',
-          hover: 'rgb(var(--mp-primary-hover, 37 99 235) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-primary-rgb, 59 130 246) / <alpha-value>)',
+          hover: 'rgb(var(--mp-primary-hover-rgb, 37 99 235) / <alpha-value>)',
         },
 
         // Background colors with proper alpha support
         background: {
-          DEFAULT: 'rgb(var(--mp-background, 255 255 255) / <alpha-value>)',
-          secondary: 'rgb(var(--mp-background-secondary, 249 250 251) / <alpha-value>)',
-          muted: 'rgb(var(--mp-background-muted, 243 244 246) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-background-rgb, 255 255 255) / <alpha-value>)',
+          secondary: 'rgb(var(--mp-background-secondary-rgb, 249 250 251) / <alpha-value>)',
+          muted: 'rgb(var(--mp-background-muted-rgb, 243 244 246) / <alpha-value>)',
         },
 
         // Foreground colors
         foreground: {
-          DEFAULT: 'rgb(var(--mp-foreground, 0 0 0) / <alpha-value>)',
-          secondary: 'rgb(var(--mp-foreground-secondary, 107 114 128) / <alpha-value>)',
-          muted: 'rgb(var(--mp-foreground-muted, 156 163 175) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-foreground-rgb, 0 0 0) / <alpha-value>)',
+          secondary: 'rgb(var(--mp-foreground-secondary-rgb, 107 114 128) / <alpha-value>)',
+          muted: 'rgb(var(--mp-muted-rgb, 156 163 175) / <alpha-value>)',
         },
 
         // Border colors
         border: {
-          DEFAULT: 'rgb(var(--mp-border, 224 224 224) / <alpha-value>)',
-          muted: 'rgb(var(--mp-border-muted, 229 231 235) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-border-rgb, 224 224 224) / <alpha-value>)',
+          muted: 'rgb(var(--mp-border-muted-rgb, 229 231 235) / <alpha-value>)',
         },
 
         // Status colors
         destructive: {
-          DEFAULT: 'rgb(var(--mp-destructive, 239 68 68) / <alpha-value>)',
-          hover: 'rgb(var(--mp-destructive-hover, 220 38 38) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-destructive-rgb, 239 68 68) / <alpha-value>)',
+          hover: 'rgb(var(--mp-destructive-hover-rgb, 220 38 38) / <alpha-value>)',
         },
 
         success: {
-          DEFAULT: 'rgb(var(--mp-success, 34 197 94) / <alpha-value>)',
-          hover: 'rgb(var(--mp-success-hover, 22 163 74) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-success-rgb, 34 197 94) / <alpha-value>)',
+          hover: 'rgb(var(--mp-success-hover-rgb, 22 163 74) / <alpha-value>)',
         },
 
         warning: {
-          DEFAULT: 'rgb(var(--mp-warning, 245 158 11) / <alpha-value>)',
-          hover: 'rgb(var(--mp-warning-hover, 217 119 6) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-warning-rgb, 245 158 11) / <alpha-value>)',
+          hover: 'rgb(var(--mp-warning-hover-rgb, 217 119 6) / <alpha-value>)',
         },
 
         // Accent colors
         accent: {
-          DEFAULT: 'rgb(var(--mp-accent, 243 244 246) / <alpha-value>)',
-          hover: 'rgb(var(--mp-accent-hover, 229 231 235) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--mp-accent-rgb, 243 244 246) / <alpha-value>)',
+          hover: 'rgb(var(--mp-accent-hover-rgb, 229 231 235) / <alpha-value>)',
         },
 
         // VSCode variables mapped to semantic names
@@ -91,10 +91,7 @@ module.exports = {
       },
 
       borderRadius: {
-        'default': 'var(--mp-border-radius, 0.375rem)',
-        'sm': 'var(--mp-border-radius-sm, 0.25rem)',
-        'md': 'var(--mp-border-radius-md, 0.375rem)',
-        'lg': 'var(--mp-border-radius-lg, 0.5rem)',
+        DEFAULT: 'var(--mp-border-radius, 0.375rem)',
       },
       
       fontSize: {
@@ -144,7 +141,11 @@ module.exports = {
         h = h.slice(1);
         if (h.length === 3) {
           h = h.split('').map((c) => c + c).join('');
-        }
+          } else if (h.length === 4) { // #RGBA
+            h = h.split('').map((c, i) => (i < 3 ? c + c : '')).join('');
+          } else if (h.length === 8) { // #RRGGBBAA
+            h = h.slice(0, 6);
+          }
         const num = parseInt(h, 16);
         if (!Number.isFinite(num)) return undefined;
         const r = (num >> 16) & 255;
@@ -188,7 +189,31 @@ module.exports = {
 
       addBase({
         ':root': {
-          // Core semantic tokens
+          // Core semantic tokens (RGB triplets)
+          '--mp-background-rgb': toRgb(resolve('colors.background.DEFAULT', fallbacks.white), fallbacks.white),
+          '--mp-background-secondary-rgb': toRgb(resolve('colors.background.secondary', fallbacks.gray100), fallbacks.gray100),
+          '--mp-foreground-rgb': toRgb(resolve('colors.foreground.DEFAULT', fallbacks.gray900), fallbacks.gray900),
+          '--mp-foreground-secondary-rgb': toRgb(resolve('colors.foreground.secondary', fallbacks.gray700), fallbacks.gray700),
+          '--mp-primary-rgb': primary,
+          '--mp-primary-hover-rgb': primaryHover,
+          '--mp-primary-foreground-rgb': toRgb(resolve('colors.primary.foreground', fallbacks.white), fallbacks.white),
+          '--mp-border-rgb': toRgb(resolve('colors.border.DEFAULT', fallbacks.gray200), fallbacks.gray200),
+          '--mp-border-muted-rgb': toRgb(resolve('colors.border.muted', fallbacks.gray300), fallbacks.gray300),
+          '--mp-muted-rgb': toRgb(resolve('colors.foreground.muted', fallbacks.gray700), fallbacks.gray700),
+          '--mp-destructive-rgb': destructive,
+          '--mp-destructive-hover-rgb': destructiveHover,
+          '--mp-destructive-foreground-rgb': toRgb(resolve('colors.destructive.foreground', fallbacks.white), fallbacks.white),
+          '--mp-success-rgb': success,
+          '--mp-success-hover-rgb': successHover,
+          '--mp-success-foreground-rgb': toRgb(resolve('colors.success.foreground', fallbacks.white), fallbacks.white),
+          '--mp-warning-rgb': warning,
+          '--mp-warning-hover-rgb': warningHover,
+          '--mp-warning-foreground-rgb': toRgb(resolve('colors.warning.foreground', fallbacks.black), fallbacks.black),
+          '--mp-accent-rgb': toRgb(resolve('colors.accent.DEFAULT', fallbacks.gray100), fallbacks.gray100),
+          '--mp-accent-hover-rgb': toRgb(resolve('colors.accent.hover', fallbacks.gray200), fallbacks.gray200),
+          '--mp-accent-foreground-rgb': toRgb(resolve('colors.accent.foreground', fallbacks.gray700), fallbacks.gray700),
+          '--mp-border-radius': '0.375rem',
+          // Backwards-compat: also set non -rgb vars to the same triplets
           '--mp-background': toRgb(resolve('colors.background.DEFAULT', fallbacks.white), fallbacks.white),
           '--mp-background-secondary': toRgb(resolve('colors.background.secondary', fallbacks.gray100), fallbacks.gray100),
           '--mp-foreground': toRgb(resolve('colors.foreground.DEFAULT', fallbacks.gray900), fallbacks.gray900),
@@ -211,9 +236,17 @@ module.exports = {
           '--mp-accent': toRgb(resolve('colors.accent.DEFAULT', fallbacks.gray100), fallbacks.gray100),
           '--mp-accent-hover': toRgb(resolve('colors.accent.hover', fallbacks.gray200), fallbacks.gray200),
           '--mp-accent-foreground': toRgb(resolve('colors.accent.foreground', fallbacks.gray700), fallbacks.gray700),
-          '--mp-border-radius': '0.375rem',
         },
         '.dark, [data-theme="dark"]': {
+          '--mp-background-rgb': toRgb(resolve('colors.background.dark', fallbacks.zinc900), fallbacks.zinc900),
+          '--mp-background-secondary-rgb': toRgb(resolve('colors.background.darkSecondary', fallbacks.gray800), fallbacks.gray800),
+          '--mp-foreground-rgb': toRgb(resolve('colors.foreground.dark', fallbacks.zinc100), fallbacks.zinc100),
+          '--mp-foreground-secondary-rgb': toRgb(resolve('colors.foreground.darkSecondary', fallbacks.gray300), fallbacks.gray300),
+          '--mp-border-rgb': toRgb(resolve('colors.border.dark', fallbacks.gray700), fallbacks.gray700),
+          '--mp-border-muted-rgb': toRgb(resolve('colors.border.darkMuted', fallbacks.gray700), fallbacks.gray700),
+          '--mp-accent-rgb': toRgb(resolve('colors.accent.dark', fallbacks.gray800), fallbacks.gray800),
+          '--mp-accent-hover-rgb': toRgb(resolve('colors.accent.darkHover', fallbacks.gray700), fallbacks.gray700),
+          // Backwards-compat mirror
           '--mp-background': toRgb(resolve('colors.background.dark', fallbacks.zinc900), fallbacks.zinc900),
           '--mp-background-secondary': toRgb(resolve('colors.background.darkSecondary', fallbacks.gray800), fallbacks.gray800),
           '--mp-foreground': toRgb(resolve('colors.foreground.dark', fallbacks.zinc100), fallbacks.zinc100),
@@ -222,7 +255,7 @@ module.exports = {
           '--mp-border-muted': toRgb(resolve('colors.border.darkMuted', fallbacks.gray700), fallbacks.gray700),
           '--mp-accent': toRgb(resolve('colors.accent.dark', fallbacks.gray800), fallbacks.gray800),
           '--mp-accent-hover': toRgb(resolve('colors.accent.darkHover', fallbacks.gray700), fallbacks.gray700),
-          // Keep primary/semantic status colors, but consumers can override with their own dark tokens
+          // Keep primary/semantic status colors, but consumers can override with their own dark tokens}
         },
       });
     },

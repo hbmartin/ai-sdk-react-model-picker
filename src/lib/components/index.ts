@@ -8,8 +8,5 @@ export { Toggle, type ToggleProps } from './Toggle';
 export { ModelSelectionListbox, type ModelSelectionListboxProps } from './ModelSelectionListbox';
 export { AddModelForm, type AddModelFormProps } from './AddModelForm';
 
-// Theme adaptation
-export { VSCodeThemeAdapter, type VSCodeThemeAdapterProps } from './VSCodeThemeAdapter';
-
 // UI components
 export * from './ui/Listbox';
