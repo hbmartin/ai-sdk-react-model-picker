@@ -34,33 +34,141 @@ npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
 npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere
 ```
 
-## Quick Start
+### Important: CSS Import
+
+The library's CSS must be imported separately in your application:
 
 ```tsx
-import { ModelSelect } from 'ai-sdk-react-model-picker';
-import { ProviderRegistry, OpenAIProvider, AnthropicProvider } from 'ai-sdk-react-model-picker/providers';
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+// Import at the top of your app or entry file
 import 'ai-sdk-react-model-picker/styles.css';
+```
+
+## Setup by Environment
+
+### Web Applications
+
+#### Standard React App Setup
+
+```tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { ModelSelect } from 'ai-sdk-react-model-picker';
+import {
+  ProviderRegistry,
+  OpenAIProvider,
+  AnthropicProvider,
+} from 'ai-sdk-react-model-picker/providers';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import 'ai-sdk-react-model-picker/styles.css'; // Required!
 
 function App() {
   const [selectedModelId, setSelectedModelId] = useState(null);
-  
+
   // Setup providers and storage
   const storage = new MemoryStorageAdapter();
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
-  
+
   const handleModelChange = async (model) => {
     setSelectedModelId(model.model.id);
-    
+    // Ready to use with Vercel AI SDK
+  };
+
+  return (
+    <ModelSelect
+      storage={storage}
+      providerRegistry={registry}
+      selectedModelId={selectedModelId}
+      onModelChange={handleModelChange}
+    />
+  );
+}
+
+// Mount to DOM
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(<App />);
+```
+
+#### Webpack Configuration for VSCode Extension
+
+```javascript
+// webpack.config.js
+module.exports = [
+  // Extension config
+  {
+    target: 'node',
+    entry: './src/extension.ts',
+    // ... extension config
+  },
+  // Webview config
+  {
+    target: 'web',
+    entry: './src/webview/index.tsx',
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: 'webview.js',
+    },
+    externals: {
+      vscode: 'commonjs vscode',
+    },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
+      alias: {
+        // Ensure single React instance
+        react: path.resolve('./node_modules/react'),
+        'react-dom': path.resolve('./node_modules/react-dom'),
+      },
+    },
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/,
+        },
+        {
+          test: /\.css$/,
+          use: ['style-loader', 'css-loader'],
+        },
+      ],
+    },
+  },
+];
+```
+
+## Quick Start
+
+```tsx
+import { ModelSelect } from 'ai-sdk-react-model-picker';
+import {
+  ProviderRegistry,
+  OpenAIProvider,
+  AnthropicProvider,
+} from 'ai-sdk-react-model-picker/providers';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import 'ai-sdk-react-model-picker/styles.css';
+
+function App() {
+  const [selectedModelId, setSelectedModelId] = useState(null);
+
+  // Setup providers and storage
+  const storage = new MemoryStorageAdapter();
+  const registry = new ProviderRegistry();
+  registry.register(new OpenAIProvider());
+  registry.register(new AnthropicProvider());
+
+  const handleModelChange = async (model) => {
+    setSelectedModelId(model.model.id);
+
     // Ready to use with Vercel AI SDK
     const aiModel = await model.provider.createInstance({
       model: model.model.id,
-      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey']
+      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey'],
     });
   };
-  
+
   return (
     <ModelSelect
       storage={storage}
@@ -77,13 +185,15 @@ function App() {
 ### Providers
 
 Providers represent AI service providers (OpenAI, Anthropic, etc.) and handle:
+
 - Model definitions and capabilities
 - API key validation
 - AI SDK client creation
 
 Built-in providers:
+
 - **OpenAI** - GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo
-- **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus/Sonnet/Haiku  
+- **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus/Sonnet/Haiku
 - **Google** - Gemini 1.5 Pro/Flash, Gemini Pro
 - **Azure OpenAI** - Azure-hosted OpenAI models
 - **Mistral** - Mistral Large/Medium/Small, Codestral
@@ -100,9 +210,15 @@ const memoryStorage = new MemoryStorageAdapter();
 
 // Custom implementation
 class CustomStorage implements StorageAdapter {
-  async get<T>(key: string): Promise<T | undefined> { /* ... */ }
-  async set<T>(key: string, value: T): Promise<void> { /* ... */ }
-  async remove(key: string): Promise<void> { /* ... */ }
+  async get<T>(key: string): Promise<T | undefined> {
+    /* ... */
+  }
+  async set<T>(key: string, value: T): Promise<void> {
+    /* ... */
+  }
+  async remove(key: string): Promise<void> {
+    /* ... */
+  }
 }
 ```
 
@@ -119,7 +235,7 @@ interface ModelSelectProps {
   providerRegistry: IProviderRegistry;
   selectedModelId: ModelId | null;
   onModelChange: (model: ModelConfigWithProvider) => void;
-  
+
   // Optional
   roles?: Role[];
   selectedRole?: string;
@@ -206,8 +322,8 @@ import { ModelPickerProvider } from 'ai-sdk-react-model-picker/context';
 
 function App() {
   return (
-    <ModelPickerProvider 
-      storage={storage} 
+    <ModelPickerProvider
+      storage={storage}
       providerRegistry={registry}
       onConfigureProvider={(id) => console.log('Configure', id)}
     >
@@ -220,7 +336,7 @@ function App() {
 
 function ChatInterface() {
   const { selectedModel, selectModel } = useModelSelection();
-  
+
   // Use selected model...
 }
 ```
@@ -240,52 +356,97 @@ const roles = [
   selectedRole="chat"
   onRoleChange={(roleId) => setCurrentRole(roleId)}
   // ... other props
-/>
+/>;
 ```
 
-### Custom Theming
+## Troubleshooting
+
+### Invalid Hook Call Error
+
+This error typically occurs when:
+
+1. **React is duplicated in your bundle**
+
+   ```bash
+   # Check for duplicate React instances
+   npm ls react
+
+   # If using npm link for development
+   cd your-library
+   npm link ../your-app/node_modules/react
+   npm link ../your-app/node_modules/react-dom
+   ```
+
+2. **Component is not properly mounted in React tree**
+
+   ```tsx
+   // ❌ Wrong - calling component as function
+   const picker = ModelSelect({ ...props });
+
+   // ✅ Correct - using as JSX element
+   const picker = <ModelSelect {...props} />;
+   ```
+
+3. **Missing React DOM root (especially in VSCode)**
+
+   ```tsx
+   // ❌ Wrong - direct render
+   ReactDOM.render(<App />, container);
+
+   // ✅ Correct - using createRoot (React 18+)
+   const root = createRoot(container);
+   root.render(<App />);
+   ```
+
+### CSS Not Loading
+
+**Ensure you import the CSS file:**
 
 ```tsx
-const customTheme = {
-  colors: {
-    background: '#1a1a1a',
-    foreground: '#ffffff',
-    primary: '#0066cc',
-    border: '#333333',
-  },
-  classNames: {
-    button: 'my-custom-button-class',
-    dropdown: 'my-custom-dropdown-class',
-  },
-};
-
-<ModelSelect theme={customTheme} /* ... */ />
+import 'ai-sdk-react-model-picker/styles.css';
 ```
 
-## VSCode Extension Integration
+**For VSCode extensions, include CSS in webview:**
 
-The library automatically detects VSCode environments and applies appropriate theming:
+```typescript
+const styleUri = webview.asWebviewUri(
+  vscode.Uri.joinPath(
+    extensionUri,
+    'node_modules',
+    'ai-sdk-react-model-picker',
+    'dist',
+    'styles.css'
+  )
+);
+```
 
-```tsx
-// No special setup needed - automatic detection
-function VSCodePanel() {
-  return (
-    <ModelSelect
-      storage={storage}
-      providerRegistry={registry}
-      selectedModelId={selectedModelId}
-      onModelChange={handleModelChange}
-      // Theme automatically adapts to VSCode dark/light mode
-    />
-  );
+### TypeScript Errors
+
+**Cannot find module './styles/globals.css':**
+
+```typescript
+// Add to your global.d.ts or types file
+declare module '*.css' {
+  const content: Record<string, string>;
+  export default content;
 }
 ```
 
-CSS variables are automatically mapped:
-- `--vscode-editor-background` → `--mp-background`
-- `--vscode-editor-foreground` → `--mp-foreground`  
-- `--vscode-button-background` → `--mp-primary`
-- And more...
+### VSCode Webview Not Updating
+
+**Enable retainContextWhenHidden:**
+
+```typescript
+const panel = vscode.window.createWebviewPanel(
+  'modelPicker',
+  'Model Picker',
+  vscode.ViewColumn.One,
+  {
+    enableScripts: true,
+    retainContextWhenHidden: true, // Keeps state when hidden
+  }
+);
+```
 
 ## Styling
 
@@ -322,122 +483,16 @@ The library works with or without Tailwind CSS. If your app uses Tailwind, the c
 Full TypeScript support with branded types for better type safety:
 
 ```tsx
-import type { 
-  ModelId, 
-  ProviderId, 
+import type {
+  ModelId,
+  ProviderId,
   ApiKey,
-  ModelConfigWithProvider 
+  ModelConfigWithProvider,
 } from 'ai-sdk-react-model-picker';
 
 // Branded types prevent mixing different ID types
 const modelId: ModelId = 'gpt-4o' as ModelId;
 const providerId: ProviderId = 'openai' as ProviderId;
-```
-
-## Examples
-
-### Basic Chat App
-
-```tsx
-import { useState } from 'react';
-import { streamText } from 'ai';
-import { ModelSelect } from 'ai-sdk-react-model-picker';
-import { createDefaultRegistry } from 'ai-sdk-react-model-picker/providers';
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
-
-function ChatApp() {
-  const [selectedModelId, setSelectedModelId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  
-  const storage = new MemoryStorageAdapter();
-  const providers = createDefaultRegistry();
-  
-  const handleModelChange = async (model) => {
-    setSelectedModelId(model.model.id);
-  };
-  
-  const sendMessage = async (message) => {
-    if (!selectedModelId) return;
-    
-    const model = providers.getAllModels()
-      .find(m => m.model.id === selectedModelId);
-      
-    const aiModel = await model.provider.createInstance({
-      model: model.model.id,
-      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey']
-    });
-    
-    const result = await streamText({
-      model: aiModel,
-      messages: [...messages, { role: 'user', content: message }],
-    });
-    
-    // Handle streaming response...
-  };
-  
-  return (
-    <div className="chat-app">
-      <ModelSelect
-        storage={storage}
-        providerRegistry={providers}
-        selectedModelId={selectedModelId}
-        onModelChange={handleModelChange}
-      />
-      
-      <div className="messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`message ${msg.role}`}>
-            {msg.content}
-          </div>
-        ))}
-      </div>
-      
-      <input 
-        onKeyPress={(e) => {
-          if (e.key === 'Enter') {
-            sendMessage(e.target.value);
-            e.target.value = '';
-          }
-        }}
-        placeholder="Type a message..."
-      />
-    </div>
-  );
-}
-```
-
-### VSCode Extension
-
-```tsx
-import * as vscode from 'vscode';
-import { ModelSelect } from 'ai-sdk-react-model-picker';
-
-// VSCode Webview Panel
-function createModelPickerPanel() {
-  const panel = vscode.window.createWebviewPanel(
-    'modelPicker',
-    'AI Model Picker',
-    vscode.ViewColumn.One,
-    { enableScripts: true }
-  );
-  
-  panel.webview.html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Model Picker</title>
-      </head>
-      <body data-vscode-theme-kind="${vscode.window.activeColorTheme.kind}">
-        <div id="root"></div>
-        <script>
-          // ModelSelect component automatically detects VSCode environment
-          // and applies appropriate theming
-        </script>
-      </body>
-    </html>
-  `;
-}
 ```
 
 ## Contributing
@@ -464,3 +519,7 @@ npm run dev
 ## License
 
 [Licensed under the Apache License, Version 2.0](LICENSE.txt)
+
+- Copyright 2023 Continue Dev, Inc.
+- Copyright 2025 Harold Martin
+- Logos are the property of their respective creators.

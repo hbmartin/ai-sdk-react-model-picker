@@ -148,7 +148,67 @@ export interface ListboxOptionsProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export function ListboxOptions({ children, className = '', ...props }: ListboxOptionsProps) {
-  const { isOpen, optionsRef } = useListboxContext();
+  const { isOpen, optionsRef, buttonRef } = useListboxContext();
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+  const calculateDropdownPosition = () => {
+    if (!buttonRef.current || !optionsRef.current) {
+      return;
+    }
+
+    const triggerRect = buttonRef.current.getBoundingClientRect();
+    const optionsRect = optionsRef.current.getBoundingClientRect();
+    const modalHeight = optionsRect.height; // Reduced from 220 since we removed add models section
+    // const modalWidth = 240;
+    const padding = 8;
+
+    // Calculate vertical position (above the trigger)
+    let top = triggerRect.top - modalHeight - padding;
+
+    // If there's not enough space above, show below
+    if (top < padding) {
+      top = triggerRect.bottom + padding;
+    }
+
+    // Calculate horizontal position (align with trigger)
+    const left = triggerRect.left;
+
+    // Ensure modal doesn't go off-screen horizontally
+    // const rightEdge = left + modalWidth;
+    // if (rightEdge > window.innerWidth - padding) {
+    //   left = window.innerWidth - modalWidth - padding;
+    // }
+    // if (left < padding) {
+    //   left = padding;
+    // }
+
+    setDropdownPosition({ top, left });
+  };
+
+  useEffect(() => {
+    // const handleScroll = () => {
+    //   if (isOpen) {
+    //     calculateDropdownPosition();
+    //   }
+    // };
+
+    // const handleResize = () => {
+    //   if (isOpen) {
+    //     calculateDropdownPosition();
+    //   }
+    // };
+
+    if (isOpen) {
+      calculateDropdownPosition();
+      // window.addEventListener('scroll', handleScroll, true);
+      // window.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      // window.removeEventListener('scroll', handleScroll, true);
+      // window.removeEventListener('resize', handleResize);
+    };
+  }, [isOpen]);
 
   if (!isOpen) {
     return;
@@ -156,18 +216,35 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
 
   return (
     <div
-      ref={optionsRef}
-      role="listbox"
-      className={`
-        absolute z-50 w-full mt-1
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'transparent',
+        zIndex: 1000,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        ref={optionsRef}
+        role="listbox"
+        className={`
+        absolute z-50 w-full mt-1 py-1
         bg-background border border-border rounded-default shadow-lg
         max-h-60 overflow-auto
-        animate-in fade-in-0 zoom-in-95 duration-150
         ${className}
       `}
-      {...props}
-    >
-      {children}
+        style={{
+          top: dropdownPosition.top,
+          left: dropdownPosition.left,
+          pointerEvents: 'auto',
+        }}
+        {...props}
+      >
+        {children}
+      </div>
     </div>
   );
 }

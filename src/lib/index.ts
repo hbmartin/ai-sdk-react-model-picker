@@ -1,3 +1,6 @@
+// Styles (ensure CSS is emitted for consumers who rely on the exported styles.css)
+import './styles/globals.css';
+
 // Components
 export { ModelSelect } from './components/ModelSelect';
 export { ModelCard } from './components/ModelCard';
@@ -15,6 +18,10 @@ export {
   useProviders,
 } from './context';
 export type { ModelPickerProviderProps } from './context';
+
+// VSCode/IDE integration hooks
+export { useVSCodeContext, getEnvironmentClasses, useUniversalTheme } from './hooks';
+export type { VSCodeContext, UniversalTheme } from './hooks';
 
 // Providers
 export { createDefaultRegistry, createPopularProvidersRegistry } from './providers';
@@ -54,6 +61,3 @@ export type {
   ProviderInstanceParams,
   ValidationResult,
 } from './types';
-
-// Core CSS - users must import this
-import './styles/globals.css';
