@@ -128,11 +128,10 @@ export function ListboxButton({ children, className = '', onClick, ...props }: L
       aria-expanded={isOpen}
       aria-haspopup="listbox"
       className={`
-        flex items-center justify-between w-full px-3 py-2
-        bg-background border border-border rounded-default
-        text-foreground hover:bg-accent
-        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1
-        transition-colors duration-150
+        flex items-center justify-between w-full py-0 px-1
+        bg-transparent border border-border rounded text-xs
+        text-muted hover:text-foreground focus:text-foreground
+        transition-all duration-150
         ${className}
       `}
       {...props}
@@ -158,8 +157,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
 
     const triggerRect = buttonRef.current.getBoundingClientRect();
     const optionsRect = optionsRef.current.getBoundingClientRect();
-    const modalHeight = optionsRect.height; // Reduced from 220 since we removed add models section
-    // const modalWidth = 240;
+    const modalHeight = optionsRect.height;
     const padding = 8;
 
     // Calculate vertical position (above the trigger)
@@ -231,8 +229,8 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
         ref={optionsRef}
         role="listbox"
         className={`
-        absolute z-50 w-full mt-1 py-1
-        bg-background border border-border rounded-default shadow-lg
+        absolute z-50 max-w-xs mt-1 py-1
+        bg-background border border-solid border-border rounded
         max-h-60 overflow-auto
         ${className}
       `}
@@ -304,7 +302,7 @@ export function ListboxOption({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={`
-        px-3 py-2 cursor-pointer select-none
+        px-3 py-1 cursor-pointer select-none
         ${isSelected ? 'bg-primary text-white' : 'text-foreground hover:bg-accent'}
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent'}
         transition-colors duration-150

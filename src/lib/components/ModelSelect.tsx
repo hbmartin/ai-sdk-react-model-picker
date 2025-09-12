@@ -42,12 +42,10 @@ export function ModelSelect({
   roles,
   selectedRole,
   onRoleChange,
-  onConfigureProvider,
+  onConfigureProviders,
   theme: _theme,
   className = '',
   disabled = false,
-  onSaveApiKey: _onSaveApiKey,
-  onLoadApiKey: _onLoadApiKey,
   onSaveConfig: _onSaveConfig,
 }: ModelSelectProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -128,21 +126,7 @@ export function ModelSelect({
       return;
     }
 
-    // if (!modelOption.hasApiKey) {
-    //   // Handle missing API key
-    //   const requiredKeys = modelOption.model.provider.requiredKeys ?? ['apiKey'];
-    //   onMissingConfiguration?.(requiredKeys);
-    //   return;
-    // }
-
     onModelChange(modelOption.model);
-  };
-
-  // Handle configuration button click
-  const handleConfigureProvider = () => {
-    if (selectedModel) {
-      onConfigureProvider?.(selectedModel.provider.id);
-    }
   };
 
   const displayTitle = selectedModel?.model.displayName ?? 'Select model';
@@ -170,7 +154,7 @@ export function ModelSelect({
         <div className="relative flex">
           <ListboxButton
             disabled={disabled || isLoading}
-            className="text-muted h-[18px] gap-1 border-none min-w-0 flex-1"
+            className="h-[18px] gap-1 border-none min-w-0 flex-1"
           >
             <span className="line-clamp-1 break-all hover:brightness-110 text-left">
               {displayTitle}
@@ -184,13 +168,12 @@ export function ModelSelect({
           <ListboxOptions className="min-w-[160px]">
             {/* Header */}
             <div className="flex items-center justify-between gap-1 px-2 py-1 border-b border-border">
-              <span className="font-semibold text-sm">Models</span>
+              <span className="font-semibold text-xs text-foreground">Models</span>
               <button
                 type="button"
-                onClick={handleConfigureProvider}
-                className="p-1  bg-background border border-border rounded-default
+                onClick={onConfigureProviders}
+                className="p-1 bg-transparent border-none rounded
         text-foreground hover:bg-accent
-        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1
         transition-colors duration-150"
                 title="Configure provider"
               >
@@ -199,7 +182,7 @@ export function ModelSelect({
             </div>
 
             {/* Models list */}
-            <div className="no-scrollbar max-h-[300px] overflow-y-auto">
+            <div className="no-scrollbar max-h-[300px]">
               {isLoading ? (
                 <div className="text-muted flex items-center gap-2 px-2 pb-2 pt-1 text-xs">
                   <SpinnerIcon className="animate-spin h-3 w-3" />
@@ -213,21 +196,19 @@ export function ModelSelect({
                   // TODO: this should check all required keys
 
                   return (
-                    <ListboxOption
-                      key={option.model.model.id}
-                      value={option.model.model.id}
-                      className="px-3 py-2"
-                    >
+                    <ListboxOption key={option.model.model.id} value={option.model.model.id}>
                       <div className="flex w-full items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <CubeIcon className="h-3 w-3 flex-shrink-0" />
+                          {option.model.provider.icon ? (
+                            <option.model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
+                          ) : (
+                            <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
+                          )}
                           <span className="line-clamp-1 text-xs">
                             {option.model.model.displayName}
-                            {option.isAutoDetected === true && (
-                              <span className="text-muted ml-1.5 text-[10px] italic">
-                                (autodetected)
-                              </span>
-                            )}
+                            <span className="text-muted ml-1.5 text-[10px] italic">
+                              {option.model.provider.name}
+                            </span>
                           </span>
                         </div>
                         <CheckIcon
@@ -241,12 +222,11 @@ export function ModelSelect({
             </div>
 
             {!isLoading && (
-              <ListboxOption
-                value={ADD_MODEL_ID}
-                onClick={() => setShowAddModelForm(true)}
-                className="border-t border-border bg-accent"
-              >
-                <div className="text-muted flex items-center py-0.5 hover:text-foreground text-xs">
+              <ListboxOption value={ADD_MODEL_ID} onClick={() => setShowAddModelForm(true)}>
+                <div
+                  className="text-muted flex items-center py-0.5 my-0.5 hover:text-foreground text-xs font-semibold
+                        border-b-0 border-t-1 border-r-0 border-l-0 border-border border-solid"
+                >
                   <PlusIcon className="mr-2 h-3 w-3" />
                   Add model
                 </div>

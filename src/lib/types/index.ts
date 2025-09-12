@@ -54,9 +54,25 @@ export interface ValidationResult {
 
 // Storage adapter interface for flexible storage solutions
 export interface StorageAdapter {
-  get(key: string): Promise<Record<string, string> | undefined>;
-  set(key: string, value: Record<string, string>): Promise<void>;
-  remove(key: string): Promise<void>;
+  get(key: string): PromiseLike<Record<string, string> | undefined>;
+  set(key: string, value: Record<string, string>): PromiseLike<void>;
+  remove(key: string): PromiseLike<void>;
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function assertRecordStringString(value: unknown): asserts value is Record<string, string> {
+  if (!isObject(value)) {
+    throw new Error('Value is not an object');
+  }
+
+  if (
+    !Object.entries(value).every(([key, val]) => typeof key === 'string' && typeof val === 'string')
+  ) {
+    throw new Error('Value is not a record of strings');
+  }
 }
 
 // Provider capability tags
@@ -174,15 +190,11 @@ export interface ModelSelectProps {
   readonly roles?: Role[];
   readonly selectedRole?: string;
   readonly onRoleChange?: (roleId: string) => void;
-  readonly onConfigureProvider?: (providerId: ProviderId) => void;
-  readonly onMissingConfiguration?: (keys: string[]) => void;
+  readonly onConfigureProviders: () => void;
   readonly theme?: ThemeConfig;
   readonly className?: string;
   readonly disabled?: boolean;
 
-  // Storage callbacks for credentials
-  readonly onSaveApiKey?: (providerId: ProviderId, key: ApiKey) => Promise<void>;
-  readonly onLoadApiKey?: (providerId: ProviderId) => Promise<ApiKey | undefined>;
   readonly onSaveConfig?: (config: Record<string, string>) => Promise<void>;
 }
 

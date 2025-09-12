@@ -215,7 +215,7 @@ export function baseUrlField<T extends { baseURL?: string }>(
 ): ConfigurationField<T> {
   return {
     key: 'baseURL' as OptionalStringKeys<T>,
-    label: 'API Base URL',
+    label: required ? 'API Base URL' : 'API Base URL (optional)',
     placeholder,
     required,
     validation: (value: string) => {
