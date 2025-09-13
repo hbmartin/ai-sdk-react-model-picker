@@ -1,127 +1,57 @@
-/* eslint-disable sonarjs/no-nested-conditional */
-import { useState, useEffect, useMemo } from 'react';
-import type { ModelSelectProps, ModelConfigWithProvider, ModelId } from '../types';
+import { useCallback, useState } from 'react';
 import {
-  CubeIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  SettingsIcon,
-  PlusIcon,
-  SpinnerIcon,
-} from '../icons';
+  type ModelSelectProps,
+  providerAndModelKey,
+  type ProviderAndModelKey,
+  idsFromKey,
+} from '../types';
+import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
+import { CubeIcon, CheckIcon, ChevronDownIcon, SettingsIcon, PlusIcon } from '../icons';
 import { AddModelForm } from './AddModelForm';
 import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
 
-interface ModelOption {
-  model: ModelConfigWithProvider;
-  hasCredentials: boolean;
-  isAutoDetected?: boolean;
-}
-
 const ADD_MODEL_ID = '__add_model__' as const;
-
-// Typed comparator to avoid any/unknown inference in linters
-// eslint-disable-next-line code-complete/enforce-meaningful-names
-const compareModelOptions = (a: ModelOption, b: ModelOption): number => {
-  if (a.hasCredentials && !b.hasCredentials) {
-    return -1;
-  }
-  if (!a.hasCredentials && b.hasCredentials) {
-    return 1;
-  }
-  return a.model.model.displayName.localeCompare(b.model.model.displayName);
-};
 
 // eslint-disable-next-line sonarjs/prefer-read-only-props
 export function ModelSelect({
   storage,
   providerRegistry,
-  selectedModelId,
   onModelChange,
   roles,
   selectedRole,
   onRoleChange,
-  onConfigureProviders,
-  theme: _theme,
   className = '',
   disabled = false,
-  onSaveConfig: _onSaveConfig,
 }: ModelSelectProps) {
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const [modelOptions, setModelOptions] = useState<readonly ModelOption[]>([]);
-
-  // Get all available models from providers
-  const allModels = useMemo(() => {
-    return providerRegistry.getAllModels();
-  }, [providerRegistry]);
-
-  // Load API keys and model configuration
-  // TODO: optimize this to only load for currently selected provider
-  useEffect(() => {
-    async function loadModelOptions() {
-      try {
-        const options: ModelOption[] = await Promise.all(
-          allModels.map(async (modelWithProvider) => {
-            const providerId = modelWithProvider.provider.id;
-            const provider = providerRegistry.getProvider(providerId);
-            try {
-              const storedConfig = (await storage.get(`${providerId}:config`)) ?? {};
-              const hasCredentials = provider.hasCredentials(storedConfig);
-              return {
-                model: modelWithProvider,
-                hasCredentials: hasCredentials,
-                isAutoDetected: false, // TODO: Implement auto-detection logic
-              } as ModelOption;
-            } catch (error) {
-              console.warn(`Failed to load config for provider "${providerId}":`, error);
-              return {
-                model: modelWithProvider,
-                hasCredentials: false,
-                isAutoDetected: false,
-              } as ModelOption;
-            }
-          })
-        );
-        if (!cancelled) {
-          setModelOptions(options);
-        }
-      } catch (error) {
-        console.error('Failed to load model options:', error);
-      }
-    }
-
-    let cancelled = false;
-    void loadModelOptions();
-    return () => {
-      cancelled = true;
-    };
-  }, [allModels, storage, providerRegistry]);
-
-  // Sort options: those with API keys first, then alphabetically
-  const sortedOptions = useMemo<readonly ModelOption[]>(() => {
-    return modelOptions.toSorted(compareModelOptions);
-  }, [modelOptions]);
-
-  // Find selected model
-  const selectedModel = selectedModelId
-    ? allModels.find((model) => model.model.id === selectedModelId)
-    : undefined;
+  const [showConfigureProviders, setShowConfigureProviders] = useState(false);
+  const { recentlyUsedModels, modelsWithCredentials, selectedModel, setSelectedModelAndProvider } =
+    useModelsWithConfiguredProvider(storage, providerRegistry);
 
   // Handle model selection
-  const handleModelSelect = (modelId: ModelId | typeof ADD_MODEL_ID) => {
-    if (modelId === ADD_MODEL_ID) {
+  const handleModelSelect = (key: ProviderAndModelKey | typeof ADD_MODEL_ID) => {
+    if (key === ADD_MODEL_ID) {
       setShowAddModelForm(true);
       return;
     }
-
-    const modelOption = sortedOptions.find((opt) => opt.model.model.id === modelId);
-    if (!modelOption) {
+    const { providerId, modelId } = idsFromKey(key);
+    if (modelId === selectedModel?.model.id && providerId === selectedModel.provider.id) {
       return;
     }
-
-    onModelChange(modelOption.model);
+    const modelWithProvider = setSelectedModelAndProvider(modelId, providerId);
+    if (modelWithProvider) {
+      onModelChange(modelWithProvider);
+    }
   };
+
+  const shouldOpenList = useCallback(() => {
+    if (recentlyUsedModels.length === 0 && modelsWithCredentials.length === 0) {
+      setShowAddModelForm(true);
+      return false;
+    }
+    return true;
+  }, [recentlyUsedModels, modelsWithCredentials]);
 
   const displayTitle = selectedModel?.model.displayName ?? 'Select model';
 
@@ -144,9 +74,13 @@ export function ModelSelect({
       )}
 
       {/* Model selector */}
-      <Listbox value={selectedModelId} onChange={handleModelSelect}>
+      <Listbox value={selectedModel} onChange={handleModelSelect}>
         <div className="relative flex">
-          <ListboxButton disabled={disabled} className="h-[18px] gap-1 border-none min-w-0 flex-1">
+          <ListboxButton
+            disabled={disabled}
+            className="h-[18px] gap-1 border-none min-w-0 flex-1"
+            shouldOpenList={shouldOpenList}
+          >
             <span className="line-clamp-1 break-all hover:brightness-110 text-left">
               {displayTitle}
             </span>
@@ -162,7 +96,7 @@ export function ModelSelect({
               <span className="font-semibold text-xs text-foreground">Models</span>
               <button
                 type="button"
-                onClick={onConfigureProviders}
+                onClick={() => setShowConfigureProviders(true)}
                 className="p-1 bg-transparent border-none rounded
         text-foreground hover:bg-accent
         transition-colors duration-150"
@@ -170,40 +104,86 @@ export function ModelSelect({
               >
                 <SettingsIcon className="h-3 w-3" />
               </button>
+              {showConfigureProviders && <span>Sorry, not implemented yet</span>}
             </div>
 
             {/* Models list */}
             <div className="no-scrollbar max-h-[300px]">
-              {sortedOptions.length === 0 ? (
-                <div className="text-muted px-2 py-4 text-center text-sm">No models configured</div>
+              {modelsWithCredentials.length === 0 ? (
+                <div className="text-muted px-2 py-4 text-center text-xs">No models configured</div>
               ) : (
-                sortedOptions.map((option) => {
-                  const isSelected = option.model.model.id === selectedModelId;
-                  // TODO: this should check all required keys
-
-                  return (
-                    <ListboxOption key={option.model.model.id} value={option.model.model.id}>
-                      <div className="flex w-full items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {option.model.provider.icon ? (
-                            <option.model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
-                          ) : (
-                            <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
-                          )}
-                          <span className="line-clamp-1 text-xs">
-                            {option.model.model.displayName}
-                            <span className="text-muted ml-1.5 text-[10px] italic">
-                              {option.model.provider.name}
-                            </span>
-                          </span>
-                        </div>
-                        <CheckIcon
-                          className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
-                        />
+                <>
+                  {/* Recently Used Models */}
+                  {recentlyUsedModels.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
+                        Recently Used
                       </div>
-                    </ListboxOption>
-                  );
-                })
+                      {recentlyUsedModels.map((model) => {
+                        const isSelected = model.model.id === selectedModel?.model.id;
+                        return (
+                          <ListboxOption
+                            key={providerAndModelKey(model)}
+                            value={providerAndModelKey(model)}
+                          >
+                            <div className="flex w-full items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {model.provider.icon ? (
+                                  <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
+                                ) : (
+                                  <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
+                                )}
+                                <span className="line-clamp-1 text-xs">
+                                  {model.model.displayName}
+                                  <span className="text-muted ml-1.5 text-[10px] italic">
+                                    {model.provider.name}
+                                  </span>
+                                </span>
+                              </div>
+                              <CheckIcon
+                                className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
+                              />
+                            </div>
+                          </ListboxOption>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Unused Models with Credentials */}
+                  {modelsWithCredentials.length > 0 && (
+                    <>
+                      {modelsWithCredentials.map((model) => {
+                        const isSelected = model.model.id === selectedModel?.model.id;
+                        return (
+                          <ListboxOption
+                            key={providerAndModelKey(model)}
+                            value={providerAndModelKey(model)}
+                          >
+                            <div className="flex w-full items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {model.provider.icon ? (
+                                  <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
+                                ) : (
+                                  <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
+                                )}
+                                <span className="line-clamp-1 text-xs">
+                                  {model.model.displayName}
+                                  <span className="text-muted ml-1.5 text-[10px] italic">
+                                    {model.provider.name}
+                                  </span>
+                                </span>
+                              </div>
+                              <CheckIcon
+                                className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
+                              />
+                            </div>
+                          </ListboxOption>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
               )}
             </div>
 

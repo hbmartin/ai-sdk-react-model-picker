@@ -50,6 +50,7 @@ export function AddModelForm({
     () => providerRegistry.getAllProviders().map((provider) => provider.metadata),
     [providerRegistry]
   );
+  console.log('allProviders', allProviders);
 
   // Update available models when provider changes
   const availableModels: ModelConfig[] = useMemo(
@@ -117,7 +118,7 @@ export function AddModelForm({
     return undefined;
   }, [selectedProvider, selectedModel, watchedValues]);
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  backdrop-blur-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  backdrop-blur-sm">
       <div
         className={`
         bg-background border border-border rounded-lg shadow-lg

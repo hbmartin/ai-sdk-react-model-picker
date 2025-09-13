@@ -136,6 +136,7 @@ export default defineConfig([
       'unicorn/prefer-export-from': 'off',
       'unicorn/no-keyword-prefix': 'off',
       'unicorn/no-useless-undefined': 'off',
+      'unicorn/no-array-reduce': 'off',
 
       'sonarjs/void-use': 'off',
       'sonarjs/todo-tag': 'off',
