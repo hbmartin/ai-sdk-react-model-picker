@@ -9,6 +9,7 @@ import {
   type ModelConfigWithProvider,
   type ProviderId,
   providerAndModelKey,
+  type AIProvider,
 } from '../types';
 import {
   addProviderWithCredentials,
@@ -16,6 +17,31 @@ import {
   getProvidersWithCredentials,
   getRecentlyUsedModels,
 } from '../storage/repository';
+
+function buildProviderMaps(providers: AIProvider[]): {
+  providerMetadata: Record<ProviderId, ProviderMetadata>;
+  providerModels: Map<ProviderId, Map<ModelId, ModelConfig>>;
+} {
+  const providerMetadata: Record<ProviderId, ProviderMetadata> = {};
+  const providerModels = new Map<ProviderId, Map<ModelId, ModelConfig>>();
+
+  for (const prov of providers) {
+    providerMetadata[prov.metadata.id] = prov.metadata;
+    providerModels.set(
+      prov.metadata.id,
+      prov.models.reduce<Map<ModelId, ModelConfig>>(
+        // eslint-disable-next-line sonarjs/no-nested-functions
+        (macc, model) => {
+          macc.set(model.id, model);
+          return macc;
+        },
+        new Map()
+      )
+    );
+  }
+
+  return { providerMetadata, providerModels };
+}
 
 export function useModelsWithConfiguredProvider(
   storage: StorageAdapter,
@@ -35,11 +61,12 @@ export function useModelsWithConfiguredProvider(
         return;
       }
       const modelWithProvider = { model, provider: provider.metadata };
+      const modelKey = providerAndModelKey(modelWithProvider);
       void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
       void addProviderWithCredentials(storage, providerId);
       setSelectedModel(modelWithProvider);
       setRecentlyUsedModels((prev) => {
-        const index = prev.findIndex((model) => model.model.id === modelId);
+        const index = prev.findIndex((model) => providerAndModelKey(model) === modelKey);
         if (index === -1) {
           return [modelWithProvider, ...prev];
         }
@@ -62,30 +89,8 @@ export function useModelsWithConfiguredProvider(
         const providers = [...knownProviders].map((providerId) => {
           return providerRegistry.getProvider(providerId);
         });
-        const providerMetadata = providers.reduce<Record<ProviderId, ProviderMetadata>>(
-          (acc, provider) => {
-            acc[provider.metadata.id] = provider.metadata;
-            return acc;
-          },
-          {}
-        );
-        const providerModels = providers.reduce<Map<ProviderId, Map<ModelId, ModelConfig>>>(
-          (pacc, provider) => {
-            pacc.set(
-              provider.metadata.id,
-              provider.models.reduce<Map<ModelId, ModelConfig>>(
-                // eslint-disable-next-line sonarjs/no-nested-functions
-                (macc, model) => {
-                  macc.set(model.id, model);
-                  return macc;
-                },
-                new Map()
-              )
-            );
-            return pacc;
-          },
-          new Map()
-        );
+        const { providerMetadata, providerModels } = buildProviderMaps(providers);
+
         const recentlyUsedModels = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
@@ -95,19 +100,19 @@ export function useModelsWithConfiguredProvider(
             }
             providerModels.get(providerId)?.delete(modelId);
             return {
-              model: model,
+              model,
               provider: providerMetadata[providerId],
             };
           })
           .filter((item) => item !== undefined);
-        setSelectedModel(recentlyUsedModels[0]);
+        setSelectedModel((prev) => prev ?? recentlyUsedModels[0]);
         setRecentlyUsedModels(recentlyUsedModels);
         setModelsWithCredentials(
           [...providerModels.entries()].flatMap(([providerId, models]) => {
             // eslint-disable-next-line sonarjs/no-nested-functions
             return [...models.entries()].map(([_modelId, model]) => {
               return {
-                model: model,
+                model,
                 provider: providerMetadata[providerId],
               };
             });

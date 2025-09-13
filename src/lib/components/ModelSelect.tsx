@@ -74,7 +74,10 @@ export function ModelSelect({
       )}
 
       {/* Model selector */}
-      <Listbox value={selectedModel} onChange={handleModelSelect}>
+      <Listbox
+        value={selectedModel ? providerAndModelKey(selectedModel) : undefined}
+        onChange={handleModelSelect}
+      >
         <div className="relative flex">
           <ListboxButton
             disabled={disabled}
@@ -120,7 +123,9 @@ export function ModelSelect({
                         Recently Used
                       </div>
                       {recentlyUsedModels.map((model) => {
-                        const isSelected = model.model.id === selectedModel?.model.id;
+                        const isSelected =
+                          model.model.id === selectedModel?.model.id &&
+                          model.provider.id === selectedModel.provider.id;
                         return (
                           <ListboxOption
                             key={providerAndModelKey(model)}
@@ -154,7 +159,9 @@ export function ModelSelect({
                   {modelsWithCredentials.length > 0 && (
                     <>
                       {modelsWithCredentials.map((model) => {
-                        const isSelected = model.model.id === selectedModel?.model.id;
+                        const isSelected =
+                          model.model.id === selectedModel?.model.id &&
+                          model.provider.id === selectedModel.provider.id;
                         return (
                           <ListboxOption
                             key={providerAndModelKey(model)}
@@ -206,6 +213,7 @@ export function ModelSelect({
           storage={storage}
           onClose={() => setShowAddModelForm(false)}
           onModelAdded={(model) => {
+            setSelectedModelAndProvider(model.model.id, model.provider.id);
             setShowAddModelForm(false);
             onModelChange(model);
           }}

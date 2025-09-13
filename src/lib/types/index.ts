@@ -27,13 +27,18 @@ export interface ModelConfigWithProvider {
   provider: ProviderMetadata;
 }
 
+const KEY_DELIMITER = '/' as const;
+
 export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
-  return `${model.provider.id}/${model.model.id}` as ProviderAndModelKey;
+  return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
 }
 
 export function idsFromKey(key: ProviderAndModelKey): { providerId: ProviderId; modelId: ModelId } {
-  const [providerId, modelId] = key.split('/');
-  return { providerId: providerId as ProviderId, modelId: modelId as ModelId };
+  const parts = key.split(KEY_DELIMITER);
+  if (parts.length !== 2) {
+    throw new TypeError('Invalid ProviderAndModelKey format');
+  }
+  return { providerId: parts[0] as ProviderId, modelId: parts[1] as ModelId };
 }
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;

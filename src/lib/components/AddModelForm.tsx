@@ -50,7 +50,6 @@ export function AddModelForm({
     () => providerRegistry.getAllProviders().map((provider) => provider.metadata),
     [providerRegistry]
   );
-  console.log('allProviders', allProviders);
 
   // Update available models when provider changes
   const availableModels: ModelConfig[] = useMemo(

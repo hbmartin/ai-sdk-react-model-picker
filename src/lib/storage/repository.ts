@@ -8,25 +8,30 @@ import {
 const RECENTLY_USED_MODELS_KEY = 'recentlyUsedModels' as const;
 const PROVIDERS_WITH_CREDENTIALS_KEY = 'providersWithCredentials' as const;
 
-function reverseSortKeysByValue<T>(obj: Record<string, string> | undefined): T[] {
+function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
   try {
     assertRecordStringString(obj);
   } catch (error) {
     console.error('Invalid storage format:', error);
     return [];
   }
-  return (
-    Object.entries(obj)
-      // eslint-disable-next-line code-complete/enforce-meaningful-names
-      .toSorted((a, b) => a[1].localeCompare(b[1]))
-      .map(([key]) => key as T)
-  );
+  try {
+    return (
+      Object.entries(obj)
+        // eslint-disable-next-line code-complete/enforce-meaningful-names
+        .toSorted((a, b) => Number(a[1]) - Number(b[1]))
+        .map(([key]) => key as T)
+    );
+  } catch (error) {
+    console.error('Invalid value format:', error);
+    return [];
+  }
 }
 
 export async function getRecentlyUsedModels(
   storage: StorageAdapter
 ): Promise<ProviderAndModelKey[]> {
-  return storage.get(RECENTLY_USED_MODELS_KEY).then(reverseSortKeysByValue<ProviderAndModelKey>);
+  return storage.get(RECENTLY_USED_MODELS_KEY).then(sortKeysByRecency<ProviderAndModelKey>);
 }
 
 export async function addRecentlyUsedModel(
