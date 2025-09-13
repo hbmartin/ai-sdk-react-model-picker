@@ -13,25 +13,10 @@ import { AddModelForm } from './AddModelForm';
 import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
 
-interface ModelOption {
-  model: ModelConfigWithProvider;
-  hasCredentials: boolean;
-  isAutoDetected?: boolean;
-}
-
 const ADD_MODEL_ID = '__add_model__' as const;
+const RECENTLY_USED_MODELS_KEY = 'recentlyUsedModels' as const;
 
-// Typed comparator to avoid any/unknown inference in linters
-// eslint-disable-next-line code-complete/enforce-meaningful-names
-const compareModelOptions = (a: ModelOption, b: ModelOption): number => {
-  if (a.hasCredentials && !b.hasCredentials) {
-    return -1;
-  }
-  if (!a.hasCredentials && b.hasCredentials) {
-    return 1;
-  }
-  return a.model.model.displayName.localeCompare(b.model.model.displayName);
-};
+type RecentlyUsedModels = Record<string, string>;
 
 // eslint-disable-next-line sonarjs/prefer-read-only-props
 export function ModelSelect({
@@ -49,59 +34,85 @@ export function ModelSelect({
   onSaveConfig: _onSaveConfig,
 }: ModelSelectProps) {
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const [modelOptions, setModelOptions] = useState<readonly ModelOption[]>([]);
+  const [modelsWithCredentials, setModelsWithCredentials] = useState<ModelConfigWithProvider[]>([]);
+  const [recentlyUsedModels, setRecentlyUsedModels] = useState<RecentlyUsedModels>({});
 
   // Get all available models from providers
   const allModels = useMemo(() => {
     return providerRegistry.getAllModels();
   }, [providerRegistry]);
 
-  // Load API keys and model configuration
-  // TODO: optimize this to only load for currently selected provider
+  // Load recently used models from storage
   useEffect(() => {
-    async function loadModelOptions() {
+    async function loadRecentlyUsed() {
       try {
-        const options: ModelOption[] = await Promise.all(
+        const stored = await storage.get(RECENTLY_USED_MODELS_KEY);
+        if (stored && typeof stored === 'object') {
+          setRecentlyUsedModels(stored as RecentlyUsedModels);
+        }
+      } catch (error) {
+        console.warn('Failed to load recently used models:', error);
+      }
+    }
+    void loadRecentlyUsed();
+  }, [storage]);
+
+  // Load models with credentials
+  useEffect(() => {
+    async function loadModelsWithCredentials() {
+      try {
+        const modelsWithCreds = await Promise.all(
           allModels.map(async (modelWithProvider) => {
             const providerId = modelWithProvider.provider.id;
             const provider = providerRegistry.getProvider(providerId);
             try {
               const storedConfig = (await storage.get(`${providerId}:config`)) ?? {};
               const hasCredentials = provider.hasCredentials(storedConfig);
-              return {
-                model: modelWithProvider,
-                hasCredentials: hasCredentials,
-                isAutoDetected: false, // TODO: Implement auto-detection logic
-              } as ModelOption;
+              return hasCredentials ? modelWithProvider : null;
             } catch (error) {
               console.warn(`Failed to load config for provider "${providerId}":`, error);
-              return {
-                model: modelWithProvider,
-                hasCredentials: false,
-                isAutoDetected: false,
-              } as ModelOption;
+              return null;
             }
           })
         );
         if (!cancelled) {
-          setModelOptions(options);
+          setModelsWithCredentials(modelsWithCreds.filter(Boolean) as ModelConfigWithProvider[]);
         }
       } catch (error) {
-        console.error('Failed to load model options:', error);
+        console.error('Failed to load models with credentials:', error);
       }
     }
 
     let cancelled = false;
-    void loadModelOptions();
+    void loadModelsWithCredentials();
     return () => {
       cancelled = true;
     };
   }, [allModels, storage, providerRegistry]);
 
-  // Sort options: those with API keys first, then alphabetically
-  const sortedOptions = useMemo<readonly ModelOption[]>(() => {
-    return modelOptions.toSorted(compareModelOptions);
-  }, [modelOptions]);
+  // Organize models into sections
+  const { recentModels, unusedModels } = useMemo(() => {
+    const modelKey = (m: ModelConfigWithProvider) => `${m.provider.id}:${m.model.id}`;
+
+    // Get recently used models that have credentials, sorted by most recent
+    const recentWithTimestamps = modelsWithCredentials
+      .map((model) => ({
+        model,
+        timestamp: recentlyUsedModels[modelKey(model)],
+      }))
+      .filter((item) => item.timestamp)
+      .sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+
+    const recent = recentWithTimestamps.map((item) => item.model);
+
+    // Get unused models with credentials, sorted alphabetically
+    const recentKeys = new Set(recent.map(modelKey));
+    const unused = modelsWithCredentials
+      .filter((model) => !recentKeys.has(modelKey(model)))
+      .sort((a, b) => a.model.displayName.localeCompare(b.model.displayName));
+
+    return { recentModels: recent, unusedModels: unused };
+  }, [modelsWithCredentials, recentlyUsedModels]);
 
   // Find selected model
   const selectedModel = selectedModelId
@@ -109,18 +120,32 @@ export function ModelSelect({
     : undefined;
 
   // Handle model selection
-  const handleModelSelect = (modelId: ModelId | typeof ADD_MODEL_ID) => {
+  const handleModelSelect = async (modelId: ModelId | typeof ADD_MODEL_ID) => {
     if (modelId === ADD_MODEL_ID) {
       setShowAddModelForm(true);
       return;
     }
 
-    const modelOption = sortedOptions.find((opt) => opt.model.model.id === modelId);
-    if (!modelOption) {
+    const model = allModels.find((m) => m.model.id === modelId);
+    if (!model) {
       return;
     }
 
-    onModelChange(modelOption.model);
+    // Update recently used models
+    const modelKey = `${model.provider.id}:${model.model.id}`;
+    try {
+      const existing = (await storage.get(RECENTLY_USED_MODELS_KEY)) || {};
+      const updated = {
+        ...(existing as RecentlyUsedModels),
+        [modelKey]: Date.now().toString(),
+      };
+      await storage.set(RECENTLY_USED_MODELS_KEY, updated);
+      setRecentlyUsedModels(updated);
+    } catch (error) {
+      console.warn('Failed to update recently used models:', error);
+    }
+
+    onModelChange(model);
   };
 
   const displayTitle = selectedModel?.model.displayName ?? 'Select model';
@@ -174,36 +199,78 @@ export function ModelSelect({
 
             {/* Models list */}
             <div className="no-scrollbar max-h-[300px]">
-              {sortedOptions.length === 0 ? (
+              {modelsWithCredentials.length === 0 ? (
                 <div className="text-muted px-2 py-4 text-center text-sm">No models configured</div>
               ) : (
-                sortedOptions.map((option) => {
-                  const isSelected = option.model.model.id === selectedModelId;
-                  // TODO: this should check all required keys
-
-                  return (
-                    <ListboxOption key={option.model.model.id} value={option.model.model.id}>
-                      <div className="flex w-full items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {option.model.provider.icon ? (
-                            <option.model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
-                          ) : (
-                            <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
-                          )}
-                          <span className="line-clamp-1 text-xs">
-                            {option.model.model.displayName}
-                            <span className="text-muted ml-1.5 text-[10px] italic">
-                              {option.model.provider.name}
-                            </span>
-                          </span>
-                        </div>
-                        <CheckIcon
-                          className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
-                        />
+                <>
+                  {/* Recently Used Models */}
+                  {recentModels.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
+                        Recently Used
                       </div>
-                    </ListboxOption>
-                  );
-                })
+                      {recentModels.map((model) => {
+                        const isSelected = model.model.id === selectedModelId;
+                        return (
+                          <ListboxOption key={model.model.id} value={model.model.id}>
+                            <div className="flex w-full items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {model.provider.icon ? (
+                                  <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
+                                ) : (
+                                  <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
+                                )}
+                                <span className="line-clamp-1 text-xs">
+                                  {model.model.displayName}
+                                  <span className="text-muted ml-1.5 text-[10px] italic">
+                                    {model.provider.name}
+                                  </span>
+                                </span>
+                              </div>
+                              <CheckIcon
+                                className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
+                              />
+                            </div>
+                          </ListboxOption>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Unused Models with Credentials */}
+                  {unusedModels.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
+                        {recentModels.length > 0 ? 'Other Available' : 'Available Models'}
+                      </div>
+                      {unusedModels.map((model) => {
+                        const isSelected = model.model.id === selectedModelId;
+                        return (
+                          <ListboxOption key={model.model.id} value={model.model.id}>
+                            <div className="flex w-full items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {model.provider.icon ? (
+                                  <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
+                                ) : (
+                                  <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
+                                )}
+                                <span className="line-clamp-1 text-xs">
+                                  {model.model.displayName}
+                                  <span className="text-muted ml-1.5 text-[10px] italic">
+                                    {model.provider.name}
+                                  </span>
+                                </span>
+                              </div>
+                              <CheckIcon
+                                className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
+                              />
+                            </div>
+                          </ListboxOption>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
               )}
             </div>
 
