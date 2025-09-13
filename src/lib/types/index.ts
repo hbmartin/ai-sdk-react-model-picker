@@ -8,6 +8,7 @@ export type ProviderId = Brand<string, 'ProviderId'>;
 export type ModelId = Brand<string, 'ModelId'>;
 export type ApiKey = Brand<string, 'ApiKey'>;
 export type ApiUrl = Brand<string, 'ApiUrl'>;
+export type ProviderAndModelKey = Brand<string, 'ProviderAndModelKey'>;
 
 // Core model configuration
 export interface ModelConfig {
@@ -24,6 +25,20 @@ export interface ModelConfig {
 export interface ModelConfigWithProvider {
   model: ModelConfig;
   provider: ProviderMetadata;
+}
+
+const KEY_DELIMITER = '/' as const;
+
+export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
+  return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
+}
+
+export function idsFromKey(key: ProviderAndModelKey): { providerId: ProviderId; modelId: ModelId } {
+  const parts = key.split(KEY_DELIMITER);
+  if (parts.length !== 2) {
+    throw new TypeError('Invalid ProviderAndModelKey format');
+  }
+  return { providerId: parts[0] as ProviderId, modelId: parts[1] as ModelId };
 }
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -156,7 +171,7 @@ export abstract class AIProvider {
 
   // Optional dynamic model loading
   // eslint-disable-next-line @typescript-eslint/require-await
-  async loadModels?(): Promise<ModelConfig[]> {
+  async getModels(): Promise<ModelConfig[]> {
     return this.models;
   }
 
@@ -183,19 +198,14 @@ export interface ModelSelectProps {
   // Required props
   readonly storage: StorageAdapter;
   readonly providerRegistry: IProviderRegistry;
-  readonly selectedModelId: ModelId | undefined;
   readonly onModelChange: (model: ModelConfigWithProvider) => void;
 
   // Optional configuration
   readonly roles?: Role[];
   readonly selectedRole?: string;
   readonly onRoleChange?: (roleId: string) => void;
-  readonly onConfigureProviders: () => void;
-  readonly theme?: ThemeConfig;
   readonly className?: string;
   readonly disabled?: boolean;
-
-  readonly onSaveConfig?: (config: Record<string, string>) => Promise<void>;
 }
 
 // Internal component state for forms and dialogs

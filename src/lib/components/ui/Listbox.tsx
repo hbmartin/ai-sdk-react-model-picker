@@ -102,12 +102,18 @@ export interface ListboxButtonProps extends ButtonHTMLAttributes<HTMLButtonEleme
   readonly children: ReactNode;
 }
 
-export function ListboxButton({ children, className = '', onClick, ...props }: ListboxButtonProps) {
+export function ListboxButton({
+  children,
+  className = '',
+  shouldOpenList,
+  ...props
+}: ListboxButtonProps & { shouldOpenList?: () => boolean }) {
   const { isOpen, setIsOpen, buttonRef } = useListboxContext();
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setIsOpen(!isOpen);
-    onClick?.(event);
+  const handleClick = (_event: React.MouseEvent<HTMLButtonElement>) => {
+    if (shouldOpenList === undefined || shouldOpenList()) {
+      setIsOpen(!isOpen);
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
