@@ -68,10 +68,10 @@ export function assertRecordStringString(value: unknown): asserts value is Recor
     throw new Error('Value is not an object');
   }
 
-  if (
-    !Object.entries(value).every(([key, val]) => typeof key === 'string' && typeof val === 'string')
-  ) {
-    throw new Error('Value is not a record of strings');
+  for (const [key, val] of Object.entries(value)) {
+    if (typeof val !== 'string') {
+      throw new TypeError(`Value at key "${key}" is not a string`);
+    }
   }
 }
 
