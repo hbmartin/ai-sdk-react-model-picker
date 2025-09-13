@@ -117,7 +117,7 @@ export function AddModelForm({
     return undefined;
   }, [selectedProvider, selectedModel, watchedValues]);
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  backdrop-blur-md">
       <div
         className={`
         bg-background border border-border rounded-lg shadow-lg
@@ -129,7 +129,7 @@ export function AddModelForm({
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-foreground">Add Model</h2>
+            <h2 className="text-md font-semibold text-foreground">Add Model</h2>
             <button
               type="button"
               onClick={onClose}

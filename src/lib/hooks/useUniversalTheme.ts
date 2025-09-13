@@ -28,7 +28,8 @@ export function useUniversalTheme(): UniversalTheme {
     }
 
     // Check data attributes as fallback
-    const bodyDataTheme = document.body.dataset['vscode-theme-kind'];
+    const bodyDataTheme =
+      document.body.dataset['vscode-theme-kind'] ?? document.body.dataset['vscodeThemeKind'];
     if (bodyDataTheme?.includes('vscode-') === true) {
       setEnvironment('vscode');
       const vsTheme = bodyDataTheme.includes('dark') ? 'dark' : 'light';

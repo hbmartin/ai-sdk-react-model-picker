@@ -2,7 +2,6 @@
 import { createElement } from 'react';
 import type { IconComponent } from '../types';
 
-// OpenAI Icon
 export const OpenAIIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -12,11 +11,10 @@ export const OpenAIIcon: IconComponent = (props) =>
       ...props,
     },
     createElement('path', {
-      d: 'M22.282 9.821a5.985 5.985 0 00-.516-4.91 6.046 6.046 0 00-6.51-2.9A6.065 6.065 0 004.981 4.18a5.985 5.985 0 00-3.998 2.9 6.046 6.046 0 00.743 7.097 5.98 5.98 0 00.51 4.911 6.078 6.078 0 006.283 2.899 5.99 5.99 0 005.197-2.9 6.022 6.022 0 004.001-2.9 5.99 5.99 0 00-1.435-7.266zm-9.08 4.035a4.5 4.5 0 11-8.999.001 4.5 4.5 0 018.999-.001z',
+      d: 'M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z',
     })
   );
 
-// Anthropic Icon
 export const AnthropicIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -30,7 +28,6 @@ export const AnthropicIcon: IconComponent = (props) =>
     })
   );
 
-// Google Icon
 export const GoogleIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -40,49 +37,26 @@ export const GoogleIcon: IconComponent = (props) =>
       ...props,
     },
     createElement('path', {
-      d: 'M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z',
-      fill: '#4285F4',
-    }),
-    createElement('path', {
-      d: 'M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z',
-      fill: '#34A853',
-    }),
-    createElement('path', {
-      d: 'M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z',
-      fill: '#FBBC05',
-    }),
-    createElement('path', {
-      d: 'M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z',
-      fill: '#EA4335',
+      d: 'M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81',
     })
   );
 
-// Azure Icon
 export const AzureIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
-      viewBox: '0 0 24 24',
+      viewBox: '0 0 96 96',
       fill: 'currentColor',
       ...props,
     },
     createElement('path', {
-      d: 'M5.531 5.656L12 2l6.469 3.656v7.312L12 16.625l-6.469-3.657V5.656z',
-      fill: '#0072C6',
+      d: 'M33.338 6.544a4.118 4.118 0 0 0-3.943 2.879L4.252 83.917a4.14 4.14 0 0 0 3.908 5.538h20.787a4.443 4.443 0 0 0 3.41-2.9l5.014-14.777 17.91 16.705a4.237 4.237 0 0 0 2.666.972H81.24L71.024 60.261l-29.781.007L59.47 6.544z',
     }),
     createElement('path', {
-      d: 'M18.469 12.969L12 16.625v6.375l6.469-3.656v-6.375z',
-      fill: '#0072C6',
-      opacity: '0.8',
-    }),
-    createElement('path', {
-      d: 'M5.531 12.969v6.375L12 23v-6.375l-6.469-3.656z',
-      fill: '#0072C6',
-      opacity: '0.6',
+      d: 'M66.595 9.364a4.145 4.145 0 0 0-3.928-2.82H33.648a4.146 4.146 0 0 1 3.928 2.82l25.184 74.62a4.146 4.146 0 0 1-3.928 5.472h29.02a4.146 4.146 0 0 0 3.927-5.472z',
     })
   );
 
-// Mistral Icon
 export const MistralIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -92,11 +66,10 @@ export const MistralIcon: IconComponent = (props) =>
       ...props,
     },
     createElement('path', {
-      d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v-.07zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+      d: 'M17.143 3.429v3.428h-3.429v3.429h-3.428V6.857H6.857V3.43H3.43v13.714H0v3.428h10.286v-3.428H6.857v-3.429h3.429v3.429h3.429v-3.429h3.428v3.429h-3.428v3.428H24v-3.428h-3.43V3.429z',
     })
   );
 
-// Cohere Icon
 export const CohereIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -106,7 +79,13 @@ export const CohereIcon: IconComponent = (props) =>
       ...props,
     },
     createElement('path', {
-      d: 'M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.52L19.48 8 12 11.48 4.52 8 12 4.52zm-8 4.24L11 12v8l-7-3.5v-7.74zm16 0v7.74L13 20v-8l7-3.24z',
+      d: 'M8.128 14.099c.592 0 1.77-.033 3.398-.703 1.897-.781 5.672-2.2 8.395-3.656 1.905-1.018 2.74-2.366 2.74-4.18A4.56 4.56 0 0018.1 1H7.549A6.55 6.55 0 001 7.55c0 3.617 2.745 6.549 7.128 6.549z',
+    }),
+    createElement('path', {
+      d: 'M9.912 18.61a4.387 4.387 0 012.705-4.052l3.323-1.38c3.361-1.394 7.06 1.076 7.06 4.715a5.104 5.104 0 01-5.105 5.104l-3.597-.001a4.386 4.386 0 01-4.386-4.387z',
+    }),
+    createElement('path', {
+      d: 'M4.776 14.962A3.775 3.775 0 001 18.738v.489a3.776 3.776 0 007.551 0v-.49a3.775 3.775 0 00-3.775-3.775z',
     })
   );
 
@@ -142,7 +121,6 @@ export const CubeIcon: IconComponent = (props) =>
     createElement('path', { d: 'm13.5 7.5 8 5' })
   );
 
-// Check Icon
 export const CheckIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -160,7 +138,6 @@ export const CheckIcon: IconComponent = (props) =>
     })
   );
 
-// ChevronDown Icon
 export const ChevronDownIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -178,7 +155,6 @@ export const ChevronDownIcon: IconComponent = (props) =>
     })
   );
 
-// Settings Icon
 export const SettingsIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -197,7 +173,6 @@ export const SettingsIcon: IconComponent = (props) =>
     })
   );
 
-// Plus Icon
 export const PlusIcon: IconComponent = (props) =>
   createElement(
     'svg',
@@ -214,7 +189,6 @@ export const PlusIcon: IconComponent = (props) =>
     createElement('line', { x1: '5', y1: '12', x2: '19', y2: '12' })
   );
 
-// Loading Spinner Icon
 export const SpinnerIcon: IconComponent = (props) =>
   createElement(
     'svg',

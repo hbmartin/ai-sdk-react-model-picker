@@ -41,6 +41,7 @@ export type {
 
 // Storage
 export { MemoryStorageAdapter } from './storage';
+export { assertRecordStringString } from './types';
 
 // Types
 export type {
