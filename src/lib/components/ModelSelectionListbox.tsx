@@ -94,63 +94,64 @@ export function ModelSelectionListbox({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      <Listbox value={selectedItem} onChange={onSelectionChange}>
-        <ListboxButton disabled={disabled || isLoading} className="relative w-full">
-          <span className="flex items-center gap-2 min-w-0 flex-1">
-            <SelectedIcon className="w-4 h-4 flex-shrink-0 text-current" />
-            <span className="text-xs truncate">{isLoading ? 'Loading...' : selectedTitle}</span>
-          </span>
-          <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-muted" aria-hidden="true" />
-        </ListboxButton>
+    <Listbox value={selectedItem} onChange={onSelectionChange} className={className}>
+      <ListboxButton
+        disabled={disabled || isLoading}
+        className="relative w-full text-foreground p-2 border border-border border-solid text-sm"
+      >
+        <span className="flex items-center gap-2 min-w-0 flex-1">
+          <SelectedIcon className="w-4 h-4 flex-shrink-0 text-current" />
+          <span className="truncate pl-2">{isLoading ? 'Loading...' : selectedTitle}</span>
+        </span>
+        <ChevronDownIcon className="w-4 h-4 flex-shrink-0 text-muted" aria-hidden="true" />
+      </ListboxButton>
 
-        <Transition>
-          <ListboxOptions className="py-1">
-            {/* Popular/Top Options */}
-            {topOptions.length > 0 && (
-              <div>
-                <div className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted bg-accent">
-                  Popular
+      <Transition>
+        <ListboxOptions className="py-1">
+          {/* Popular/Top Options */}
+          {topOptions.length > 0 && (
+            <div>
+              <div className="px-3 py-1 text-sm font-medium uppercase tracking-wider text-muted bg-accent">
+                Popular
+              </div>
+              {topOptions.map((option) => renderOption(option))}
+            </div>
+          )}
+
+          {/* Separator */}
+          {topOptions.length > 0 && otherOptions.length > 0 && (
+            <div className="border-t border-border my-1" />
+          )}
+
+          {/* Other Options */}
+          {otherOptions.length > 0 && (
+            <div>
+              {topOptions.length > 0 && (
+                <div className="px-3 py-1 text-sm font-medium uppercase tracking-wider text-muted bg-accent">
+                  Additional Options
                 </div>
-                {topOptions.map((option) => renderOption(option))}
+              )}
+              {otherOptions.map((option) => renderOption(option))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {topOptions.length === 0 && otherOptions.length === 0 && !isLoading && (
+            <div className="px-3 py-4 text-center text-sm text-muted">No options available</div>
+          )}
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="px-3 py-4 text-center text-sm text-muted">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Loading options...
               </div>
-            )}
-
-            {/* Separator */}
-            {topOptions.length > 0 && otherOptions.length > 0 && (
-              <div className="border-t border-border my-1" />
-            )}
-
-            {/* Other Options */}
-            {otherOptions.length > 0 && (
-              <div>
-                {topOptions.length > 0 && (
-                  <div className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted bg-accent">
-                    Additional Options
-                  </div>
-                )}
-                {otherOptions.map((option) => renderOption(option))}
-              </div>
-            )}
-
-            {/* Empty State */}
-            {topOptions.length === 0 && otherOptions.length === 0 && !isLoading && (
-              <div className="px-3 py-4 text-center text-sm text-muted">No options available</div>
-            )}
-
-            {/* Loading State */}
-            {isLoading && (
-              <div className="px-3 py-4 text-center text-sm text-muted">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  Loading options...
-                </div>
-              </div>
-            )}
-          </ListboxOptions>
-        </Transition>
-      </Listbox>
-    </div>
+            </div>
+          )}
+        </ListboxOptions>
+      </Transition>
+    </Listbox>
   );
 }
 

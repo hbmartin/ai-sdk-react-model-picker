@@ -29,14 +29,10 @@ function buildProviderMaps(providers: AIProvider[]): {
     providerMetadata[prov.metadata.id] = prov.metadata;
     providerModels.set(
       prov.metadata.id,
-      prov.models.reduce<Map<ModelId, ModelConfig>>(
-        // eslint-disable-next-line sonarjs/no-nested-functions
-        (macc, model) => {
-          macc.set(model.id, model);
-          return macc;
-        },
-        new Map()
-      )
+      prov.models.reduce<Map<ModelId, ModelConfig>>((macc, model) => {
+        macc.set(model.id, model);
+        return macc;
+      }, new Map())
     );
   }
 

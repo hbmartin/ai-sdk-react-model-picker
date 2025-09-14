@@ -8,7 +8,9 @@ export type ProviderId = Brand<string, 'ProviderId'>;
 export type ModelId = Brand<string, 'ModelId'>;
 export type ApiKey = Brand<string, 'ApiKey'>;
 export type ApiUrl = Brand<string, 'ApiUrl'>;
-export type ProviderAndModelKey = Brand<string, 'ProviderAndModelKey'>;
+const KEY_DELIMITER = '/' as const;
+export type ProviderAndModelKey = `${ProviderId}${typeof KEY_DELIMITER}${ModelId}` &
+  Brand<string, 'ProviderAndModelKey'>;
 
 // Core model configuration
 export interface ModelConfig {
@@ -27,14 +29,13 @@ export interface ModelConfigWithProvider {
   provider: ProviderMetadata;
 }
 
-const KEY_DELIMITER = '/' as const;
-
 export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
 }
 
 export function idsFromKey(key: ProviderAndModelKey): { providerId: ProviderId; modelId: ModelId } {
   const parts = key.split(KEY_DELIMITER);
+  // eslint-disable-next-line code-complete/no-magic-numbers-except-zero-one
   if (parts.length !== 2) {
     throw new TypeError('Invalid ProviderAndModelKey format');
   }
@@ -136,7 +137,7 @@ export abstract class AIProvider {
   abstract readonly metadata: ProviderMetadata;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abstract readonly configuration: ConfigAPI<any>;
-  // TODO: require callers to use loadModels() instead
+  // TODO: require callers to use getModels() instead
   abstract readonly models: ModelConfig[];
 
   hasCredentials(config: Record<string, string>): boolean {
@@ -173,6 +174,10 @@ export abstract class AIProvider {
   // eslint-disable-next-line @typescript-eslint/require-await
   async getModels(): Promise<ModelConfig[]> {
     return this.models;
+  }
+
+  getDefaultModel(): ModelConfig {
+    return this.models.find((model) => model.isDefault === true) ?? this.models[0];
   }
 
   // AI SDK v5 integration - return configured model instance
