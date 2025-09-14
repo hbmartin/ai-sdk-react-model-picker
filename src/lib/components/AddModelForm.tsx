@@ -165,6 +165,11 @@ export function AddModelForm({
                   </label>
                   <input
                     placeholder={placeholder}
+                    autoComplete="off"
+                    spellCheck="false"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    type="text"
                     className="w-full px-3 py-2 border border-border border-solid rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                     {...register(key, {
                       validate: (value) => {
@@ -175,7 +180,9 @@ export function AddModelForm({
                         if (fieldValidation?.error !== undefined) {
                           return fieldValidation.error;
                         }
-                        if (fieldValidation?.warning !== undefined) {
+                        if (fieldValidation?.warning === undefined) {
+                          warnings.current.delete(key);
+                        } else {
                           warnings.current.set(key, fieldValidation.warning);
                         }
                         return true;

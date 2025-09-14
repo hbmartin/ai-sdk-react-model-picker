@@ -8,6 +8,7 @@ export type ProviderId = Brand<string, 'ProviderId'>;
 export type ModelId = Brand<string, 'ModelId'>;
 export type ApiKey = Brand<string, 'ApiKey'>;
 export type ApiUrl = Brand<string, 'ApiUrl'>;
+const KEY_DELIMITER = '/' as const;
 export type ProviderAndModelKey = `${ProviderId}${typeof KEY_DELIMITER}${ModelId}` &
   Brand<string, 'ProviderAndModelKey'>;
 
@@ -27,8 +28,6 @@ export interface ModelConfigWithProvider {
   model: ModelConfig;
   provider: ProviderMetadata;
 }
-
-const KEY_DELIMITER = '/' as const;
 
 export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;

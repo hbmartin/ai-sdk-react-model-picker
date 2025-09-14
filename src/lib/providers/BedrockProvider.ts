@@ -13,7 +13,7 @@ import { BedrockIcon } from '../icons';
 import { makeConfiguration, type ConfigAPI } from './configuration';
 
 const awsRegionRegex = /^[a-z]{2}-[a-z]+-\d+$/;
-const awsAccessKeyIdRegex = /^(AKIA|ASIA)[\dA-Z]{16}$/;
+const awsAccessKeyIdRegex = /^[\dA-Z]{20}$/;
 const awsSecretAccessKeyRegex = /^[\d+/=A-Za-z]{40}$/;
 
 export class BedrockProvider extends AIProvider {

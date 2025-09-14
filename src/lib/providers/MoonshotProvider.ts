@@ -18,7 +18,7 @@ export class MoonshotProvider extends AIProvider {
     name: 'Moonshot AI',
     description: 'Moonshot AI Kimi models with long context capabilities',
     icon: MoonshotIcon,
-    documentationUrl: 'hhttps://platform.moonshot.ai/docs/introduction',
+    documentationUrl: 'https://platform.moonshot.ai/docs/introduction',
     apiKeyUrl: 'https://platform.moonshot.ai/console/api-keys',
   };
 
@@ -26,13 +26,11 @@ export class MoonshotProvider extends AIProvider {
     {
       id: createModelId('kimi-k2-0905-preview'),
       displayName: 'Kimi K2 (256k)',
-      isDefault: true,
       maxTokens: 256_000,
     },
     {
       id: createModelId('kimi-k2-0711-preview'),
       displayName: 'Kimi K2 (128k MoE)',
-      isDefault: true,
       maxTokens: 128_000,
     },
     {
@@ -62,7 +60,7 @@ export class MoonshotProvider extends AIProvider {
       openai = await import('@ai-sdk/openai');
     } catch {
       throw new Error(
-        'OpenAI provider requires "@ai-sdk/openai" to be installed. ' +
+        'Moonshot provider requires "@ai-sdk/openai" to be installed. ' +
           'Please install it with: npm install @ai-sdk/openai'
       );
     }
