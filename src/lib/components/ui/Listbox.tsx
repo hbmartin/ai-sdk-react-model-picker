@@ -134,9 +134,9 @@ export function ListboxButton({
       aria-expanded={isOpen}
       aria-haspopup="listbox"
       className={`
-        flex items-center justify-between w-full py-0 px-1
-        bg-transparent border border-border rounded text-xs
-        text-muted hover:text-foreground focus:text-foreground
+        leading-none flex items-center justify-between w-full
+        bg-transparent rounded
+         focus:text-foreground
         transition-all duration-150
         ${className}
       `}

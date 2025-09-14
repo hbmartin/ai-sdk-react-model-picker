@@ -36,15 +36,7 @@ export class OpenAIProvider extends AIProvider {
 
   override readonly configuration: ConfigAPI<OpenAIProviderSettings> =
     makeConfiguration<OpenAIProviderSettings>()({
-      fields: [
-        apiKeyField('sk-'),
-        baseUrlField('https://api.openai.com/v1'),
-        {
-          key: 'name',
-          label: 'Name',
-          placeholder: 'openai',
-        },
-      ],
+      fields: [apiKeyField('sk-'), baseUrlField('https://api.openai.com/v1')],
       requiresAtLeastOneOf: ['apiKey', 'baseURL'],
     });
 

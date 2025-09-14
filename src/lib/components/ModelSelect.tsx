@@ -53,7 +53,7 @@ export function ModelSelect({
     return true;
   }, [recentlyUsedModels, modelsWithCredentials]);
 
-  const displayTitle = selectedModel?.model.displayName ?? 'Select model';
+  const displayTitle = selectedModel?.model.displayName ?? 'Add model';
 
   return (
     <div className={`ai-sdk-model-picker ${className}`}>
@@ -81,7 +81,7 @@ export function ModelSelect({
         <div className="relative flex">
           <ListboxButton
             disabled={disabled}
-            className="h-[18px] gap-1 border-none min-w-0 flex-1"
+            className="h-[18px] gap-1 border-none min-w-0 flex-1 text-muted hover:text-foreground py-0 px-1 text-xs"
             shouldOpenList={shouldOpenList}
           >
             <span className="line-clamp-1 break-all hover:brightness-110 text-left">
@@ -212,10 +212,11 @@ export function ModelSelect({
           providerRegistry={providerRegistry}
           storage={storage}
           onClose={() => setShowAddModelForm(false)}
-          onModelAdded={(model) => {
-            setSelectedModelAndProvider(model.model.id, model.provider.id);
+          onProviderConfigured={(provider) => {
+            const model = providerRegistry.getProvider(provider.id).getDefaultModel();
+            setSelectedModelAndProvider(model.id, provider.id);
             setShowAddModelForm(false);
-            onModelChange(model);
+            onModelChange({ model, provider });
           }}
         />
       )}
