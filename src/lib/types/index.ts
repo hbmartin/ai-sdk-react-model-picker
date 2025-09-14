@@ -194,8 +194,6 @@ export interface IProviderRegistry {
   getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[];
   getProviderMetadata(providerId: ProviderId): ProviderMetadata;
   hasProvider(providerId: ProviderId): boolean;
-  unregister(providerId: ProviderId): boolean;
-  clear(): void;
 }
 
 // Component prop interfaces

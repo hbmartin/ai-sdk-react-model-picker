@@ -7,6 +7,7 @@ import {
 
 const RECENTLY_USED_MODELS_KEY = 'recentlyUsedModels' as const;
 const PROVIDERS_WITH_CREDENTIALS_KEY = 'providersWithCredentials' as const;
+const CONFIG_SUFFIX = 'config' as const;
 
 function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
   try {
@@ -29,9 +30,15 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
 }
 
 export async function getRecentlyUsedModels(
-  storage: StorageAdapter
+  storage: Pick<StorageAdapter, 'get'>
 ): Promise<ProviderAndModelKey[]> {
   return storage.get(RECENTLY_USED_MODELS_KEY).then(sortKeysByRecency<ProviderAndModelKey>);
+}
+
+export async function getSelectedProviderAndModelKey(
+  storage: Pick<StorageAdapter, 'get'>
+): Promise<ProviderAndModelKey | undefined> {
+  return getRecentlyUsedModels(storage).then((keys) => (keys.length > 0 ? keys[0] : undefined));
 }
 
 export async function addRecentlyUsedModel(
@@ -46,7 +53,9 @@ export async function addRecentlyUsedModel(
   });
 }
 
-export async function getProvidersWithCredentials(storage: StorageAdapter): Promise<ProviderId[]> {
+export async function getProvidersWithCredentials(
+  storage: Pick<StorageAdapter, 'get'>
+): Promise<ProviderId[]> {
   return storage
     .get(PROVIDERS_WITH_CREDENTIALS_KEY)
     .then((providers) => Object.keys(providers ?? {}) as ProviderId[]);
@@ -62,4 +71,19 @@ export async function addProviderWithCredentials(
       [providerId]: Date.now().toString(),
     });
   });
+}
+
+export async function setProviderConfiguration(
+  storage: StorageAdapter,
+  providerId: ProviderId,
+  configuration: Record<string, string>
+): Promise<void> {
+  return storage.set(`${providerId}:${CONFIG_SUFFIX}`, configuration);
+}
+
+export async function getProviderConfiguration(
+  storage: StorageAdapter,
+  providerId: ProviderId
+): Promise<Record<string, string> | undefined> {
+  return storage.get(`${providerId}:${CONFIG_SUFFIX}`);
 }

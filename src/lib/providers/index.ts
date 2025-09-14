@@ -1,9 +1,11 @@
-import { createProviderId } from '../types';
+import { AIProvider, createProviderId, type ProviderId } from '../types';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
+import { BedrockProvider } from './BedrockProvider';
 import { CohereProvider } from './CohereProvider';
 import { GoogleProvider } from './GoogleProvider';
 import { MistralProvider } from './MistralProvider';
+import { MoonshotProvider } from './MoonshotProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { ProviderRegistry } from './ProviderRegistry';
 
@@ -20,6 +22,18 @@ export type {
   ApiKey,
   ApiUrl,
 } from '../types';
+
+// All providers that are available, keyed by provider id
+export const allProviders: Record<ProviderId, { new (): AIProvider }> = {
+  [createProviderId('openai')]: OpenAIProvider,
+  [createProviderId('anthropic')]: AnthropicProvider,
+  [createProviderId('google')]: GoogleProvider,
+  [createProviderId('azure')]: AzureProvider,
+  [createProviderId('mistral')]: MistralProvider,
+  [createProviderId('cohere')]: CohereProvider,
+  [createProviderId('bedrock')]: BedrockProvider,
+  [createProviderId('moonshot')]: MoonshotProvider,
+};
 
 // Helper function to create a registry with default providers
 export function createDefaultRegistry(): ProviderRegistry {
@@ -59,6 +73,18 @@ export function createDefaultRegistry(): ProviderRegistry {
     registry.register(new CohereProvider());
   } catch (error) {
     console.warn('Cohere provider not available:', error);
+  }
+
+  try {
+    registry.register(new BedrockProvider());
+  } catch (error) {
+    console.warn('Bedrock provider not available:', error);
+  }
+
+  try {
+    registry.register(new MoonshotProvider());
+  } catch (error) {
+    console.warn('Moonshot provider not available:', error);
   }
 
   return registry;

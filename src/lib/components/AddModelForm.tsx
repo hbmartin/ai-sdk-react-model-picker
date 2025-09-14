@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import type { IProviderRegistry, StorageAdapter, AIProvider, ProviderMetadata } from '../types';
+import { setProviderConfiguration } from '../storage/repository';
 import { ModelSelectionListbox } from './ModelSelectionListbox';
 
 export interface AddModelFormProps {
@@ -69,7 +70,7 @@ export function AddModelForm({
         return;
       }
 
-      await storage.set(`${selectedProvider.metadata.id}:config`, formData);
+      await setProviderConfiguration(storage, selectedProvider.metadata.id, formData);
 
       // Call success callback
       onProviderConfigured(selectedProvider.metadata);
