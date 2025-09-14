@@ -1,12 +1,18 @@
-import type {
-  AIProvider,
-  IProviderRegistry,
-  ProviderId,
-  ModelConfigWithProvider,
-  ProviderMetadata,
+import {
+  type AIProvider,
+  type IProviderRegistry,
+  type ProviderId,
+  type ModelConfigWithProvider,
+  type ProviderMetadata,
+  createProviderId,
 } from '../types';
 
 export class ProviderRegistry implements IProviderRegistry {
+  readonly topProviders = [
+    createProviderId('anthropic'),
+    createProviderId('openai'),
+    createProviderId('google'),
+  ];
   private readonly providers = new Map<ProviderId, AIProvider>();
   constructor(readonly defaultProvider: ProviderId | undefined) {}
 

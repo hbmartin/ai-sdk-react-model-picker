@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import type { IProviderRegistry, StorageAdapter, AIProvider, ProviderMetadata } from '../types';
 import { setProviderConfiguration } from '../storage/repository';
-import { ModelSelectionListbox } from './ModelSelectionListbox';
+import { ProviderSelectionListbox } from './ProviderSelectionListbox';
 
 export interface AddModelFormProps {
   readonly providerRegistry: IProviderRegistry;
@@ -41,10 +41,19 @@ export function AddModelForm({
   } = useForm<FormData>();
   const watchedValues = watch();
   // Set default provider
-  const allProviders = useMemo(
-    () => providerRegistry.getAllProviders().map((provider) => provider.metadata),
-    [providerRegistry]
-  );
+  const { topProviders, otherProviders } = useMemo(() => {
+    const allProviders = providerRegistry.getAllProviders().map((provider) => provider.metadata);
+    const topProviders = [];
+    const otherProviders = [];
+    for (const provider of allProviders) {
+      if (providerRegistry.topProviders.includes(provider.id)) {
+        topProviders.push(provider);
+      } else {
+        otherProviders.push(provider);
+      }
+    }
+    return { topProviders, otherProviders };
+  }, [providerRegistry]);
 
   useEffect(() => {
     reset();
@@ -52,7 +61,6 @@ export function AddModelForm({
   }, [selectedProvider, reset]);
 
   const onSubmit = async (formDataWithAny: FormData) => {
-    console.log('onSubmit', formDataWithAny);
     const formData = Object.fromEntries(
       Object.entries(formDataWithAny).filter(([_, value]) => typeof value === 'string')
     ) as Record<string, string>;
@@ -72,7 +80,7 @@ export function AddModelForm({
 
       await setProviderConfiguration(storage, selectedProvider.metadata.id, formData);
 
-      // Call success callback
+      // Model and Provider are set as selected in the parent component
       onProviderConfigured(selectedProvider.metadata);
     } catch (error_) {
       console.error('Error saving model configuration:', error_);
@@ -93,19 +101,23 @@ export function AddModelForm({
     return undefined;
   }, [selectedProvider, watchedValues]);
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  backdrop-blur-sm">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className={`
         bg-background border border-border rounded-lg shadow-lg
         max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto
         ${className}
       `}
+        onClick={(event) => event.stopPropagation()}
       >
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-md font-semibold text-foreground">Add Model</h2>
+            <h2 className="text-md font-semibold text-foreground leading-none">Add Model</h2>
             <button
               type="button"
               onClick={onClose}
@@ -135,14 +147,15 @@ export function AddModelForm({
             {/* Provider Selection */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Provider</label>
-              <ModelSelectionListbox
+              <ProviderSelectionListbox
                 selectedItem={selectedProvider?.metadata}
                 onSelectionChange={(item) => {
                   if ('name' in item) {
                     setSelectedProvider(providerRegistry.getProvider(item.id));
                   }
                 }}
-                topOptions={allProviders}
+                topOptions={topProviders}
+                otherOptions={otherProviders}
               />
               <p className="mt-1 text-xs text-muted">
                 Don't see your provider?{' '}

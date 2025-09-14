@@ -5,7 +5,10 @@ export { ModelProviderTag, type ModelProviderTagProps } from './ModelProviderTag
 export { Toggle, type ToggleProps } from './Toggle';
 
 // Supporting components
-export { ModelSelectionListbox, type ModelSelectionListboxProps } from './ModelSelectionListbox';
+export {
+  ProviderSelectionListbox,
+  type ProviderSelectionListboxProps,
+} from './ProviderSelectionListbox';
 export { AddModelForm, type AddModelFormProps } from './AddModelForm';
 
 // UI components

@@ -40,11 +40,11 @@ export function createDefaultRegistry(
   defaultProvider: ProviderId = createProviderId('anthropic')
 ): ProviderRegistry {
   const registry = new ProviderRegistry(defaultProvider);
-  for (const providerId in allProviders) {
+  for (const provider of Object.values(allProviders)) {
     try {
-      registry.register(new allProviders[providerId as ProviderId]());
+      registry.register(new provider());
     } catch (error) {
-      console.warn(`${providerId} provider not available:`, error);
+      console.warn(`Provider not available:`, error);
     }
   }
 

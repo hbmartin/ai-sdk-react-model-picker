@@ -49,7 +49,7 @@ export interface ProviderMetadata {
   id: ProviderId;
   name: string;
   description?: string;
-  icon?: IconComponent;
+  icon: IconComponent;
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
@@ -187,6 +187,7 @@ export abstract class AIProvider {
 // Provider registry interface
 export interface IProviderRegistry {
   readonly defaultProvider: ProviderId | undefined;
+  readonly topProviders: ProviderId[];
   register(provider: AIProvider): ProviderId;
   getProvider(providerId: ProviderId): AIProvider;
   getAllProviders(): AIProvider[];

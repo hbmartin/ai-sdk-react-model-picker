@@ -6,7 +6,7 @@ import {
   idsFromKey,
 } from '../types';
 import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
-import { CubeIcon, CheckIcon, ChevronDownIcon, SettingsIcon, PlusIcon } from '../icons';
+import { CheckIcon, ChevronDownIcon, SettingsIcon, PlusIcon } from '../icons';
 import { AddModelForm } from './AddModelForm';
 import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
@@ -133,11 +133,7 @@ export function ModelSelect({
                           >
                             <div className="flex w-full items-center justify-between">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
-                                {model.provider.icon ? (
-                                  <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
-                                ) : (
-                                  <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
-                                )}
+                                <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
                                 <span className="line-clamp-1 text-xs">
                                   {model.model.displayName}
                                   <span className="text-muted ml-1.5 text-[10px] italic">
@@ -169,11 +165,7 @@ export function ModelSelect({
                           >
                             <div className="flex w-full items-center justify-between">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
-                                {model.provider.icon ? (
-                                  <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
-                                ) : (
-                                  <CubeIcon className="h-3 w-3 text-current flex-shrink-0" />
-                                )}
+                                <model.provider.icon className="h-3 w-3 text-current flex-shrink-0" />
                                 <span className="line-clamp-1 text-xs">
                                   {model.model.displayName}
                                   <span className="text-muted ml-1.5 text-[10px] italic">
