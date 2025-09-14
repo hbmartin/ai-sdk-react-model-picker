@@ -8,7 +8,6 @@ import type {
 
 export class ProviderRegistry implements IProviderRegistry {
   private readonly providers = new Map<ProviderId, AIProvider>();
-  private storagePrefix = 'model-picker';
   constructor(readonly defaultProvider: ProviderId | undefined) {}
 
   /**
@@ -99,22 +98,6 @@ export class ProviderRegistry implements IProviderRegistry {
    */
   unregister(providerId: ProviderId): boolean {
     return this.providers.delete(providerId);
-  }
-
-  /**
-   * Set the storage prefix for namespacing provider data
-   * @param prefix Storage namespace prefix
-   */
-  setStoragePrefix(prefix: string): void {
-    this.storagePrefix = prefix;
-  }
-
-  /**
-   * Get the current storage prefix
-   * @returns Current storage prefix
-   */
-  getStoragePrefix(): string {
-    return this.storagePrefix;
   }
 
   /**

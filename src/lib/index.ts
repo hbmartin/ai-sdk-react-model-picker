@@ -62,4 +62,5 @@ export type {
   IProviderRegistry,
   ProviderInstanceParams,
   ValidationResult,
+  ProviderAndModelKey,
 } from './types';

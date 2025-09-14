@@ -36,55 +36,16 @@ export const allProviders: Record<ProviderId, { new (): AIProvider }> = {
 };
 
 // Helper function to create a registry with default providers
-export function createDefaultRegistry(): ProviderRegistry {
-  const registry = new ProviderRegistry(createProviderId('anthropic'));
-
-  try {
-    registry.register(new OpenAIProvider());
-  } catch (error) {
-    console.warn('OpenAI provider not available:', error);
-  }
-
-  try {
-    registry.register(new AnthropicProvider());
-  } catch (error) {
-    console.warn('Anthropic provider not available:', error);
-  }
-
-  try {
-    registry.register(new GoogleProvider());
-  } catch (error) {
-    console.warn('Google provider not available:', error);
-  }
-
-  try {
-    registry.register(new AzureProvider());
-  } catch (error) {
-    console.warn('Azure provider not available:', error);
-  }
-
-  try {
-    registry.register(new MistralProvider());
-  } catch (error) {
-    console.warn('Mistral provider not available:', error);
-  }
-
-  try {
-    registry.register(new CohereProvider());
-  } catch (error) {
-    console.warn('Cohere provider not available:', error);
-  }
-
-  try {
-    registry.register(new BedrockProvider());
-  } catch (error) {
-    console.warn('Bedrock provider not available:', error);
-  }
-
-  try {
-    registry.register(new MoonshotProvider());
-  } catch (error) {
-    console.warn('Moonshot provider not available:', error);
+export function createDefaultRegistry(
+  defaultProvider: ProviderId = createProviderId('anthropic')
+): ProviderRegistry {
+  const registry = new ProviderRegistry(defaultProvider);
+  for (const providerId in allProviders) {
+    try {
+      registry.register(new allProviders[providerId as ProviderId]());
+    } catch (error) {
+      console.warn(`${providerId} provider not available:`, error);
+    }
   }
 
   return registry;

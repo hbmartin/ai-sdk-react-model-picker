@@ -5,6 +5,8 @@ import {
   type StorageAdapter,
 } from '../types';
 
+type StorageGetter = Pick<StorageAdapter, 'get'>;
+
 const RECENTLY_USED_MODELS_KEY = 'recentlyUsedModels' as const;
 const PROVIDERS_WITH_CREDENTIALS_KEY = 'providersWithCredentials' as const;
 const CONFIG_SUFFIX = 'config' as const;
@@ -30,13 +32,13 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
 }
 
 export async function getRecentlyUsedModels(
-  storage: Pick<StorageAdapter, 'get'>
+  storage: StorageGetter
 ): Promise<ProviderAndModelKey[]> {
   return storage.get(RECENTLY_USED_MODELS_KEY).then(sortKeysByRecency<ProviderAndModelKey>);
 }
 
 export async function getSelectedProviderAndModelKey(
-  storage: Pick<StorageAdapter, 'get'>
+  storage: StorageGetter
 ): Promise<ProviderAndModelKey | undefined> {
   return getRecentlyUsedModels(storage).then((keys) => (keys.length > 0 ? keys[0] : undefined));
 }
@@ -53,9 +55,7 @@ export async function addRecentlyUsedModel(
   });
 }
 
-export async function getProvidersWithCredentials(
-  storage: Pick<StorageAdapter, 'get'>
-): Promise<ProviderId[]> {
+export async function getProvidersWithCredentials(storage: StorageGetter): Promise<ProviderId[]> {
   return storage
     .get(PROVIDERS_WITH_CREDENTIALS_KEY)
     .then((providers) => Object.keys(providers ?? {}) as ProviderId[]);
@@ -73,17 +73,21 @@ export async function addProviderWithCredentials(
   });
 }
 
+function providerConfigKey(providerId: ProviderId): string {
+  return `${providerId}:${CONFIG_SUFFIX}`;
+}
+
 export async function setProviderConfiguration(
   storage: StorageAdapter,
   providerId: ProviderId,
   configuration: Record<string, string>
 ): Promise<void> {
-  return storage.set(`${providerId}:${CONFIG_SUFFIX}`, configuration);
+  return storage.set(providerConfigKey(providerId), configuration);
 }
 
 export async function getProviderConfiguration(
   storage: StorageAdapter,
   providerId: ProviderId
 ): Promise<Record<string, string> | undefined> {
-  return storage.get(`${providerId}:${CONFIG_SUFFIX}`);
+  return storage.get(providerConfigKey(providerId));
 }

@@ -1,3 +1,5 @@
+/* eslint-disable sonarjs/no-commented-code */
+/* eslint-disable code-complete/no-magic-numbers-except-zero-one */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createContext,
@@ -8,6 +10,7 @@ import {
   type ReactNode,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
+  useCallback,
 } from 'react';
 
 // Types for the Listbox components
@@ -128,6 +131,7 @@ export function ListboxButton({
 
   return (
     <button
+      type="button"
       ref={buttonRef}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -156,7 +160,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
   const { isOpen, optionsRef, buttonRef } = useListboxContext();
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
-  const calculateDropdownPosition = () => {
+  const calculateDropdownPosition = useCallback(() => {
     if (!buttonRef.current || !optionsRef.current) {
       return;
     }
@@ -187,7 +191,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
     // }
 
     setDropdownPosition({ top, left });
-  };
+  }, [buttonRef, optionsRef]);
 
   useEffect(() => {
     // const handleScroll = () => {
@@ -212,7 +216,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
       // window.removeEventListener('scroll', handleScroll, true);
       // window.removeEventListener('resize', handleResize);
     };
-  }, [isOpen]);
+  }, [isOpen, calculateDropdownPosition]);
 
   if (!isOpen) {
     return;
