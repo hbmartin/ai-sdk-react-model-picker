@@ -171,7 +171,7 @@ export class BedrockProvider extends AIProvider {
           required: true,
           validation: (value: string) => {
             if (!awsRegionRegex.test(value)) {
-              return { error: `AWS region format is invalid. Example: us-east-1, eu-west-1` };
+              return { error: 'AWS region format is invalid.' };
             }
             return undefined;
           },
@@ -183,7 +183,7 @@ export class BedrockProvider extends AIProvider {
           required: true,
           validation: (value: string) => {
             if (!awsAccessKeyIdRegex.test(value)) {
-              return { error: `AWS access key ID format is invalid. Example: AKIA...` };
+              return { error: 'Access key ID must be exactly 20 alphanumeric characters.' };
             }
             return undefined;
           },
@@ -196,7 +196,7 @@ export class BedrockProvider extends AIProvider {
           validation: (value: string) => {
             if (!awsSecretAccessKeyRegex.test(value)) {
               return {
-                error: `AWS secret access key format is invalid. Must be 40 characters long.`,
+                error: 'Secret access key must be exactly 40 characters.',
               };
             }
             return undefined;

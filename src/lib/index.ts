@@ -24,7 +24,7 @@ export { useVSCodeContext, getEnvironmentClasses, useUniversalTheme } from './ho
 export type { VSCodeContext, UniversalTheme } from './hooks';
 
 // Providers
-export { createDefaultRegistry, createPopularProvidersRegistry, allProviders } from './providers';
+export { createDefaultRegistry, allProviders } from './providers';
 export { ProviderRegistry } from './providers/ProviderRegistry';
 export { AnthropicProvider } from './providers/AnthropicProvider';
 export { OpenAIProvider } from './providers/OpenAIProvider';

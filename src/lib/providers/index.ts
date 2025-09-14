@@ -44,31 +44,8 @@ export function createDefaultRegistry(
     try {
       registry.register(new provider());
     } catch (error) {
-      console.warn(`Provider not available:`, error);
+      console.error(`Provider not available:`, error);
     }
-  }
-
-  return registry;
-}
-
-// Popular providers for quick setup
-export function createPopularProvidersRegistry(): ProviderRegistry {
-  const registry = new ProviderRegistry(createProviderId('anthropic'));
-
-  try {
-    registry.register(new OpenAIProvider());
-  } catch (error) {
-    console.warn('OpenAI provider not available:', error);
-  }
-  try {
-    registry.register(new AnthropicProvider());
-  } catch (error) {
-    console.warn('Anthropic provider not available:', error);
-  }
-  try {
-    registry.register(new GoogleProvider());
-  } catch (error) {
-    console.warn('Google provider not available:', error);
   }
 
   return registry;

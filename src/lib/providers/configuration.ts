@@ -42,25 +42,17 @@ export interface ConfigAPI<ConfigObj extends object> {
 function formatMessage(
   missing: readonly string[],
   fieldValidationErrors: readonly string[],
-  fieldValidationWarnings: readonly string[],
-  extraneous: readonly string[],
   unmetMinimumRequiredKeys: readonly string[] | undefined
 ) {
   const lines: string[] = [];
   if (missing.length > 0) {
-    lines.push(`• Missing required: ${missing.join(', ')}`);
+    lines.push(`Missing required: ${missing.join(', ')}`);
   }
   if (fieldValidationErrors.length > 0) {
-    lines.push(`• Validation errors: ${fieldValidationErrors.join(', ')}`);
-  }
-  if (fieldValidationWarnings.length > 0) {
-    lines.push(`• Validation warnings: ${fieldValidationWarnings.join(', ')}`);
-  }
-  if (extraneous.length > 0) {
-    lines.push(`• Extraneous: ${extraneous.join(', ')}`);
+    lines.push(`Validation errors: ${fieldValidationErrors.join(', ')}`);
   }
   if (unmetMinimumRequiredKeys && unmetMinimumRequiredKeys.length > 0) {
-    lines.push(`• At least one of these keys is required: ${unmetMinimumRequiredKeys.join(', ')}`);
+    lines.push(`At least one of these are required: ${unmetMinimumRequiredKeys.join(', ')}`);
   }
   return lines.join('\n');
 }
@@ -137,8 +129,6 @@ export function makeConfiguration<ConfigObj extends object>(
           : formatMessage(
               missingRequired,
               fieldValidationErrors,
-              fieldValidationWarnings,
-              extraneous,
               // eslint-disable-next-line sonarjs/no-nested-conditional
               hasMinimumRequiredKeys ? undefined : requiresAtLeastOneOf?.map(String)
             ),
@@ -218,8 +208,11 @@ export function baseUrlField<T extends { baseURL?: string }>(
     label: required ? 'API Base URL' : 'API Base URL (optional)',
     placeholder,
     required,
-    validation: (value: string) => {
-      if (!value.startsWith('https://')) {
+    validation: (value: string | undefined) => {
+      if (required && (value === undefined || value.trim().length === 0)) {
+        return { error: 'API key is required' };
+      }
+      if (value?.startsWith('https://') === false) {
         return { warning: 'API base URL typically starts with "https://"' };
       }
       return undefined;
@@ -237,13 +230,16 @@ export function apiKeyField<T extends { apiKey?: string }>(
     label: 'API Key',
     placeholder: typeof requirement === 'string' ? `${requirement}...` : '',
     required,
-    validation: (value: string) => {
-      if (typeof requirement === 'string' && !value.startsWith(requirement)) {
+    validation: (value: string | undefined) => {
+      if (required && (value === undefined || value.trim().length === 0)) {
+        return { error: 'API key is required' };
+      }
+      if (typeof requirement === 'string' && value?.startsWith(requirement) === false) {
         return { warning: `API key typically starts with "${requirement}"` };
       }
-      if (typeof requirement === 'number' && value.length < requirement) {
+      if (typeof requirement === 'number' && (value?.length ?? 0) < requirement) {
         return {
-          warning: `API key appears to be too short (${String(value.length)} < ${String(requirement)})`,
+          warning: `API key appears to be too short (${value?.length === undefined ? '' : String(value.length)} < ${String(requirement)})`,
         };
       }
       return undefined;
