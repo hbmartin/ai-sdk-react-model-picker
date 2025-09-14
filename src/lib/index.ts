@@ -24,7 +24,7 @@ export { useVSCodeContext, getEnvironmentClasses, useUniversalTheme } from './ho
 export type { VSCodeContext, UniversalTheme } from './hooks';
 
 // Providers
-export { createDefaultRegistry, createPopularProvidersRegistry } from './providers';
+export { createDefaultRegistry, createPopularProvidersRegistry, allProviders } from './providers';
 export { ProviderRegistry } from './providers/ProviderRegistry';
 export { AnthropicProvider } from './providers/AnthropicProvider';
 export { OpenAIProvider } from './providers/OpenAIProvider';
@@ -41,7 +41,8 @@ export type {
 
 // Storage
 export { MemoryStorageAdapter } from './storage';
-export { assertRecordStringString } from './types';
+export { assertRecordStringString, idsFromKey } from './types';
+export { getSelectedProviderAndModelKey, getProviderConfiguration } from './storage/repository';
 
 // Types
 export type {
@@ -61,4 +62,5 @@ export type {
   IProviderRegistry,
   ProviderInstanceParams,
   ValidationResult,
+  ProviderAndModelKey,
 } from './types';
