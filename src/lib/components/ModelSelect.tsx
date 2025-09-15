@@ -96,24 +96,18 @@ export function ModelSelect({
                   <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
                     Recently Used
                   </div>
-                  {recentlyUsedModels.map((model) => {
-                    const isSelected =
-                      model.model.id === selectedModel?.model.id &&
-                      model.provider.id === selectedModel.provider.id;
-                    return <ModelOption key={model.key} model={model} isSelected={isSelected} />;
-                  })}
+                  {recentlyUsedModels.map((model) => (
+                    <ModelOption key={model.key} model={model} />
+                  ))}
 
                   {modelsWithCredentials.length > 0 && (
                     <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
                       Available Models
                     </div>
                   )}
-                  {modelsWithCredentials.map((model) => {
-                    const isSelected =
-                      model.model.id === selectedModel?.model.id &&
-                      model.provider.id === selectedModel.provider.id;
-                    return <ModelOption key={model.key} model={model} isSelected={isSelected} />;
-                  })}
+                  {modelsWithCredentials.map((model) => (
+                    <ModelOption key={model.key} model={model} />
+                  ))}
                 </>
               )}
             </div>
@@ -136,12 +130,7 @@ export function ModelSelect({
           onProviderConfigured={(provider) => {
             const modelWithProvider = setSelectedProviderAndModel(provider.id);
             setShowAddModelForm(false);
-            if (modelWithProvider !== undefined) {
-              onModelChange?.({
-                model: modelWithProvider.model,
-                provider: modelWithProvider.provider,
-              });
-            }
+            onModelChange?.(modelWithProvider);
           }}
           onProviderDeleted={(providerId) => {
             const model = deleteProvider(providerId);
