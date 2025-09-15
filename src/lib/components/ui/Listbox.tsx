@@ -219,7 +219,8 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
   }, [isOpen, calculateDropdownPosition]);
 
   if (!isOpen) {
-    return;
+    // eslint-disable-next-line unicorn/no-null
+    return null;
   }
 
   return (

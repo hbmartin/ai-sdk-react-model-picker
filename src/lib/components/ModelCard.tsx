@@ -85,11 +85,9 @@ export function ModelCard({
       <div className="px-4 py-3">
         {/* Header with icon and title */}
         <div className="flex items-center mb-3">
-          {model.provider.icon && (
-            <div className="mr-3 w-6 h-6 flex-shrink-0">
-              <model.provider.icon className="w-6 h-6 text-foreground" />
-            </div>
-          )}
+          <div className="mr-3 w-6 h-6 flex-shrink-0">
+            <model.provider.icon className="w-6 h-6 text-foreground" />
+          </div>
           <h3 className="text-lg font-semibold text-foreground truncate">{displayTitle}</h3>
         </div>
 

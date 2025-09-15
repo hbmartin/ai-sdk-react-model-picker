@@ -128,36 +128,19 @@ export const CohereIcon: IconComponent = (props) =>
     })
   );
 
-// Generic AI Model Icon (fallback)
-export const ModelIcon: IconComponent = (props) =>
+export const ClickIcon: IconComponent = (props) =>
   createElement(
     'svg',
     {
       viewBox: '0 0 24 24',
       fill: 'currentColor',
+      width: '512',
+      height: '512',
       ...props,
     },
     createElement('path', {
-      d: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+      d: 'M11.7 18q-2.4-.125-4.05-1.85T6 12q0-2.5 1.75-4.25T12 6q2.425 0 4.15 1.65T18 11.7l-2.1-.625q-.325-1.35-1.4-2.212T12 8q-1.65 0-2.825 1.175T8 12q0 1.425.863 2.5t2.212 1.4L11.7 18Zm1.2 3.95q-.225.05-.45.05H12q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12v.45q0 .225-.05.45L20 12.3V12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20h.3l.6 1.95Zm7.625.55l-4.275-4.275L15 22l-3-10l10 3l-3.775 1.25l4.275 4.275l-1.975 1.975Z',
     })
-  );
-
-// Cube Icon for models
-export const CubeIcon: IconComponent = (props) =>
-  createElement(
-    'svg',
-    {
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: '2',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-      ...props,
-    },
-    createElement('path', { d: 'm21.5 12.5-8-5-8 5v7l8 5 8-5v-7z' }),
-    createElement('path', { d: 'm21.5 12.5-8 5-8-5' }),
-    createElement('path', { d: 'm13.5 7.5 8 5' })
   );
 
 export const CheckIcon: IconComponent = (props) =>

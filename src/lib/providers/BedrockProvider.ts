@@ -169,9 +169,12 @@ export class BedrockProvider extends AIProvider {
           label: 'AWS Region',
           placeholder: 'us-east-1',
           required: true,
-          validation: (value: string) => {
+          validation: (value: string | undefined) => {
+            if (value === undefined) {
+              return { error: 'AWS region is required' };
+            }
             if (!awsRegionRegex.test(value)) {
-              return { error: `AWS region format is invalid. Example: us-east-1, eu-west-1` };
+              return { error: 'AWS region format is invalid.' };
             }
             return undefined;
           },
@@ -181,9 +184,14 @@ export class BedrockProvider extends AIProvider {
           label: 'Access Key ID',
           placeholder: 'AKIA...',
           required: true,
-          validation: (value: string) => {
+          validation: (value: string | undefined) => {
+            if (value === undefined) {
+              return { error: 'Access key ID is required' };
+            }
             if (!awsAccessKeyIdRegex.test(value)) {
-              return { error: `AWS access key ID format is invalid. Example: AKIA...` };
+              return {
+                error: 'Access key ID must be exactly 20 upper case or numeric characters.',
+              };
             }
             return undefined;
           },
@@ -193,10 +201,13 @@ export class BedrockProvider extends AIProvider {
           label: 'Secret Access Key',
           placeholder: '...',
           required: true,
-          validation: (value: string) => {
+          validation: (value: string | undefined) => {
+            if (value === undefined) {
+              return { error: 'Secret access key is required' };
+            }
             if (!awsSecretAccessKeyRegex.test(value)) {
               return {
-                error: `AWS secret access key format is invalid. Must be 40 characters long.`,
+                error: 'Secret access key must be exactly 40 characters.',
               };
             }
             return undefined;

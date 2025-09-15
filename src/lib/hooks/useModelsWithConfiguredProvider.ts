@@ -115,7 +115,7 @@ export function useModelsWithConfiguredProvider(
           })
         );
       } catch (error) {
-        console.warn('Failed to load recently used models:', error);
+        console.error('Failed to load recently used models:', error);
       }
     }
     void loadRecentlyUsed();

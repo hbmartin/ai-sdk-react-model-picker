@@ -63,9 +63,6 @@ jobs:
     name: Publish to NPM Registry
     needs: quality-checks
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write  # For NPM provenance
     
     steps:
       - name: Checkout repository
@@ -90,13 +87,6 @@ jobs:
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
           echo "Updated version to ${{ github.event.inputs.version }}"
       
-      - name: Configure NPM for publishing
-        run: |
-          echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > ~/.npmrc
-          npm whoami || echo "Not authenticated yet"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
       - name: Publish to NPM (release trigger)
         if: github.event_name == 'release'
         run: |
@@ -108,16 +98,13 @@ jobs:
           
           echo "Publishing with tag: $TAG"
           npm publish --access public --tag $TAG
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       
       - name: Publish to NPM (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "Publishing version ${{ github.event.inputs.version }} with tag: ${{ github.event.inputs.tag }}"
           npm publish --access public --tag ${{ github.event.inputs.tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   create-release-pr:
     name: Create Release Pull Request

@@ -1,63 +1,23 @@
-import type { IconComponent, ModelConfigWithProvider, ProviderMetadata } from '../types';
-import { CubeIcon, CheckIcon, ChevronDownIcon } from '../icons';
+import type { ProviderMetadata } from '../types';
+import { CheckIcon, ChevronDownIcon, ClickIcon } from '../icons';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from './ui/Listbox';
 
-export interface ModelSelectionListboxProps {
-  /** Currently selected model/provider */
-  readonly selectedItem: ModelConfigWithProvider | ProviderMetadata | undefined;
-  /** Callback when selection changes */
-  readonly onSelectionChange: (item: ModelConfigWithProvider | ProviderMetadata) => void;
-  /** Top/popular options to show first */
-  readonly topOptions?: (ModelConfigWithProvider | ProviderMetadata)[];
-  /** Other/additional options */
-  readonly otherOptions?: (ModelConfigWithProvider | ProviderMetadata)[];
-  /** Custom className */
+export interface ProviderSelectionListboxProps {
+  readonly selectedItem: ProviderMetadata | undefined;
+  readonly onSelectionChange: (item: ProviderMetadata) => void;
+  readonly topOptions: ProviderMetadata[];
+  readonly otherOptions?: ProviderMetadata[];
   readonly className?: string;
-  /** Placeholder text */
   readonly placeholder?: string;
-  /** Loading state */
   readonly isLoading?: boolean;
-  /** Disabled state */
   readonly disabled?: boolean;
-}
-
-function isProvider(item: object): item is ProviderMetadata {
-  return 'id' in item && 'name' in item && !('model' in item);
-}
-
-function isModel(item: object): item is ModelConfigWithProvider {
-  return 'model' in item && 'provider' in item;
-}
-
-function getItemTitle(item: ModelConfigWithProvider | ProviderMetadata): string {
-  if (isProvider(item)) {
-    return item.name;
-  } else if (isModel(item)) {
-    return item.model.displayName || item.model.id;
-  }
-  return 'Unknown';
-}
-
-function getItemIcon(
-  item: ModelConfigWithProvider | ProviderMetadata | undefined
-): IconComponent | undefined {
-  if (item === undefined) {
-    return undefined;
-  }
-  if (isProvider(item)) {
-    return item.icon;
-  }
-  if (isModel(item)) {
-    return item.provider.icon;
-  }
-  return undefined;
 }
 
 /**
  * Dropdown listbox for selecting models or providers
  * Migrated from Continue's ModelSelectionListbox with enhanced features
  */
-export function ModelSelectionListbox({
+export function ProviderSelectionListbox({
   selectedItem,
   onSelectionChange,
   topOptions = [],
@@ -66,17 +26,17 @@ export function ModelSelectionListbox({
   placeholder = 'Select an option',
   isLoading = false,
   disabled = false,
-}: ModelSelectionListboxProps) {
-  const selectedTitle = selectedItem ? getItemTitle(selectedItem) : placeholder;
-  const SelectedIcon = getItemIcon(selectedItem) ?? CubeIcon;
+}: ProviderSelectionListboxProps) {
+  const selectedTitle = selectedItem?.name ?? placeholder;
+  const SelectedIcon = selectedItem?.icon ?? ClickIcon;
 
-  const renderOption = (item: ModelConfigWithProvider | ProviderMetadata) => {
-    const title = getItemTitle(item);
-    const ItemIcon = getItemIcon(item) ?? CubeIcon;
+  const renderOption = (item: ProviderMetadata) => {
+    const title = item.name;
+    const ItemIcon = item.icon;
 
     return (
       <ListboxOption
-        key={isProvider(item) ? `provider-${item.id}` : `model-${item.model.id}`}
+        key={`provider-${item.id}`}
         value={item}
         className="flex items-center justify-between gap-2"
       >
@@ -98,6 +58,7 @@ export function ModelSelectionListbox({
       <ListboxButton
         disabled={disabled || isLoading}
         className="relative w-full text-foreground p-2 border border-border border-solid text-sm"
+        aria-label={selectedTitle}
       >
         <span className="flex items-center gap-2 min-w-0 flex-1">
           <SelectedIcon className="w-4 h-4 flex-shrink-0 text-current" />
@@ -108,26 +69,23 @@ export function ModelSelectionListbox({
 
       <Transition>
         <ListboxOptions className="py-1">
-          {/* Popular/Top Options */}
           {topOptions.length > 0 && (
             <div>
-              <div className="px-3 py-1 text-sm font-medium uppercase tracking-wider text-muted bg-accent">
+              <div className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted bg-transparent">
                 Popular
               </div>
               {topOptions.map((option) => renderOption(option))}
             </div>
           )}
 
-          {/* Separator */}
           {topOptions.length > 0 && otherOptions.length > 0 && (
             <div className="border-t border-border my-1" />
           )}
 
-          {/* Other Options */}
           {otherOptions.length > 0 && (
             <div>
               {topOptions.length > 0 && (
-                <div className="px-3 py-1 text-sm font-medium uppercase tracking-wider text-muted bg-accent">
+                <div className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted bg-transparent">
                   Additional Options
                 </div>
               )}
@@ -155,4 +113,4 @@ export function ModelSelectionListbox({
   );
 }
 
-export default ModelSelectionListbox;
+export default ProviderSelectionListbox;

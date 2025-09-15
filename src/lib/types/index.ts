@@ -49,7 +49,7 @@ export interface ProviderMetadata {
   id: ProviderId;
   name: string;
   description?: string;
-  icon?: IconComponent;
+  icon: IconComponent;
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
@@ -152,14 +152,7 @@ export abstract class AIProvider {
         error: results.message ?? `${this.metadata.name} configuration is invalid`,
       };
     }
-    if (!this.hasCredentials(config)) {
-      return {
-        isValid: false,
-        error: this.configuration.requiresAtLeastOneOf
-          ? `${this.metadata.name} requires at least one of the following keys: ${this.configuration.requiresAtLeastOneOf.join(', ')}`
-          : `${this.metadata.name} failed credentials validation`,
-      };
-    }
+
     if (results.fieldValidationWarnings.length > 0) {
       return {
         isValid: true,
@@ -187,6 +180,7 @@ export abstract class AIProvider {
 // Provider registry interface
 export interface IProviderRegistry {
   readonly defaultProvider: ProviderId | undefined;
+  readonly topProviders: ProviderId[];
   register(provider: AIProvider): ProviderId;
   getProvider(providerId: ProviderId): AIProvider;
   getAllProviders(): AIProvider[];
