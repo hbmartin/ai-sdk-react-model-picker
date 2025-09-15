@@ -63,7 +63,7 @@ export class CohereProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/cohere'
       );
     }
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = cohere.createCohere(params.options);
     return client(params.model);
   }

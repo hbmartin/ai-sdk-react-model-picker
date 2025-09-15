@@ -22,7 +22,7 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
     return (
       Object.entries(obj)
         // eslint-disable-next-line code-complete/enforce-meaningful-names
-        .toSorted((a, b) => Number(a[1]) - Number(b[1]))
+        .toSorted((a, b) => Number(b[1]) - Number(a[1]))
         .map(([key]) => key as T)
     );
   } catch (error) {

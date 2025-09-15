@@ -53,7 +53,7 @@ export class GoogleProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/google'
       );
     }
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = google.createGoogleGenerativeAI(params.options);
     return client(params.model);
   }

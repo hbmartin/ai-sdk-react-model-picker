@@ -64,7 +64,7 @@ export class MistralProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/mistral'
       );
     }
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = mistral.createMistral(params.options);
     return client(params.model);
   }

@@ -69,7 +69,7 @@ export class AzureProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/azure'
       );
     }
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = azure.createAzure(params.options);
     return client(params.model);
   }

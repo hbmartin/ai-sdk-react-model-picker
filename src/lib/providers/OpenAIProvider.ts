@@ -54,7 +54,7 @@ export class OpenAIProvider extends AIProvider {
       );
     }
 
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = openai.createOpenAI(params.options);
     return client(params.model);
   }

@@ -65,7 +65,7 @@ export class MoonshotProvider extends AIProvider {
       );
     }
 
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = openai.createOpenAI({
       ...params.options,
       baseURL: 'https://api.moonshot.ai/v1',

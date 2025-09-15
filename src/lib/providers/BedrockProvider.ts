@@ -236,7 +236,7 @@ export class BedrockProvider extends AIProvider {
       );
     }
 
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = bedrock.createAmazonBedrock(params.options);
     return client(params.model);
   }

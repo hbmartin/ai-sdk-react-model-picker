@@ -32,9 +32,9 @@ export type ConfigTypeValidationResult<T> = {
 export interface ConfigAPI<ConfigObj extends object> {
   requiresAtLeastOneOf: string[] | undefined;
   fields: ConfigurationField<ConfigObj>[];
-  assert(
+  assertValidConfigAndRemoveEmptyKeys(
     rec: Record<string, string> | undefined
-  ): asserts rec is Record<string, string> & StringSlice<ConfigObj>;
+  ): asserts rec is StringSlice<ConfigObj>;
   validateConfig(record: Record<string, string>): ConfigTypeValidationResult<ConfigObj>;
   validateField(key: string, value: string | undefined): FieldValidationProblem | undefined;
 }
@@ -142,7 +142,7 @@ export function makeConfiguration<ConfigObj extends object>(
       return undefined;
     }
 
-    function assert(
+    function assertValidConfigAndRemoveEmptyKeys(
       record: Record<string, string> | undefined
     ): asserts record is Record<string, string> & StringSlice<ConfigObj> {
       if (record === undefined) {
@@ -163,12 +163,20 @@ export function makeConfiguration<ConfigObj extends object>(
       if (!ok) {
         throw new Error(message);
       }
+
+      // Remove empty keys
+      for (const key of Object.keys(record)) {
+        if (record[key].trim().length === 0) {
+          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+          delete record[key];
+        }
+      }
     }
 
     return {
       requiresAtLeastOneOf: requiresAtLeastOneOf?.map(String),
       fields,
-      assert,
+      assertValidConfigAndRemoveEmptyKeys,
       validateConfig,
       validateField,
     };
