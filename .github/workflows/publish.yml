@@ -28,32 +28,35 @@ jobs:
   quality-checks:
     name: Pre-publish Quality Checks
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-      
+
+      - name: Upgrade npm to latest
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run TypeScript check
         run: npm run typecheck || npx tsc --noEmit
-      
+
       - name: Run linter
         run: npm run lint
-      
+
       - name: Run tests
         run: npm test -- --run 2>/dev/null || echo "No tests configured"
-      
+
       - name: Build library
         run: npm run build
-      
+
       - name: Check package contents
         run: |
           echo "Package contents:"
@@ -63,30 +66,33 @@ jobs:
     name: Publish to NPM Registry
     needs: quality-checks
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js with NPM registry
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
-      
+
+      - name: Upgrade npm to latest
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build library
         run: npm run build
-      
+
       - name: Update package version (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
           echo "Updated version to ${{ github.event.inputs.version }}"
-      
+
       - name: Publish to NPM (release trigger)
         if: github.event_name == 'release'
         run: |
@@ -95,11 +101,10 @@ jobs:
           if [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
             TAG="next"
           fi
-          
+
           echo "Publishing with tag: $TAG"
           npm publish --access public --tag $TAG
 
-      
       - name: Publish to NPM (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -114,37 +119,37 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      
+
       - name: Update version in package.json
         run: |
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
-          
+
           # Update changelog
           cat > RELEASE_NOTES.md << EOF
           ## Version ${{ github.event.inputs.version }}
-          
+
           Published to NPM with tag: ${{ github.event.inputs.tag }}
-          
+
           ### Changes
           - Updated version to ${{ github.event.inputs.version }}
-          
+
           ### Installation
           \`\`\`bash
           npm install ai-sdk-react-model-picker@${{ github.event.inputs.tag }}
           \`\`\`
           EOF
-      
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
@@ -153,19 +158,19 @@ jobs:
           title: 'Release: v${{ github.event.inputs.version }}'
           body: |
             ## 🚀 Release v${{ github.event.inputs.version }}
-            
+
             This PR updates the package version to ${{ github.event.inputs.version }}.
-            
+
             ### NPM Package
             - Published with tag: `${{ github.event.inputs.tag }}`
             - Install: `npm install ai-sdk-react-model-picker@${{ github.event.inputs.tag }}`
-            
+
             ### Checklist
             - [x] Version updated in package.json
             - [x] Published to NPM registry
             - [ ] Changelog updated
             - [ ] Documentation updated
-            
+
             ---
             *This PR was automatically created by the publish workflow.*
           branch: release/v${{ github.event.inputs.version }}

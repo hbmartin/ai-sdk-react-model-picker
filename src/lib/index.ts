@@ -64,3 +64,6 @@ export type {
   ValidationResult,
   ProviderAndModelKey,
 } from './types';
+
+// Utils
+export { getModel } from './utils';
