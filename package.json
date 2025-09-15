@@ -1,10 +1,41 @@
 {
   "name": "ai-sdk-react-model-picker",
   "private": false,
-  "version": "0.1.5",
+  "version": "0.1.6",
+  "description": "A flexible, theme-aware React component library for selecting and managing AI models. Built for seamless integration with Vercel's AI SDK v5, with special support for VSCode extensions and JetBrains IDEs.",
+  "homepage": "https://github.com/hbmartin/ai-sdk-react-model-picker",
+  "bugs": "https://github.com/hbmartin/ai-sdk-react-model-picker/issues",
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "react",  
+    "react-component",
+    "react-library",
+    "typescript",
+    "controlled-components",
+    "component-library",
+    "vercel-ai-sdk",
+    "ai-models",
+    "model-selection",
+    "vscode-extension",
+    "ide-integration",
+    "theme-aware",
+    "plugin-architecture",
+    "type-safe",
+    "frontend",
+    "ui-components"
+  ],
   "type": "module",
-  "author": "Harold Martin",
+  "author": {
+    "name": "Harold Martin",
+    "email": "harold.martin@gmail.com",
+    "url": "https://www.linkedin.com/in/harold-martin-98526971/"
+  },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hbmartin/ai-sdk-react-model-picker"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
