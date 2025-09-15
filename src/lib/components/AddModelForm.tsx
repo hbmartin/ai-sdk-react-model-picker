@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import type { IProviderRegistry, StorageAdapter, AIProvider, ProviderMetadata } from '../types';
 import { setProviderConfiguration } from '../storage/repository';
@@ -44,8 +44,8 @@ export function AddModelForm({
 
   const { topProviders, otherProviders } = useMemo(() => {
     const allProviders = providerRegistry.getAllProviders().map((provider) => provider.metadata);
-    const topProviders = [];
-    const otherProviders = [];
+    const topProviders: ProviderMetadata[] = [];
+    const otherProviders: ProviderMetadata[] = [];
     for (const provider of allProviders) {
       if (providerRegistry.topProviders.includes(provider.id)) {
         topProviders.push(provider);
@@ -56,8 +56,31 @@ export function AddModelForm({
     return { topProviders, otherProviders };
   }, [providerRegistry]);
 
+  const validate = (key: string, value: string | undefined): string | undefined => {
+    if (selectedProvider === undefined) {
+      return 'Provider is required';
+    }
+    const fieldValidation = selectedProvider.configuration.validateField(key, value);
+    const hasValue = value !== undefined && value.trim().length > 0;
+    const { isDirty } = getFieldState(key);
+    if (fieldValidation?.error !== undefined) {
+      return hasValue || isDirty ? fieldValidation.error : undefined;
+    }
+    if (fieldValidation?.warning === undefined && key in warnings && hasValue) {
+      setWarnings((prev) => {
+        // eslint-disable-next-line sonarjs/no-unused-vars
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      });
+    } else if (fieldValidation?.warning !== undefined && (hasValue || isDirty)) {
+      setWarnings((prev) => {
+        return { ...prev, [key]: fieldValidation.warning };
+      });
+    }
+    return undefined;
+  };
+
   const onSubmit = async (formDataWithAny: FormData) => {
-    console.log('onSubmit');
     const formData = Object.fromEntries(
       Object.entries(formDataWithAny).filter(([_, value]) => typeof value === 'string')
     ) as Record<string, string>;
@@ -92,6 +115,9 @@ export function AddModelForm({
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-model-title"
     >
       <div
         className={`
@@ -105,7 +131,9 @@ export function AddModelForm({
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-md font-semibold text-foreground leading-none">Add Model</h2>
+            <h2 id="add-model-title" className="text-md font-semibold text-foreground leading-none">
+              Add Model
+            </h2>
             <button
               type="button"
               onClick={onClose}
@@ -175,34 +203,7 @@ export function AddModelForm({
                     type="text"
                     className="w-full px-3 py-2 border border-border border-solid rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                     {...register(key, {
-                      // eslint-disable-next-line sonarjs/function-return-type
-                      validate: (value) => {
-                        const fieldValidation = selectedProvider.configuration.validateField(
-                          key,
-                          value
-                        );
-                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
-                        const hasValue = value !== undefined && value.trim().length > 0;
-                        const { isDirty } = getFieldState(key);
-                        if (fieldValidation?.error !== undefined) {
-                          return hasValue || isDirty ? fieldValidation.error : false;
-                        }
-                        if (fieldValidation?.warning === undefined && key in warnings && hasValue) {
-                          setWarnings((prev) => {
-                            // eslint-disable-next-line sonarjs/no-unused-vars
-                            const { [key]: _, ...rest } = prev;
-                            return rest;
-                          });
-                        } else if (
-                          fieldValidation?.warning !== undefined &&
-                          (hasValue || isDirty)
-                        ) {
-                          setWarnings((prev) => {
-                            return { ...prev, [key]: fieldValidation.warning };
-                          });
-                        }
-                        return true;
-                      },
+                      validate: (value) => validate(key, value),
                     })}
                   />
                   {errors[key] && (
@@ -238,6 +239,7 @@ export function AddModelForm({
           <button
             type="submit"
             disabled={isSubmitting || !isValid || selectedProvider === undefined}
+            aria-busy={isSubmitting}
             className="
                 mt-8 px-4 py-2 text-sm bg-primary text-white rounded w-full font-medium
                 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed

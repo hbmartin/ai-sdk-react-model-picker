@@ -58,6 +58,7 @@ export function ProviderSelectionListbox({
       <ListboxButton
         disabled={disabled || isLoading}
         className="relative w-full text-foreground p-2 border border-border border-solid text-sm"
+        aria-label={selectedTitle}
       >
         <span className="flex items-center gap-2 min-w-0 flex-1">
           <SelectedIcon className="w-4 h-4 flex-shrink-0 text-current" />

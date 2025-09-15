@@ -36,7 +36,7 @@ export interface ConfigAPI<ConfigObj extends object> {
     rec: Record<string, string> | undefined
   ): asserts rec is Record<string, string> & StringSlice<ConfigObj>;
   validateConfig(record: Record<string, string>): ConfigTypeValidationResult<ConfigObj>;
-  validateField(key: string, value: string): FieldValidationProblem | undefined;
+  validateField(key: string, value: string | undefined): FieldValidationProblem | undefined;
 }
 
 function formatMessage(
@@ -52,7 +52,7 @@ function formatMessage(
     lines.push(`Validation errors: ${fieldValidationErrors.join(', ')}`);
   }
   if (unmetMinimumRequiredKeys && unmetMinimumRequiredKeys.length > 0) {
-    lines.push(`At least one of these are required: ${unmetMinimumRequiredKeys.join(', ')}`);
+    lines.push(`At least one of these is required: ${unmetMinimumRequiredKeys.join(', ')}`);
   }
   return lines.join('\n');
 }
@@ -78,7 +78,7 @@ export function makeConfiguration<ConfigObj extends object>(
     );
     const fieldValidators: Map<
       string,
-      undefined | ((value: string) => FieldValidationProblem | undefined)
+      undefined | ((value: string | undefined) => FieldValidationProblem | undefined)
     > = new Map(fields.map((field) => [String(field.key), field.validation]));
 
     // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -184,7 +184,7 @@ export interface ConfigurationField<T extends object> {
   label: string;
   placeholder: string;
   required?: boolean;
-  validation?: (value: string) => FieldValidationProblem | undefined;
+  validation?: (value: string | undefined) => FieldValidationProblem | undefined;
 }
 
 function hasAny<T extends object>(
@@ -210,7 +210,7 @@ export function baseUrlField<T extends { baseURL?: string }>(
     required,
     validation: (value: string | undefined) => {
       if (required && (value === undefined || value.trim().length === 0)) {
-        return { error: 'API key is required' };
+        return { error: 'API Base URL is required' };
       }
       if (value?.startsWith('https://') === false) {
         return { warning: 'API base URL typically starts with "https://"' };
