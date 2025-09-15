@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   type StorageAdapter,
   type ProviderMetadata,
@@ -10,12 +10,15 @@ import {
   type ProviderId,
   providerAndModelKey,
   type AIProvider,
+  type KeyedModelConfigWithProvider,
 } from '../types';
 import {
   addProviderWithCredentials,
   addRecentlyUsedModel,
+  deleteProviderWithCredentials,
   getProvidersWithCredentials,
   getRecentlyUsedModels,
+  removeRecentlyUsedModels,
 } from '../storage/repository';
 
 function buildProviderMaps(providers: AIProvider[]): {
@@ -43,35 +46,89 @@ export function useModelsWithConfiguredProvider(
   storage: StorageAdapter,
   providerRegistry: IProviderRegistry
 ) {
-  const [recentlyUsedModels, setRecentlyUsedModels] = useState<ModelConfigWithProvider[]>([]);
-  const [modelsWithCredentials, setModelsWithCredentials] = useState<ModelConfigWithProvider[]>([]);
-  const [selectedModel, setSelectedModel] = useState<ModelConfigWithProvider | undefined>(
+  const [recentlyUsedModels, setRecentlyUsedModels] = useState<KeyedModelConfigWithProvider[]>([]);
+  const [modelsWithCredentials, setModelsWithCredentials] = useState<
+    KeyedModelConfigWithProvider[]
+  >([]);
+  const [selectedModel, setSelectedModel] = useState<KeyedModelConfigWithProvider | undefined>(
     undefined
   );
 
-  const setSelectedModelAndProvider = useCallback(
-    (modelId: ModelId, providerId: ProviderId): ModelConfigWithProvider | undefined => {
-      const provider = providerRegistry.getProvider(providerId);
-      const model = provider.models.find((model) => model.id === modelId);
-      if (model === undefined) {
-        return;
+  const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
+    void deleteProviderWithCredentials(storage, providerId);
+    const modelsWithProvider = recentlyUsedModels
+      .filter((model) => model.provider.id === providerId)
+      .map((model) => providerAndModelKey(model));
+    void removeRecentlyUsedModels(storage, modelsWithProvider);
+    setRecentlyUsedModels((prev) => prev.filter((model) => model.provider.id !== providerId));
+    setModelsWithCredentials((prev) => prev.filter((model) => model.provider.id !== providerId));
+
+    // Duplicate work to avoid timing issues
+    const modelToSelect =
+      recentlyUsedModels.find((model) => model.provider.id !== providerId) ??
+      modelsWithCredentials.find((model) => model.provider.id !== providerId);
+    setSelectedModel(modelToSelect);
+    return modelToSelect === undefined
+      ? undefined
+      : { model: modelToSelect.model, provider: modelToSelect.provider };
+  };
+
+  const setSelectedProviderAndModel = (
+    providerId: ProviderId,
+    modelId?: ModelId
+  ): ModelConfigWithProvider | undefined => {
+    const provider = providerRegistry.getProvider(providerId);
+    const model =
+      modelId === undefined
+        ? provider.getDefaultModel()
+        : provider.models.find((model) => model.id === modelId);
+    if (model === undefined) {
+      return;
+    }
+
+    // Save selection to storage
+    const modelWithProvider = { model, provider: provider.metadata };
+    void addProviderWithCredentials(storage, providerId);
+    void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
+
+    // Add new models to the list (i.e. this is a new provider)
+    const knownModels = new Set<string>([
+      ...recentlyUsedModels.map((model) => model.key),
+      ...modelsWithCredentials.map((model) => model.key),
+    ]);
+    const modelsToBeAdded = provider.models
+      .filter((providerModel) => {
+        return (
+          providerModel.id !== model.id &&
+          !knownModels.has(
+            providerAndModelKey({ model: providerModel, provider: provider.metadata })
+          )
+        );
+      })
+      .map((model) => ({
+        model,
+        provider: provider.metadata,
+        key: providerAndModelKey({ model, provider: provider.metadata }),
+      }));
+    setModelsWithCredentials((prev) => [...modelsToBeAdded, ...prev]);
+
+    // Update selection
+    const modelKey = providerAndModelKey(modelWithProvider);
+    const keyedModelWithProvider = { ...modelWithProvider, key: modelKey };
+    setSelectedModel(keyedModelWithProvider);
+    setRecentlyUsedModels((prev) => {
+      const index = prev.findIndex((model) => providerAndModelKey(model) === modelKey);
+      if (index === -1) {
+        return [keyedModelWithProvider, ...prev];
       }
-      const modelWithProvider = { model, provider: provider.metadata };
-      const modelKey = providerAndModelKey(modelWithProvider);
-      void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
-      void addProviderWithCredentials(storage, providerId);
-      setSelectedModel(modelWithProvider);
-      setRecentlyUsedModels((prev) => {
-        const index = prev.findIndex((model) => providerAndModelKey(model) === modelKey);
-        if (index === -1) {
-          return [modelWithProvider, ...prev];
-        }
-        return [modelWithProvider, ...prev.slice(0, index), ...prev.slice(index + 1)];
-      });
-      return modelWithProvider;
-    },
-    [storage, providerRegistry]
-  );
+      return [keyedModelWithProvider, ...prev.slice(0, index), ...prev.slice(index + 1)];
+    });
+
+    // Remove model from credentials list
+    setModelsWithCredentials((prev) => prev.filter((model) => model.key !== modelKey));
+
+    return keyedModelWithProvider;
+  };
 
   useEffect(() => {
     async function loadRecentlyUsed() {
@@ -98,6 +155,7 @@ export function useModelsWithConfiguredProvider(
             return {
               model,
               provider: providerMetadata[providerId],
+              key,
             };
           })
           .filter((item) => item !== undefined);
@@ -110,6 +168,7 @@ export function useModelsWithConfiguredProvider(
               return {
                 model,
                 provider: providerMetadata[providerId],
+                key: providerAndModelKey({ model, provider: providerMetadata[providerId] }),
               };
             });
           })
@@ -121,5 +180,11 @@ export function useModelsWithConfiguredProvider(
     void loadRecentlyUsed();
   }, [storage, providerRegistry]);
 
-  return { recentlyUsedModels, modelsWithCredentials, selectedModel, setSelectedModelAndProvider };
+  return {
+    recentlyUsedModels,
+    modelsWithCredentials,
+    selectedModel,
+    setSelectedProviderAndModel,
+    deleteProvider,
+  };
 }

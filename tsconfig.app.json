@@ -26,5 +26,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "useUnknownInCatchVariables": true
   },
-  "include": ["src", "vscode-plugin.js"]
+  "include": ["src", "vscode-plugin.js"],
+  "declaration": true
 }
