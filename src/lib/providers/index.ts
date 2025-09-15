@@ -1,4 +1,4 @@
-import { AIProvider, createProviderId, type ProviderId } from '../types';
+import { createProviderId, type ProviderCtor, type ProviderId } from '../types';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
 import { BedrockProvider } from './BedrockProvider';
@@ -24,7 +24,7 @@ export type {
 } from '../types';
 
 // All providers that are available, keyed by provider id
-export const allProviders: Record<ProviderId, { new (): AIProvider }> = {
+export const allProviders = {
   [createProviderId('openai')]: OpenAIProvider,
   [createProviderId('anthropic')]: AnthropicProvider,
   [createProviderId('google')]: GoogleProvider,
@@ -33,7 +33,7 @@ export const allProviders: Record<ProviderId, { new (): AIProvider }> = {
   [createProviderId('cohere')]: CohereProvider,
   [createProviderId('bedrock')]: BedrockProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
-};
+} satisfies Record<ProviderId, ProviderCtor>;
 
 // Helper function to create a registry with default providers
 export function createDefaultRegistry(

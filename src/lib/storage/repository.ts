@@ -55,6 +55,21 @@ export async function addRecentlyUsedModel(
   });
 }
 
+export async function removeRecentlyUsedModels(
+  storage: StorageAdapter,
+  modelKeys: ProviderAndModelKey[]
+): Promise<Record<string, string>> {
+  const existing = await storage.get(RECENTLY_USED_MODELS_KEY);
+  if (existing === undefined) {
+    return {};
+  }
+  for (const modelKey of modelKeys) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete existing[modelKey];
+  }
+  return storage.set(RECENTLY_USED_MODELS_KEY, existing).then(() => existing);
+}
+
 export async function getProvidersWithCredentials(storage: StorageGetter): Promise<ProviderId[]> {
   return storage
     .get(PROVIDERS_WITH_CREDENTIALS_KEY)
@@ -70,6 +85,20 @@ export async function addProviderWithCredentials(
       ...existing,
       [providerId]: Date.now().toString(),
     });
+  });
+}
+
+export async function deleteProviderWithCredentials(
+  storage: StorageAdapter,
+  providerId: ProviderId
+): Promise<void> {
+  return storage.get(PROVIDERS_WITH_CREDENTIALS_KEY).then((existing) => {
+    if (existing === undefined) {
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete existing[providerId];
+    return storage.set(PROVIDERS_WITH_CREDENTIALS_KEY, existing);
   });
 }
 
@@ -90,4 +119,11 @@ export async function getProviderConfiguration(
   providerId: ProviderId
 ): Promise<Record<string, string> | undefined> {
   return storage.get(providerConfigKey(providerId));
+}
+
+export async function deleteProviderConfiguration(
+  storage: StorageAdapter,
+  providerId: ProviderId
+): Promise<void> {
+  return storage.remove(providerConfigKey(providerId));
 }

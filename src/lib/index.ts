@@ -66,4 +66,4 @@ export type {
 } from './types';
 
 // Utils
-export { getModel } from './utils';
+export { getSdkLanguageModel } from './utils';

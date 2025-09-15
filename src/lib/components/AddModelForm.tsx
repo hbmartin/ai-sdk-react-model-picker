@@ -1,7 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import type { IProviderRegistry, StorageAdapter, AIProvider, ProviderMetadata } from '../types';
-import { setProviderConfiguration } from '../storage/repository';
+import type {
+  IProviderRegistry,
+  StorageAdapter,
+  AIProvider,
+  ProviderMetadata,
+  ProviderId,
+} from '../types';
+import { TrashIcon } from '../icons';
+import {
+  deleteProviderConfiguration,
+  getProviderConfiguration,
+  setProviderConfiguration,
+} from '../storage/repository';
 import { ProviderSelectionListbox } from './ProviderSelectionListbox';
 
 export interface AddModelFormProps {
@@ -10,6 +21,7 @@ export interface AddModelFormProps {
   readonly onClose: () => void;
   readonly onProviderConfigured: (provider: ProviderMetadata) => void;
   readonly className?: string;
+  readonly onProviderDeleted: (providerId: ProviderId) => void;
 }
 
 interface FormData extends Record<string, string> {
@@ -27,10 +39,12 @@ export function AddModelForm({
   onClose,
   onProviderConfigured,
   className = '',
+  onProviderDeleted,
 }: AddModelFormProps) {
   const [selectedProvider, setSelectedProvider] = useState<AIProvider | undefined>();
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | undefined>();
+  const [providerHadCredentials, setProviderHadCredentials] = useState<boolean>(false);
 
   const {
     register,
@@ -41,6 +55,24 @@ export function AddModelForm({
   } = useForm<FormData>({
     mode: 'onTouched',
   });
+
+  const clearReset = () => {
+    if (selectedProvider === undefined) {
+      reset();
+      return;
+    }
+    const currentProviderId = selectedProvider.metadata.id;
+    const emptyFields = selectedProvider.configuration.fields.reduce<Record<string, string>>(
+      (acc, field) => {
+        acc[field.key] = '';
+        return acc;
+      },
+      {}
+    );
+    if (currentProviderId === selectedProvider.metadata.id) {
+      reset(emptyFields);
+    }
+  };
 
   const { topProviders, otherProviders } = useMemo(() => {
     const allProviders = providerRegistry.getAllProviders().map((provider) => provider.metadata);
@@ -80,6 +112,20 @@ export function AddModelForm({
     return undefined;
   };
 
+  const onProviderSelected = async (provider: ProviderMetadata) => {
+    setWarnings({});
+    setSubmitError(undefined);
+
+    clearReset();
+    const providerConfig = await getProviderConfiguration(storage, provider.id);
+    if (providerConfig !== undefined) {
+      reset(providerConfig);
+    }
+
+    setProviderHadCredentials(providerConfig !== undefined);
+    setSelectedProvider(providerRegistry.getProvider(provider.id));
+  };
+
   const onSubmit = async (formDataWithAny: FormData) => {
     const formData = Object.fromEntries(
       Object.entries(formDataWithAny).filter(([_, value]) => typeof value === 'string')
@@ -104,6 +150,7 @@ export function AddModelForm({
       reset();
       setWarnings({});
       setSubmitError(undefined);
+      setProviderHadCredentials(false);
     } catch (error) {
       setSubmitError(
         `Error saving model configuration: ${error instanceof Error ? error.message : String(error)}`
@@ -120,7 +167,7 @@ export function AddModelForm({
       aria-labelledby="add-model-title"
     >
       <div
-        className={`
+        className={`transition-all duration-250 min-h-1/2
         bg-background border border-border rounded-lg shadow-lg
         max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto
         ${className}
@@ -129,10 +176,9 @@ export function AddModelForm({
       >
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 id="add-model-title" className="text-md font-semibold text-foreground leading-none">
-              Add Model
+              Add Provider
             </h2>
             <button
               type="button"
@@ -165,12 +211,7 @@ export function AddModelForm({
               <label className="block text-sm font-medium text-foreground mb-2">Provider</label>
               <ProviderSelectionListbox
                 selectedItem={selectedProvider?.metadata}
-                onSelectionChange={(item) => {
-                  setWarnings({});
-                  setSubmitError(undefined);
-                  reset();
-                  setSelectedProvider(providerRegistry.getProvider(item.id));
-                }}
+                onSelectionChange={(provider) => void onProviderSelected(provider)}
                 topOptions={topProviders}
                 otherOptions={otherProviders}
               />
@@ -236,19 +277,50 @@ export function AddModelForm({
             <p className="my-2 px-1 text-sm text-destructive">{submitError}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting || !isValid || selectedProvider === undefined}
-            aria-busy={isSubmitting}
-            className="
+          <div className="flex justify-between gap-2">
+            {selectedProvider !== undefined && providerHadCredentials && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                aria-busy={isSubmitting}
+                onClick={() => {
+                  void deleteProviderConfiguration(storage, selectedProvider.metadata.id);
+                  setProviderHadCredentials(false);
+                  clearReset();
+                  onProviderDeleted(selectedProvider.metadata.id);
+                }}
+                className="w-1/4
+              mt-8 px-4 py-2 text-sm bg-destructive text-white rounded
+              disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
+               border border-border border-solid transition-colors
+               active:scale-95 transition-all duration-100 ease-in-out
+            "
+              >
+                <TrashIcon className="w-4 h-4 flex-shrink-0 text-current" />
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={isSubmitting || !isValid || selectedProvider === undefined}
+              aria-busy={isSubmitting}
+              className="
                 mt-8 px-4 py-2 text-sm bg-primary text-white rounded w-full font-medium
                 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
                  border border-border border-solid transition-colors
                  active:scale-95 transition-all duration-100 ease-in-out
               "
-          >
-            {isSubmitting ? 'Connecting...' : 'Connect'}
-          </button>
+            >
+              {providerHadCredentials
+                ? // eslint-disable-next-line sonarjs/no-nested-conditional
+                  isSubmitting
+                  ? 'Updating...'
+                  : 'Update'
+                : // eslint-disable-next-line sonarjs/no-nested-conditional
+                  isSubmitting
+                  ? 'Connecting...'
+                  : 'Connect'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

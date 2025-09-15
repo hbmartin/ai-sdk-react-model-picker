@@ -1,12 +1,7 @@
 import { useCallback, useState } from 'react';
-import {
-  type ModelSelectProps,
-  providerAndModelKey,
-  type ProviderAndModelKey,
-  idsFromKey,
-} from '../types';
+import { type ModelSelectProps, type ProviderAndModelKey, idsFromKey } from '../types';
 import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
-import { CheckIcon, ChevronDownIcon, SettingsIcon, PlusIcon } from '../icons';
+import { CheckIcon, ChevronDownIcon, PlusIcon } from '../icons';
 import { AddModelForm } from './AddModelForm';
 import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
@@ -25,9 +20,13 @@ export function ModelSelect({
   disabled = false,
 }: ModelSelectProps) {
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const [showConfigureProviders, setShowConfigureProviders] = useState(false);
-  const { recentlyUsedModels, modelsWithCredentials, selectedModel, setSelectedModelAndProvider } =
-    useModelsWithConfiguredProvider(storage, providerRegistry);
+  const {
+    recentlyUsedModels,
+    modelsWithCredentials,
+    selectedModel,
+    setSelectedProviderAndModel,
+    deleteProvider,
+  } = useModelsWithConfiguredProvider(storage, providerRegistry);
 
   // Handle model selection
   const handleModelSelect = (key: ProviderAndModelKey | typeof ADD_MODEL_ID) => {
@@ -39,7 +38,7 @@ export function ModelSelect({
     if (modelId === selectedModel?.model.id && providerId === selectedModel.provider.id) {
       return;
     }
-    const modelWithProvider = setSelectedModelAndProvider(modelId, providerId);
+    const modelWithProvider = setSelectedProviderAndModel(providerId, modelId);
     if (modelWithProvider) {
       onModelChange(modelWithProvider);
     }
@@ -52,8 +51,6 @@ export function ModelSelect({
     }
     return true;
   }, [recentlyUsedModels, modelsWithCredentials]);
-
-  const displayTitle = selectedModel?.model.displayName ?? 'Add model';
 
   return (
     <div className={`ai-sdk-model-picker ${className}`}>
@@ -73,11 +70,7 @@ export function ModelSelect({
         </div>
       )}
 
-      {/* Model selector */}
-      <Listbox
-        value={selectedModel ? providerAndModelKey(selectedModel) : undefined}
-        onChange={handleModelSelect}
-      >
+      <Listbox value={selectedModel?.key} onChange={handleModelSelect}>
         <div className="relative flex">
           <ListboxButton
             disabled={disabled}
@@ -85,7 +78,7 @@ export function ModelSelect({
             shouldOpenList={shouldOpenList}
           >
             <span className="line-clamp-1 break-all hover:brightness-110 text-left">
-              {displayTitle}
+              {selectedModel?.model.displayName ?? 'Add Model Provider'}
             </span>
             <ChevronDownIcon
               className="hidden h-2 w-2 flex-shrink-0 hover:brightness-110 min-[200px]:flex"
@@ -94,111 +87,78 @@ export function ModelSelect({
           </ListboxButton>
 
           <ListboxOptions className="min-w-[160px]">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-1 px-2 py-1 border-b border-border">
-              <span className="font-semibold text-xs text-foreground">Models</span>
-              <button
-                type="button"
-                onClick={() => setShowConfigureProviders(true)}
-                className="p-1 bg-transparent border-none rounded
-        text-foreground hover:bg-accent
-        transition-colors duration-150"
-                title="Configure providers"
-              >
-                <SettingsIcon className="h-3 w-3" />
-              </button>
-              {showConfigureProviders && <span>Sorry, not implemented yet</span>}
-            </div>
-
-            {/* Models list */}
-            <div className="no-scrollbar max-h-[300px]">
+            <div className="no-scrollbar max-h-[300px] mb-1">
               {modelsWithCredentials.length === 0 ? (
                 <div className="text-muted px-2 py-4 text-center text-xs">No models configured</div>
               ) : (
                 <>
-                  {/* Recently Used Models */}
-                  {recentlyUsedModels.length > 0 && (
-                    <>
-                      <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
-                        Recently Used
-                      </div>
-                      {recentlyUsedModels.map((model) => {
-                        const isSelected =
-                          model.model.id === selectedModel?.model.id &&
-                          model.provider.id === selectedModel.provider.id;
-                        return (
-                          <ListboxOption
-                            key={providerAndModelKey(model)}
-                            value={providerAndModelKey(model)}
-                          >
-                            <div className="flex w-full items-center justify-between">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <model.provider.icon
-                                  className="h-3 w-3 text-current flex-shrink-0"
-                                  aria-hidden="true"
-                                />
-                                <span className="line-clamp-1 text-xs">
-                                  {model.model.displayName}
-                                  <span className="text-muted ml-1.5 text-[10px] italic">
-                                    {model.provider.name}
-                                  </span>
-                                </span>
-                              </div>
-                              <CheckIcon
-                                className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
-                              />
-                            </div>
-                          </ListboxOption>
-                        );
-                      })}
-                    </>
-                  )}
+                  <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
+                    Recently Used
+                  </div>
+                  {recentlyUsedModels.map((model) => {
+                    const isSelected =
+                      model.model.id === selectedModel?.model.id &&
+                      model.provider.id === selectedModel.provider.id;
+                    return (
+                      <ListboxOption key={model.key} value={model.key}>
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <model.provider.icon
+                              className="h-3 w-3 text-current flex-shrink-0"
+                              aria-hidden="true"
+                            />
+                            <span className="line-clamp-1 text-xs">
+                              {model.model.displayName}
+                              <span className="text-muted ml-1.5 text-[10px] italic">
+                                {model.provider.name}
+                              </span>
+                            </span>
+                          </div>
+                          <CheckIcon
+                            className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
+                          />
+                        </div>
+                      </ListboxOption>
+                    );
+                  })}
 
-                  {/* Unused Models with Credentials */}
-                  {modelsWithCredentials.length > 0 && (
-                    <>
-                      {modelsWithCredentials.map((model) => {
-                        const isSelected =
-                          model.model.id === selectedModel?.model.id &&
-                          model.provider.id === selectedModel.provider.id;
-                        return (
-                          <ListboxOption
-                            key={providerAndModelKey(model)}
-                            value={providerAndModelKey(model)}
-                          >
-                            <div className="flex w-full items-center justify-between">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <model.provider.icon
-                                  className="h-3 w-3 text-current flex-shrink-0"
-                                  aria-hidden="true"
-                                />
-                                <span className="line-clamp-1 text-xs">
-                                  {model.model.displayName}
-                                  <span className="text-muted ml-1.5 text-[10px] italic">
-                                    {model.provider.name}
-                                  </span>
-                                </span>
-                              </div>
-                              <CheckIcon
-                                className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
-                              />
-                            </div>
-                          </ListboxOption>
-                        );
-                      })}
-                    </>
-                  )}
+                  <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
+                    Available Models
+                  </div>
+                  {modelsWithCredentials.map((model) => {
+                    const isSelected =
+                      model.model.id === selectedModel?.model.id &&
+                      model.provider.id === selectedModel.provider.id;
+                    return (
+                      <ListboxOption key={model.key} value={model.key}>
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <model.provider.icon
+                              className="h-3 w-3 text-current flex-shrink-0"
+                              aria-hidden="true"
+                            />
+                            <span className="line-clamp-1 text-xs">
+                              {model.model.displayName}
+                              <span className="text-muted ml-1.5 text-[10px] italic">
+                                {model.provider.name}
+                              </span>
+                            </span>
+                          </div>
+                          <CheckIcon
+                            className={`h-3 w-3 flex-shrink-0 ${isSelected ? '' : 'invisible'}`}
+                          />
+                        </div>
+                      </ListboxOption>
+                    );
+                  })}
                 </>
               )}
             </div>
-
+            <hr className="bg-accent h-px border-0 m-0" />
             <ListboxOption value={ADD_MODEL_ID}>
-              <div
-                className="text-muted flex items-center py-0.5 my-0.5 hover:text-foreground text-xs font-semibold
-                        border-b-0 border-t border-r-0 border-l-0 border-border border-solid"
-              >
+              <div className="text-muted flex items-center my-1 hover:text-foreground text-xs font-semibold">
                 <PlusIcon className="mr-2 h-3 w-3" />
-                Add model
+                Add Model Provider
               </div>
             </ListboxOption>
           </ListboxOptions>
@@ -211,10 +171,18 @@ export function ModelSelect({
           storage={storage}
           onClose={() => setShowAddModelForm(false)}
           onProviderConfigured={(provider) => {
-            const model = providerRegistry.getProvider(provider.id).getDefaultModel();
-            setSelectedModelAndProvider(model.id, provider.id);
+            const modelWithProvider = setSelectedProviderAndModel(provider.id);
             setShowAddModelForm(false);
-            onModelChange({ model, provider });
+            if (modelWithProvider !== undefined) {
+              onModelChange({
+                model: modelWithProvider.model,
+                provider: modelWithProvider.provider,
+              });
+            }
+          }}
+          onProviderDeleted={(providerId) => {
+            const model = deleteProvider(providerId);
+            onModelChange(model);
           }}
         />
       )}

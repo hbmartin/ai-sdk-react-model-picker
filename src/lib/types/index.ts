@@ -29,6 +29,10 @@ export interface ModelConfigWithProvider {
   provider: ProviderMetadata;
 }
 
+export interface KeyedModelConfigWithProvider extends ModelConfigWithProvider {
+  key: ProviderAndModelKey;
+}
+
 export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
 }
@@ -195,7 +199,7 @@ export interface ModelSelectProps {
   // Required props
   readonly storage: StorageAdapter;
   readonly providerRegistry: IProviderRegistry;
-  readonly onModelChange: (model: ModelConfigWithProvider) => void;
+  readonly onModelChange: (model: ModelConfigWithProvider | undefined) => void;
 
   // Optional configuration
   readonly roles?: Role[];
@@ -218,6 +222,8 @@ export interface AddModelFormState {
 export interface ComponentWithChildren {
   children: ReactNode;
 }
+
+export type ProviderCtor = new () => AIProvider;
 
 // Export branded type constructors
 export const createProviderId = (id: string): ProviderId => id as ProviderId;

@@ -4,7 +4,7 @@ import type { StorageAdapter } from '../types';
 import { allProviders } from '../providers';
 import { getSelectedProviderAndModelKey, getProviderConfiguration } from '../storage/repository';
 
-export async function getModel(storage: StorageAdapter): Promise<LanguageModelV2> {
+export async function getSdkLanguageModel(storage: StorageAdapter): Promise<LanguageModelV2> {
   const modelAndProviderKey = await getSelectedProviderAndModelKey(storage);
   if (modelAndProviderKey === undefined) {
     throw new Error('Could not find a selected model');
@@ -19,6 +19,6 @@ export async function getModel(storage: StorageAdapter): Promise<LanguageModelV2
   if (config === undefined) {
     throw new Error(`Could not find the required provider configuration: ${providerId}`);
   }
-
-  return new provider().createInstance({ model: modelId, options: config });
+  const providerInstance = new provider();
+  return providerInstance.createInstance({ model: modelId, options: config });
 }

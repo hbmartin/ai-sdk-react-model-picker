@@ -3,10 +3,10 @@
 A flexible, theme-aware React component library for selecting and managing AI models. Built for seamless integration with [Vercel's AI SDK v5](https://ai-sdk.dev/), with special support for VSCode extensions and JetBrains IDEs. Based on [Continue.dev](https://github.com/continuedev/continue).
 
 [![npm version](https://badge.fury.io/js/ai-sdk-react-model-picker.svg)](https://www.npmjs.com/package/ai-sdk-react-model-picker)
-![NPM Last Update](https://img.shields.io/npm/last-update/ai-sdk-react-model-picker)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hbmartin/ai-sdk-react-model-picker)
 [![CI](https://github.com/hbmartin/ai-sdk-react-model-picker/actions/workflows/ci.yml/badge.svg)](https://github.com/hbmartin/ai-sdk-react-model-picker/actions/workflows/ci.yml)
-![NPM License](https://img.shields.io/npm/l/ai-sdk-react-model-picker?color=blue)
+[![NPM License](https://img.shields.io/npm/l/ai-sdk-react-model-picker?color=blue)](https://github.com/hbmartin/ai-sdk-react-model-picker/blob/main/LICENSE.txt)
+[![Storybook](https://img.shields.io/badge/Storybook-white?logo=storybook)](https://hbmartin.github.io/ai-sdk-react-model-picker)
 
 ## Features
 
