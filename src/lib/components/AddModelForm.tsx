@@ -57,11 +57,14 @@ export function AddModelForm({
   });
 
   const clearReset = () => {
+    const currentProviderId = selectedProvider?.metadata.id;
+    setWarnings({});
+    setSubmitError(undefined);
+
     if (selectedProvider === undefined) {
       reset();
       return;
     }
-    const currentProviderId = selectedProvider.metadata.id;
     const emptyFields = selectedProvider.configuration.fields.reduce<Record<string, string>>(
       (acc, field) => {
         acc[field.key] = '';
@@ -113,9 +116,6 @@ export function AddModelForm({
   };
 
   const onProviderSelected = async (provider: ProviderMetadata) => {
-    setWarnings({});
-    setSubmitError(undefined);
-
     clearReset();
     const providerConfig = await getProviderConfiguration(storage, provider.id);
     if (providerConfig !== undefined) {

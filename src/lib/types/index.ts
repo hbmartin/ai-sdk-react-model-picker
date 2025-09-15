@@ -199,7 +199,7 @@ export interface ModelSelectProps {
   // Required props
   readonly storage: StorageAdapter;
   readonly providerRegistry: IProviderRegistry;
-  readonly onModelChange: (model: ModelConfigWithProvider | undefined) => void;
+  readonly onModelChange?: (model: ModelConfigWithProvider | undefined) => void;
 
   // Optional configuration
   readonly roles?: Role[];

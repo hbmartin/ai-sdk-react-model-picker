@@ -3,6 +3,7 @@ export { ModelSelect, type ModelSelectProps } from './ModelSelect';
 export { ModelCard, type ModelCardProps } from './ModelCard';
 export { ModelProviderTag, type ModelProviderTagProps } from './ModelProviderTag';
 export { Toggle, type ToggleProps } from './Toggle';
+export { ModelOption, type ModelOptionProps } from './ModelOption';
 
 // Supporting components
 export {
