@@ -5,8 +5,8 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 [![npm version](https://badge.fury.io/js/ai-sdk-react-model-picker.svg)](https://www.npmjs.com/package/ai-sdk-react-model-picker)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hbmartin/ai-sdk-react-model-picker)
 [![CI](https://github.com/hbmartin/ai-sdk-react-model-picker/actions/workflows/ci.yml/badge.svg)](https://github.com/hbmartin/ai-sdk-react-model-picker/actions/workflows/ci.yml)
-![NPM License](https://img.shields.io/npm/l/ai-sdk-react-model-picker?color=blue)
-![Storybook](https://img.shields.io/badge/Storybook-white?logo=storybook)
+[![NPM License](https://img.shields.io/npm/l/ai-sdk-react-model-picker?color=blue)](https://github.com/hbmartin/ai-sdk-react-model-picker/blob/main/LICENSE.txt)
+[![Storybook](https://img.shields.io/badge/Storybook-white?logo=storybook)](https://hbmartin.github.io/ai-sdk-react-model-picker)
 
 ## Features
 

@@ -58,16 +58,22 @@ export function useModelsWithConfiguredProvider(
     void deleteProviderWithCredentials(storage, providerId);
     const modelsWithProvider = recentlyUsedModels
       .filter((model) => model.provider.id === providerId)
-      .map((model) => providerAndModelKey(model));
+      .map((model) => model.key);
     void removeRecentlyUsedModels(storage, modelsWithProvider);
-    setRecentlyUsedModels((prev) => prev.filter((model) => model.provider.id !== providerId));
-    setModelsWithCredentials((prev) => prev.filter((model) => model.provider.id !== providerId));
+    // Calculate new state arrays first
+    const newRecentlyUsed = recentlyUsedModels.filter((model) => model.provider.id !== providerId);
+    const newModelsWithCreds = modelsWithCredentials.filter(
+      (model) => model.provider.id !== providerId
+    );
 
-    // Duplicate work to avoid timing issues
-    const modelToSelect =
-      recentlyUsedModels.find((model) => model.provider.id !== providerId) ??
-      modelsWithCredentials.find((model) => model.provider.id !== providerId);
+    // Use the new, correct state to derive the next selected model
+    const modelToSelect = newRecentlyUsed[0] ?? newModelsWithCreds[0];
+
+    // Update all relevant state based on the new arrays
+    setRecentlyUsedModels(newRecentlyUsed);
+    setModelsWithCredentials(newModelsWithCreds);
     setSelectedModel(modelToSelect);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
     return modelToSelect === undefined
       ? undefined
       : { model: modelToSelect.model, provider: modelToSelect.provider };
@@ -117,7 +123,7 @@ export function useModelsWithConfiguredProvider(
     const keyedModelWithProvider = { ...modelWithProvider, key: modelKey };
     setSelectedModel(keyedModelWithProvider);
     setRecentlyUsedModels((prev) => {
-      const index = prev.findIndex((model) => providerAndModelKey(model) === modelKey);
+      const index = prev.findIndex((model) => model.key === modelKey);
       if (index === -1) {
         return [keyedModelWithProvider, ...prev];
       }

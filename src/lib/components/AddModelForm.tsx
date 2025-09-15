@@ -57,12 +57,21 @@ export function AddModelForm({
   });
 
   const clearReset = () => {
-    reset(
-      selectedProvider?.configuration.fields.reduce<Record<string, string>>((acc, field) => {
+    if (selectedProvider === undefined) {
+      reset();
+      return;
+    }
+    const currentProviderId = selectedProvider.metadata.id;
+    const emptyFields = selectedProvider.configuration.fields.reduce<Record<string, string>>(
+      (acc, field) => {
         acc[field.key] = '';
         return acc;
-      }, {})
+      },
+      {}
     );
+    if (currentProviderId === selectedProvider.metadata.id) {
+      reset(emptyFields);
+    }
   };
 
   const { topProviders, otherProviders } = useMemo(() => {
@@ -158,7 +167,7 @@ export function AddModelForm({
       aria-labelledby="add-model-title"
     >
       <div
-        className={`
+        className={`transition-all duration-250 min-h-1/2
         bg-background border border-border rounded-lg shadow-lg
         max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto
         ${className}
@@ -167,7 +176,6 @@ export function AddModelForm({
       >
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 id="add-model-title" className="text-md font-semibold text-foreground leading-none">
               Add Provider
@@ -282,7 +290,7 @@ export function AddModelForm({
                   onProviderDeleted(selectedProvider.metadata.id);
                 }}
                 className="w-1/4
-              mt-8 px-4 py-2 text-sm bg-destructive text-white rounded w-full
+              mt-8 px-4 py-2 text-sm bg-destructive text-white rounded
               disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
                border border-border border-solid transition-colors
                active:scale-95 transition-all duration-100 ease-in-out
