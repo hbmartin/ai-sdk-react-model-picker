@@ -290,7 +290,7 @@ export function AddModelForm({
                   onProviderDeleted(selectedProvider.metadata.id);
                 }}
                 className="w-1/4
-              mt-8 px-4 py-2 text-sm bg-destructive text-white rounded
+              mt-8 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded
               disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
                border border-border border-solid transition-colors
                active:scale-95 transition-all duration-100 ease-in-out
@@ -304,7 +304,7 @@ export function AddModelForm({
               disabled={isSubmitting || !isValid || selectedProvider === undefined}
               aria-busy={isSubmitting}
               className="
-                mt-8 px-4 py-2 text-sm bg-primary text-white rounded w-full font-medium
+                mt-8 px-4 py-2 text-sm bg-primary text-primary-foreground rounded w-full font-medium
                 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
                  border border-border border-solid transition-colors
                  active:scale-95 transition-all duration-100 ease-in-out

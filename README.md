@@ -466,7 +466,22 @@ Override default theme variables:
 
 ### Tailwind CSS Integration
 
-The library works with or without Tailwind CSS. If your app uses Tailwind, the components will inherit your theme automatically.
+The library works with or without Tailwind CSS:
+
+- No Tailwind: just import `ai-sdk-react-model-picker/styles.css` and you’re done.
+- With Tailwind: optionally add the preset to map your theme tokens to our CSS variables.
+
+Tailwind preset setup:
+
+```js
+// tailwind.config.js
+module.exports = {
+  presets: [require('ai-sdk-react-model-picker/tailwind-preset')],
+  // ...your config
+};
+```
+
+This enables classes like `bg-primary`, `text-foreground`, `bg-accent`, and semantic foregrounds like `text-primary-foreground` and `text-destructive-foreground` to follow your app’s theme.
 
 ## TypeScript Support
 

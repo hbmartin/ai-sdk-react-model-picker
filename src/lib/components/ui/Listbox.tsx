@@ -351,7 +351,7 @@ export function ListboxOption({
       onKeyDown={handleKeyDown}
       className={`
         px-3 py-1 cursor-pointer select-none
-        ${isSelected ? 'bg-primary text-white' : 'text-foreground hover:bg-accent'}
+        ${isSelected ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent'}
         transition-colors duration-150
         ${className}

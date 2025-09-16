@@ -85,3 +85,20 @@ Issue 7: Listbox positioning/behavior
 - Future improvements:
   - Consider using Floating UI/Popper for robust positioning if footprint allows.
   - Add type-ahead support and aria-activedescendant pattern for richer a11y.
+
+Issue 8: Theming & CSS cleanup
+- Problems:
+  - Some components used hardcoded colors (e.g., `text-white`) instead of semantic theme classes.
+  - Docs didn’t clearly explain compiled CSS vs Tailwind preset paths.
+- Changes:
+  - Replaced hardcoded `text-white` with `text-primary-foreground` / `text-destructive-foreground` where appropriate.
+  - Expanded README with explicit guidance for non-Tailwind users (import CSS only) and Tailwind users (preset usage).
+- Files changed:
+  - `src/lib/components/Toggle.tsx`
+  - `src/lib/components/ui/Listbox.tsx`
+  - `src/lib/components/AddModelForm.tsx`
+  - `README.md`
+- Validation: Linted successfully.
+- Future improvements:
+  - Audit remaining components for any direct color usage and replace with semantic tokens.
+  - Provide an optional CSS-only bundle with precompiled semantic classes for consumers not using Tailwind.
