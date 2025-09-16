@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { type ModelSelectProps, type ProviderAndModelKey, idsFromKey } from '../types';
+import { useOptionalModelPicker } from '../context';
 import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
 import { ChevronDownIcon, PlusIcon } from '../icons';
 import { AddModelForm } from './AddModelForm';
@@ -20,6 +21,12 @@ export function ModelSelect({
   className = '',
   disabled = false,
 }: ModelSelectProps) {
+  const context = useOptionalModelPicker();
+  const effectiveStorage = context?.storage ?? storage;
+  const effectiveProviderRegistry = context?.providerRegistry ?? providerRegistry;
+  const effectiveRoles = context?.roles ?? roles;
+  const effectiveSelectedRole = context?.state.selectedRole ?? selectedRole;
+  const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
   const {
     recentlyUsedModels,
@@ -27,7 +34,7 @@ export function ModelSelect({
     selectedModel,
     setSelectedProviderAndModel,
     deleteProvider,
-  } = useModelsWithConfiguredProvider(storage, providerRegistry);
+  } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry);
 
   // Handle model selection
   const handleModelSelect = (key: ProviderAndModelKey | typeof ADD_MODEL_ID) => {
@@ -41,6 +48,8 @@ export function ModelSelect({
     }
     const modelWithProvider = setSelectedProviderAndModel(providerId, modelId);
     if (modelWithProvider) {
+      // Notify both context (if present) and prop callback
+      context?.selectModel(modelWithProvider);
       onModelChange?.(modelWithProvider);
     }
   };
@@ -56,15 +65,19 @@ export function ModelSelect({
   return (
     <div className={`ai-sdk-model-picker ${className}`}>
       {/* Role selector (if roles provided) */}
-      {roles && roles.length > 0 && (
+      {effectiveRoles && effectiveRoles.length > 0 && (
         <div className="mb-3">
           <Toggle
-            optionOne={roles[0]?.label || 'Option 1'}
-            optionTwo={roles[1]?.label || 'Option 2'}
-            selected={selectedRole === roles[0]?.id}
+            optionOne={effectiveRoles[0]?.label || 'Option 1'}
+            optionTwo={effectiveRoles[1]?.label || 'Option 2'}
+            selected={effectiveSelectedRole === effectiveRoles[0]?.id}
             onClick={() => {
-              if (onRoleChange && roles.length > 1) {
-                onRoleChange(selectedRole === roles[0].id ? roles[1].id : roles[0].id);
+              if (effectiveOnRoleChange && effectiveRoles.length > 1) {
+                effectiveOnRoleChange(
+                  effectiveSelectedRole === effectiveRoles[0].id
+                    ? effectiveRoles[1].id
+                    : effectiveRoles[0].id
+                );
               }
             }}
           />
@@ -124,12 +137,15 @@ export function ModelSelect({
 
       {showAddModelForm && (
         <AddModelForm
-          providerRegistry={providerRegistry}
-          storage={storage}
+          providerRegistry={effectiveProviderRegistry}
+          storage={effectiveStorage}
           onClose={() => setShowAddModelForm(false)}
           onProviderConfigured={(provider) => {
             const modelWithProvider = setSelectedProviderAndModel(provider.id);
             setShowAddModelForm(false);
+            if (modelWithProvider) {
+              context?.selectModel(modelWithProvider);
+            }
             onModelChange?.(modelWithProvider);
           }}
           onProviderDeleted={(providerId) => {

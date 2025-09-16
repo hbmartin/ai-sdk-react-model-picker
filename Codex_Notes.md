@@ -126,3 +126,12 @@ Issue 10: Testing & QA
 - Future improvements:
   - Add React hook tests for `useModelsWithConfiguredProvider` using Testing Library.
   - Add CI config to run vitest in a single-threaded mode if needed.
+
+Issue 11: Documentation sync and troubleshooting
+- Changes:
+  - Removed `getAllModels()` reference from README (method removed).
+  - Added troubleshooting section for missing provider packages / dynamic imports.
+- Files changed:
+  - `README.md`
+- Future improvements:
+  - Keep API and docs generation in sync (consider typedoc or tsdoc extraction for prop interfaces).

@@ -271,9 +271,6 @@ const registry = new ProviderRegistry();
 registry.register(new OpenAIProvider());
 registry.register(new AnthropicProvider());
 
-// Get all models across providers
-const allModels = registry.getAllModels();
-
 // Get provider-specific models
 const openaiModels = registry.getModelsForProvider('openai');
 ```
@@ -548,3 +545,16 @@ npm run dev
 - Copyright 2023 Continue Dev, Inc.
 - Copyright 2025 Harold Martin
 - Logos are the property of their respective creators.
+### Missing provider package / dynamic import error
+
+If you see an error like “OpenAI provider requires @ai-sdk/openai to be installed” when creating a model instance, install the corresponding AI SDK provider package as a peer dependency:
+
+```bash
+npm install @ai-sdk/openai # or @ai-sdk/anthropic, @ai-sdk/google, etc.
+```
+
+For OpenRouter support, install:
+
+```bash
+npm install @openrouter/ai-sdk-provider
+```
