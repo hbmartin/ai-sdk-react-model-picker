@@ -56,3 +56,18 @@ Issue 5: ProviderRegistry.getAllModels() bypassed dynamic model loading
 - Future improvements:
   - Introduce an async hook/utility to aggregate `await provider.getModels()` per provider for dynamic fetching.
   - Consider caching model lists with invalidation hooks.
+
+Issue 6: Storage robustness and versioning
+- Problems:
+  - Stored maps used unvalidated plain records with ad-hoc merges.
+  - No versioning, making migrations harder.
+- Changes:
+  - Added versioned payload support for map-like records: `{ __version: 1, items: Record<string,string> }`.
+  - Implemented compatible readers/writers that understand both legacy and v1 formats.
+  - Validated records on load using `assertRecordStringString` across reads (recents, providers with credentials, provider configuration).
+- Files changed:
+  - `src/lib/storage/repository.ts`
+- Validation: Typechecked and linted successfully. Behavior remains backward-compatible.
+- Future improvements:
+  - Consider namespacing storage keys and adding a migration utility for future versions.
+  - Encrypt sensitive values in storage where possible (left to consumer adapter).
