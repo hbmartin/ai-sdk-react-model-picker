@@ -25,15 +25,50 @@ export class OpenRouterProvider extends AIProvider {
   readonly models: ModelConfig[] = [
     {
       id: createModelId('openrouter/auto'),
-      displayName: 'Auto (Best Available)',
+      displayName: 'Auto',
       supportsVision: true,
+    },
+    {
+      id: createModelId('x-ai/grok-code-fast-1'),
+      displayName: 'Grok Code Fast 1',
+      maxTokens: 131_072,
+    },
+    {
+      id: createModelId('openrouter/sonoma-dusk-alpha'),
+      displayName: 'Sonoma Dusk Alpha',
+      maxTokens: 2_000_000,
+    },
+    {
+      id: createModelId('openrouter/sonoma-sky-alpha'),
+      displayName: 'Sonoma Sky Alpha',
+      maxTokens: 2_000_000,
+    },
+    {
+      id: createModelId('deepseek/deepseek-chat-v3.1:free'),
+      displayName: 'DeepSeek V3.1 (free)',
+      maxTokens: 32_768,
+    },
+    {
+      id: createModelId('z-ai/glm-4.5-air:free'),
+      displayName: 'Z.AI: GLM 4.5 Air (free)',
+      maxTokens: 131_072,
+    },
+    {
+      id: createModelId('anthropic/claude-sonnet-4'),
+      displayName: 'Claude 4 Sonnet',
+      maxTokens: 1_000_000,
+      supportsVision: true,
+    },
+    {
+      id: createModelId('qwen/qwen3-coder'),
+      displayName: 'Qwen3 Coder 480B A35B',
+      maxTokens: 262_144,
     },
   ];
 
   override readonly configuration: ConfigAPI<OpenRouterProviderSettings> =
     makeConfiguration<OpenRouterProviderSettings>()({
-      fields: [apiKeyField('sk-'), baseUrlField('https://openrouter.ai/api/v1')],
-      requiresAtLeastOneOf: ['apiKey', 'baseURL'],
+      fields: [apiKeyField('sk-', true), baseUrlField('https://openrouter.ai/api/v1')],
     });
 
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
@@ -46,7 +81,7 @@ export class OpenRouterProvider extends AIProvider {
     } catch {
       throw new Error(
         'OpenRouter provider requires "@openrouter/ai-sdk-provider" to be installed. ' +
-          'Please install it with: npm install @ai-sdk/anthropic'
+          'Please install it with: npm install @openrouter/ai-sdk-provider'
       );
     }
     this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
