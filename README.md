@@ -35,7 +35,8 @@ npm install react react-dom react-hook-form
 
 # AI SDK providers (install as needed)
 npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
-npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere
+npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere @ai-sdk/amazon-bedrock
+npm install @openrouter/ai-sdk-provider
 ```
 
 ### Important: CSS Import

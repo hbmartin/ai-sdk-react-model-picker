@@ -102,3 +102,13 @@ Issue 8: Theming & CSS cleanup
 - Future improvements:
   - Audit remaining components for any direct color usage and replace with semantic tokens.
   - Provide an optional CSS-only bundle with precompiled semantic classes for consumers not using Tailwind.
+
+Issue 9: Build & packaging documentation
+- Problem: Peer provider packages were not fully documented; getting a LanguageModelV2 from the package lacked a clear example.
+- Changes:
+  - Added `@ai-sdk/amazon-bedrock` and `@openrouter/ai-sdk-provider` to peer dependency install examples.
+  - Earlier README change now points developers to `getSdkLanguageModel(storage)` for end-to-end usage.
+- Files changed:
+  - `README.md`
+- Future improvements:
+  - Add a Troubleshooting section for missing provider packages and dynamic import errors.
