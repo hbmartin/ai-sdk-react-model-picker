@@ -113,7 +113,11 @@ export function ModelPickerProvider({
 
   // Get all models from providers
   const allModels = useMemo(() => {
-    return providerRegistry.getAllModels();
+    return providerRegistry
+      .getAllProviders()
+      .flatMap((provider) =>
+        provider.models.map((model) => ({ model, provider: provider.metadata }))
+      );
   }, [providerRegistry]);
 
   // Find selected model
@@ -187,6 +191,13 @@ export function useModelPicker(): ModelPickerContextValue {
     throw new Error('useModelPicker must be used within a ModelPickerProvider');
   }
   return context;
+}
+
+/**
+ * Optional context accessor; returns undefined if not within provider
+ */
+export function useOptionalModelPicker(): ModelPickerContextValue | undefined {
+  return useContext(ModelPickerContext);
 }
 
 /**

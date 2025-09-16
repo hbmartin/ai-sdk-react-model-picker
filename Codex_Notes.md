@@ -33,3 +33,26 @@ Issue 3: README and stories used unsupported controlled props
 - Future improvements:
   - Split README into a “Basics” and “With Context” guide; keep prop/API references tightly synced with TypeScript types.
   - Add a minimal live example showcasing storage-driven selection + `getSdkLanguageModel` usage.
+
+Issue 4: Context exported but not integrated
+- Problem: `ModelSelect` did not use `ModelPickerProvider` context when present, leading to duplicate prop pluming and inconsistent usage.
+- Change: Added `useOptionalModelPicker()` and updated `ModelSelect` to read `storage`, `providerRegistry`, `roles`, `selectedRole`, and role change handler from context when available. Also dispatches context `selectModel` on selection.
+- Files changed:
+  - `src/lib/context/index.ts` (new `useOptionalModelPicker`)
+  - `src/lib/components/ModelSelect.tsx`
+- Validation: Ran `npm run lint:fix` with no issues.
+- Future improvements:
+  - Consider moving add-provider dialog actions (configure/missing config) into context to consolidate side-effects.
+  - Provide a thin wrapper component that fully binds to context to simplify consumption.
+
+Issue 5: ProviderRegistry.getAllModels() bypassed dynamic model loading
+- Problem: `getAllModels()` read `provider.models` directly, encouraging synchronous access and ignoring `getModels()`.
+- Change: Removed `getAllModels()` from the registry interface and implementation. Updated context to aggregate models from `getAllProviders()` using `provider.models` for now.
+- Files changed:
+  - `src/lib/types/index.ts` (interface)
+  - `src/lib/providers/ProviderRegistry.ts`
+  - `src/lib/context/index.ts` (aggregation)
+- Validation: Typechecked and linted successfully.
+- Future improvements:
+  - Introduce an async hook/utility to aggregate `await provider.getModels()` per provider for dynamic fetching.
+  - Consider caching model lists with invalidation hooks.

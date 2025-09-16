@@ -58,19 +58,6 @@ export class ProviderRegistry implements IProviderRegistry {
   }
 
   /**
-   * Get all models from all providers with their provider metadata
-   * @returns Array of models with provider information attached
-   */
-  getAllModels(): ModelConfigWithProvider[] {
-    return [...this.providers.entries()].flatMap(([providerId, provider]) =>
-      provider.models.map((model) => ({
-        model,
-        provider: this.getProviderMetadata(providerId),
-      }))
-    );
-  }
-
-  /**
    * Get metadata for a specific provider
    * @param providerId The provider ID
    * @returns Provider metadata
