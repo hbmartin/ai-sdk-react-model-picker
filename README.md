@@ -10,7 +10,7 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 
 ## Features
 
-🎯 **Controlled Components** - Fully controlled components with no internal state management  
+🎯 **Controlled Where It Matters** - Storage-driven selection with optional callbacks  
 🔧 **Provider Extensibility** - Easy-to-extend provider system with built-in validation  
 🎨 **Theme Aware** - Auto-detects VSCode, JetBrains IDEs, and web environments  
 ⚡ **AI SDK v5 Ready** - Direct integration with Vercel AI SDK  
@@ -66,24 +66,21 @@ import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 import 'ai-sdk-react-model-picker/styles.css'; // Required!
 
 function App() {
-  const [selectedModelId, setSelectedModelId] = useState(null);
-
   // Setup providers and storage
   const storage = new MemoryStorageAdapter();
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
 
-  const handleModelChange = async (model) => {
-    setSelectedModelId(model.model.id);
-    // Ready to use with Vercel AI SDK
+  const handleModelChange = async (_model) => {
+    // Selection is persisted to storage by the component
+    // You can react to changes here if needed
   };
 
   return (
     <ModelSelect
       storage={storage}
       providerRegistry={registry}
-      selectedModelId={selectedModelId}
       onModelChange={handleModelChange}
     />
   );
@@ -155,29 +152,22 @@ import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 import 'ai-sdk-react-model-picker/styles.css';
 
 function App() {
-  const [selectedModelId, setSelectedModelId] = useState(null);
-
   // Setup providers and storage
   const storage = new MemoryStorageAdapter();
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
 
-  const handleModelChange = async (model) => {
-    setSelectedModelId(model.model.id);
-
-    // Ready to use with Vercel AI SDK
-    const aiModel = await model.provider.createInstance({
-      model: model.model.id,
-      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey'],
-    });
+  const handleModelChange = async (_model) => {
+    // When you need a LanguageModelV2 instance for the selected model:
+    // import { getSdkLanguageModel } from 'ai-sdk-react-model-picker';
+    // const aiModel = await getSdkLanguageModel(storage);
   };
 
   return (
     <ModelSelect
       storage={storage}
       providerRegistry={registry}
-      selectedModelId={selectedModelId}
       onModelChange={handleModelChange}
     />
   );
@@ -237,16 +227,12 @@ interface ModelSelectProps {
   // Required
   storage: StorageAdapter;
   providerRegistry: IProviderRegistry;
-  selectedModelId: ModelId | null;
-  onModelChange: (model: ModelConfigWithProvider) => void;
+  onModelChange?: (model: ModelConfigWithProvider | undefined) => void;
 
   // Optional
   roles?: Role[];
   selectedRole?: string;
   onRoleChange?: (roleId: string) => void;
-  onConfigureProvider?: (providerId: ProviderId) => void;
-  onMissingConfiguration?: (keys: string[]) => void;
-  theme?: ThemeConfig;
   className?: string;
   disabled?: boolean;
 }

@@ -22,3 +22,14 @@ Issue 2: Toggle double-trigger on keyboard
 - Future improvements:
   - Consider ARIA `role="switch"` and `aria-checked` if appropriate for semantics.
   - Add keyboard tests with Testing Library for Enter/Space behavior.
+
+Issue 3: README and stories used unsupported controlled props
+- Problem: `ModelSelect` examples used `selectedModelId`, `onConfigureProvider`, `onMissingConfiguration`, and `theme` props that the component does not accept. Stories also passed `selectedModelId`.
+- Change: Updated README to reflect storage-driven selection and removed unsupported props. Replaced quick start example to suggest `getSdkLanguageModel(storage)` for AI SDK wiring. Adjusted Storybook stories to drop unsupported props and controlled `selectedModelId`.
+- Files changed:
+  - `README.md`
+  - `stories/ModelSelect.stories.tsx`
+- Validation: Ran `npm run lint:fix` (no code issues). Stories compile will be verified by Storybook during CI.
+- Future improvements:
+  - Split README into a “Basics” and “With Context” guide; keep prop/API references tightly synced with TypeScript types.
+  - Add a minimal live example showcasing storage-driven selection + `getSdkLanguageModel` usage.

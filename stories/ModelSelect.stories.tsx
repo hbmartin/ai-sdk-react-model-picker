@@ -6,7 +6,7 @@ import { GoogleProvider } from '../src/lib/providers/GoogleProvider';
 import { OpenAIProvider } from '../src/lib/providers/OpenAIProvider';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
-import type { ModelId, ModelConfigWithProvider, ModelSelectProps } from '../src/lib/types';
+import type { ModelConfigWithProvider, ModelSelectProps } from '../src/lib/types';
 import type { Meta, StoryObj } from '@storybook/react';
 import '../src/lib/styles/globals.css';
 
@@ -59,16 +59,13 @@ const createStorage = (withApiKeys: boolean = false) => {
 
 // Wrapper component to handle state
 const ModelSelectWrapper = (props: Partial<ModelSelectProps>) => {
-  const [selectedModelId, setSelectedModelId] = useState<ModelId | undefined>();
-
-  const handleModelChange = (model: ModelConfigWithProvider) => {
-    setSelectedModelId(model.model.id);
+  const handleModelChange = (model: ModelConfigWithProvider | undefined) => {
     props.onModelChange?.(model);
   };
 
   return (
     <div style={{ width: '300px' }}>
-      <ModelSelect {...props} selectedModelId={selectedModelId} onModelChange={handleModelChange} />
+      <ModelSelect {...props} onModelChange={handleModelChange} />
     </div>
   );
 };
@@ -79,8 +76,6 @@ export const Default: Story = {
       storage={createStorage()}
       providerRegistry={createProviderRegistry()}
       onModelChange={fn()}
-      onConfigureProvider={fn()}
-      onMissingConfiguration={fn()}
     />
   ),
 };
@@ -91,8 +86,6 @@ export const WithApiKeys: Story = {
       storage={createStorage(true)}
       providerRegistry={createProviderRegistry()}
       onModelChange={fn()}
-      onConfigureProvider={fn()}
-      onMissingConfiguration={fn()}
     />
   ),
 };
@@ -112,8 +105,6 @@ export const WithRoles: Story = {
         selectedRole={selectedRole}
         onRoleChange={setSelectedRole}
         onModelChange={fn()}
-        onConfigureProvider={fn()}
-        onMissingConfiguration={fn()}
       />
     );
   },
@@ -126,8 +117,6 @@ export const Disabled: Story = {
       providerRegistry={createProviderRegistry()}
       disabled
       onModelChange={fn()}
-      onConfigureProvider={fn()}
-      onMissingConfiguration={fn()}
     />
   ),
 };
@@ -139,8 +128,6 @@ export const CustomClassName: Story = {
       providerRegistry={createProviderRegistry()}
       className="custom-model-select"
       onModelChange={fn()}
-      onConfigureProvider={fn()}
-      onMissingConfiguration={fn()}
     />
   ),
 };
@@ -162,8 +149,6 @@ export const Loading: Story = {
         storage={slowStorage}
         providerRegistry={createProviderRegistry()}
         onModelChange={fn()}
-        onConfigureProvider={fn()}
-        onMissingConfiguration={fn()}
       />
     );
   },
@@ -175,8 +160,6 @@ export const EmptyProviders: Story = {
       storage={createStorage()}
       providerRegistry={new ProviderRegistry()}
       onModelChange={fn()}
-      onConfigureProvider={fn()}
-      onMissingConfiguration={fn()}
     />
   ),
 };
