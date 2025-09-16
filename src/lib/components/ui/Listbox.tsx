@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-commented-code */
 /* eslint-disable code-complete/no-magic-numbers-except-zero-one */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
@@ -159,6 +158,7 @@ export interface ListboxOptionsProps extends HTMLAttributes<HTMLDivElement> {
 export function ListboxOptions({ children, className = '', ...props }: ListboxOptionsProps) {
   const { isOpen, optionsRef, buttonRef } = useListboxContext();
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [dropdownWidth, setDropdownWidth] = useState<number | undefined>(undefined);
 
   const calculateDropdownPosition = useCallback(() => {
     if (!buttonRef.current || !optionsRef.current) {
@@ -178,45 +178,52 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
       top = triggerRect.bottom + padding;
     }
 
-    // Calculate horizontal position (align with trigger)
-    const left = triggerRect.left;
-
-    // Ensure modal doesn't go off-screen horizontally
-    // const rightEdge = left + modalWidth;
-    // if (rightEdge > window.innerWidth - padding) {
-    //   left = window.innerWidth - modalWidth - padding;
-    // }
-    // if (left < padding) {
-    //   left = padding;
-    // }
+    // Calculate horizontal position (align with trigger), clamp to viewport
+    let left = triggerRect.left;
+    const width = triggerRect.width;
+    const rightEdge = left + optionsRect.width;
+    if (rightEdge > window.innerWidth - padding) {
+      left = Math.max(padding, window.innerWidth - optionsRect.width - padding);
+    }
+    if (left < padding) {
+      left = padding;
+    }
 
     setDropdownPosition({ top, left });
+    setDropdownWidth(width);
   }, [buttonRef, optionsRef]);
 
   useEffect(() => {
-    // const handleScroll = () => {
-    //   if (isOpen) {
-    //     calculateDropdownPosition();
-    //   }
-    // };
-
-    // const handleResize = () => {
-    //   if (isOpen) {
-    //     calculateDropdownPosition();
-    //   }
-    // };
+    const recalc = () => {
+      if (isOpen) {
+        calculateDropdownPosition();
+      }
+    };
 
     if (isOpen) {
       calculateDropdownPosition();
-      // window.addEventListener('scroll', handleScroll, true);
-      // window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', recalc, true);
+      window.addEventListener('resize', recalc);
     }
 
     return () => {
-      // window.removeEventListener('scroll', handleScroll, true);
-      // window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', recalc, true);
+      window.removeEventListener('resize', recalc);
     };
   }, [isOpen, calculateDropdownPosition]);
+
+  // Focus management: when opening, focus first option if nothing focused
+  useEffect(() => {
+    if (isOpen && optionsRef.current) {
+      const active = document.activeElement;
+      if (!optionsRef.current.contains(active)) {
+        const first = optionsRef.current.querySelector('[role="option"]');
+        if (first instanceof HTMLElement) {
+          first.focus();
+        }
+      }
+    }
+  }, [isOpen, optionsRef]);
 
   if (!isOpen) {
     // eslint-disable-next-line unicorn/no-null
@@ -248,9 +255,39 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
         style={{
           top: dropdownPosition.top,
           left: dropdownPosition.left,
+          width: dropdownWidth,
           pointerEvents: 'auto',
         }}
         {...props}
+        onKeyDown={(event) => {
+          if (!optionsRef.current) {
+            return;
+          }
+          const focusable = [
+            ...optionsRef.current.querySelectorAll<HTMLElement>('[role="option"]'),
+          ];
+          if (focusable.length === 0) {
+            return;
+          }
+          const currentIndex = focusable.indexOf(document.activeElement);
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (currentIndex === -1) {
+              focusable[0].focus();
+            } else {
+              const nextIndex = Math.min(focusable.length - 1, currentIndex + 1);
+              focusable[nextIndex].focus();
+            }
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (currentIndex === -1) {
+              focusable.at(-1).focus();
+            } else {
+              const prevIndex = Math.max(0, currentIndex - 1);
+              focusable[prevIndex].focus();
+            }
+          }
+        }}
       >
         {children}
       </div>

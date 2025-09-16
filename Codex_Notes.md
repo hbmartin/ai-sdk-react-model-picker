@@ -71,3 +71,17 @@ Issue 6: Storage robustness and versioning
 - Future improvements:
   - Consider namespacing storage keys and adding a migration utility for future versions.
   - Encrypt sensitive values in storage where possible (left to consumer adapter).
+
+Issue 7: Listbox positioning/behavior
+- Problems:
+  - Dropdown didn’t reposition on scroll/resize; width didn’t match trigger; no clamping to viewport edges; minimal keyboard focus behavior.
+- Changes:
+  - Added scroll/resize listeners and recalculation logic.
+  - Matched dropdown width to trigger and clamped horizontal position within viewport with padding.
+  - Focus first option on open if focus is outside; added ArrowUp/ArrowDown roving focus between options.
+- Files changed:
+  - `src/lib/components/ui/Listbox.tsx`
+- Validation: Linted and typechecked. UX is improved while keeping implementation lightweight.
+- Future improvements:
+  - Consider using Floating UI/Popper for robust positioning if footprint allows.
+  - Add type-ahead support and aria-activedescendant pattern for richer a11y.
