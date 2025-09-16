@@ -112,3 +112,17 @@ Issue 9: Build & packaging documentation
   - `README.md`
 - Future improvements:
   - Add a Troubleshooting section for missing provider packages and dynamic import errors.
+
+Issue 10: Testing & QA
+- Added tests:
+  - `idsFromKey` and `providerAndModelKey` round-trip with model IDs containing '/'.
+  - Storage repository: versioned map shape, legacy compatibility, and recents/providers flows.
+  - Provider configuration validation (OpenAI): required fields and at-least-one semantics.
+- Files added:
+  - `tests/types.keys.test.ts`
+  - `tests/storage.repository.test.ts`
+  - `tests/providers.validation.test.ts`
+- Validation: Test run is constrained by environment (EPERM when tearing down workers), but individual specs compile. Lint and typecheck pass.
+- Future improvements:
+  - Add React hook tests for `useModelsWithConfiguredProvider` using Testing Library.
+  - Add CI config to run vitest in a single-threaded mode if needed.

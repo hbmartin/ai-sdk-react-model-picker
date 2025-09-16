@@ -1,0 +1,32 @@
+import { describe, expect, it } from 'vitest';
+import {
+  providerAndModelKey,
+  idsFromKey,
+  type ModelConfigWithProvider,
+  createProviderId,
+  createModelId,
+} from '../src/lib/types';
+
+describe('ProviderAndModelKey encoding/decoding', () => {
+  it('handles model IDs containing slashes', () => {
+    const modelWithProvider: ModelConfigWithProvider = {
+      provider: {
+        id: createProviderId('openrouter'),
+        name: 'OpenRouter',
+        // minimal icon component stub
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        icon: (() => null) as any,
+      },
+      model: {
+        id: createModelId('openrouter/auto'),
+        displayName: 'OpenRouter Auto',
+      },
+    };
+
+    const key = providerAndModelKey(modelWithProvider);
+    const { providerId, modelId } = idsFromKey(key);
+    expect(providerId).toBe(createProviderId('openrouter'));
+    expect(modelId).toBe(createModelId('openrouter/auto'));
+  });
+});
+
