@@ -215,6 +215,25 @@ class CustomStorage implements StorageAdapter {
     /* ... */
   }
 }
+
+Security note: The default `MemoryStorageAdapter` is not persistent and not secure. In production, inject a secure storage implementation appropriate for your platform, e.g. `localStorage` (web), `chrome.storage` (extensions), or secret storage APIs in IDEs.
+
+Example (web) `localStorage` adapter:
+
+```ts
+class LocalStorageAdapter implements StorageAdapter {
+  async get(key: string): Promise<Record<string, string> | undefined> {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : undefined;
+  }
+  async set(key: string, value: Record<string, string>): Promise<void> {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+  async remove(key: string): Promise<void> {
+    localStorage.removeItem(key);
+  }
+}
+```
 ```
 
 ## API Reference

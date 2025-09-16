@@ -11,9 +11,6 @@ describe('Provider configuration validation', () => {
   it('valid with apiKey or baseURL', () => {
     const provider = new OpenAIProvider();
     expect(provider.validateCredentials({ apiKey: 'sk-abc' }).isValid).toBe(true);
-    expect(provider.validateCredentials({ baseURL: 'https://api.example.com' }).isValid).toBe(
-      true
-    );
+    expect(provider.validateCredentials({ baseURL: 'https://api.example.com' }).isValid).toBe(true);
   });
 });
-

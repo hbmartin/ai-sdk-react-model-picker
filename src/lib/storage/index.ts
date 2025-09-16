@@ -2,7 +2,8 @@
 import type { StorageAdapter } from '../types';
 
 /**
- * In-memory storage implementation for testing or SSR environments
+ * In-memory storage implementation for testing or SSR environments.
+ * NOTE: This is not persistent and not secure. Do not use for real API keys in production.
  */
 export class MemoryStorageAdapter implements StorageAdapter {
   private readonly storage = new Map<string, Record<string, string>>();

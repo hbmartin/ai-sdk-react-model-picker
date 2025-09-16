@@ -5,17 +5,18 @@ import {
   type ModelConfigWithProvider,
   createProviderId,
   createModelId,
+  type IconComponent,
 } from '../src/lib/types';
 
 describe('ProviderAndModelKey encoding/decoding', () => {
   it('handles model IDs containing slashes', () => {
+    const DummyIcon = (() => undefined) as unknown as IconComponent;
     const modelWithProvider: ModelConfigWithProvider = {
       provider: {
         id: createProviderId('openrouter'),
         name: 'OpenRouter',
         // minimal icon component stub
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        icon: (() => null) as any,
+        icon: DummyIcon,
       },
       model: {
         id: createModelId('openrouter/auto'),
@@ -29,4 +30,3 @@ describe('ProviderAndModelKey encoding/decoding', () => {
     expect(modelId).toBe(createModelId('openrouter/auto'));
   });
 });
-

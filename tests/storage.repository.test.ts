@@ -30,7 +30,8 @@ describe('Storage repository versioning and behavior', () => {
 
   it('is backward-compatible with legacy plain record format', async () => {
     const key1 = `${createProviderId('openai')}/${createModelId('gpt-5')}` as ProviderAndModelKey;
-    const key2 = `${createProviderId('anthropic')}/${createModelId('claude')}` as ProviderAndModelKey;
+    const key2 =
+      `${createProviderId('anthropic')}/${createModelId('claude')}` as ProviderAndModelKey;
 
     // Simulate legacy format
     await storage.set('recentlyUsedModels', { [key2]: '100' });
@@ -53,4 +54,3 @@ describe('Storage repository versioning and behavior', () => {
     expect(raw.__version).toBe(1);
   });
 });
-
