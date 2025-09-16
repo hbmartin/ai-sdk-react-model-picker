@@ -28,8 +28,16 @@ export function Toggle({
         ${className}
       `}
       onClick={disabled ? undefined : onClick}
-      onKeyDown={disabled ? undefined : onClick}
-      onKeyUp={disabled ? undefined : onClick}
+      onKeyDown={
+        disabled
+          ? undefined
+          : (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onClick();
+              }
+            }
+      }
       role="button"
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}

@@ -13,3 +13,12 @@ Issue 1: Provider/model key delimiter is unsafe
   - Add unit tests for key creation/parsing and for known model IDs containing `/`.
   - Consider URL-safe encoding or a different delimiter if string keys must remain.
 
+Issue 2: Toggle double-trigger on keyboard
+- Problem: `Toggle` fired `onClick` on both `onKeyDown` and `onKeyUp`, so Enter/Space toggled twice.
+- Change: Removed `onKeyUp` handler and constrained `onKeyDown` to only trigger on Enter/Space with `preventDefault()`.
+- Files changed:
+  - `src/lib/components/Toggle.tsx`
+- Validation: Ran `npm run lint:fix`. Adjusted variable name per ESLint rule (no 1-letter identifiers).
+- Future improvements:
+  - Consider ARIA `role="switch"` and `aria-checked` if appropriate for semantics.
+  - Add keyboard tests with Testing Library for Enter/Space behavior.
