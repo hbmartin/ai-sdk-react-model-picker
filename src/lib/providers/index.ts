@@ -7,6 +7,7 @@ import { GoogleProvider } from './GoogleProvider';
 import { MistralProvider } from './MistralProvider';
 import { MoonshotProvider } from './MoonshotProvider';
 import { OpenAIProvider } from './OpenAIProvider';
+import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderRegistry } from './ProviderRegistry';
 
 export type {
@@ -33,6 +34,7 @@ export const allProviders = {
   [createProviderId('cohere')]: CohereProvider,
   [createProviderId('bedrock')]: BedrockProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
+  [createProviderId('openrouter')]: OpenRouterProvider,
 } satisfies Record<ProviderId, ProviderCtor>;
 
 // Helper function to create a registry with default providers

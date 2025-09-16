@@ -1,7 +1,7 @@
 {
   "name": "ai-sdk-react-model-picker",
   "private": false,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "A flexible, theme-aware React component library for selecting and managing AI models. Built for seamless integration with Vercel's AI SDK v5, with special support for VSCode extensions and JetBrains IDEs.",
   "homepage": "https://github.com/hbmartin/ai-sdk-react-model-picker",
   "bugs": "https://github.com/hbmartin/ai-sdk-react-model-picker/issues",
@@ -88,6 +88,7 @@
     "@ai-sdk/google": ">=2.0.0",
     "@ai-sdk/mistral": ">=2.0.0",
     "@ai-sdk/openai": ">=2.0.0",
+    "@openrouter/ai-sdk-provider": ">=1.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-hook-form": "^7.62.0"
@@ -113,6 +114,9 @@
     },
     "@ai-sdk/amazon-bedrock": {
       "optional": true
+    },
+    "@openrouter/ai-sdk-provider": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -124,6 +128,7 @@
     "@ai-sdk/mistral": "^2.0.0",
     "@ai-sdk/openai": "^2.0.29",
     "@eslint/js": "^9.35.0",
+    "@openrouter/ai-sdk-provider": "^1.2.0",
     "@storybook/addon-docs": "^9.1.6",
     "@storybook/addon-onboarding": "^9.1.6",
     "@storybook/addon-vitest": "^9.1.6",

@@ -24,6 +24,7 @@ export class AnthropicProvider extends AIProvider {
       contextLength: 200_000,
       supportsVision: true,
       supportsTools: true,
+      isDefault: true,
     },
     {
       id: createModelId('claude-opus-4-1-20250805'),
@@ -31,7 +32,6 @@ export class AnthropicProvider extends AIProvider {
       maxTokens: 200_000,
       supportsVision: true,
       supportsTools: true,
-      isDefault: true,
     },
     {
       id: createModelId('claude-3-5-haiku-20241022'),
@@ -61,7 +61,7 @@ export class AnthropicProvider extends AIProvider {
           'Please install it with: npm install @ai-sdk/anthropic'
       );
     }
-    this.configuration.assert(params.options);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(params.options);
     const client = anthropic.createAnthropic(params.options);
     return client(params.model);
   }
