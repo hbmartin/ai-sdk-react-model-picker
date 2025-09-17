@@ -11,61 +11,13 @@ const RECENTLY_USED_MODELS_KEY = 'recentlyUsedModels' as const;
 const PROVIDERS_WITH_CREDENTIALS_KEY = 'providersWithCredentials' as const;
 const CONFIG_SUFFIX = 'config' as const;
 
-// Versioned map payload: { __v: 1, items: Record<string,string> }
-interface VersionedMapV1<T extends string = string> {
-  readonly __version: 1;
-  readonly items: Record<T, string>;
-}
-
-function isVersionedMapV1<T extends string = string>(value: unknown): value is VersionedMapV1<T> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '__version' in (value as Record<string, unknown>) &&
-    (value as { __version?: unknown }).__version === 1 &&
-    'items' in (value as Record<string, unknown>)
-  );
-}
-
-async function readVersionedMap<T extends string = string>(
-  storage: StorageGetter,
-  key: string
-): Promise<Record<T, string>> {
-  const raw = await storage.get(key);
-  if (raw === undefined) {
-    return {} as Record<T, string>;
-  }
-  if (isVersionedMapV1<T>(raw)) {
-    try {
-      assertRecordStringString(raw.items);
-      return raw.items;
-    } catch (error) {
-      console.error('Invalid versioned storage format:', error);
-      return {} as Record<T, string>;
-    }
-  }
-  // Back-compat: plain record
+function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
   try {
-    assertRecordStringString(raw);
-    return raw as Record<T, string>;
+    assertRecordStringString(obj);
   } catch (error) {
-    console.error('Invalid legacy storage format:', error);
-    return {} as Record<T, string>;
+    console.error('Invalid storage format:', error);
+    return [];
   }
-}
-
-async function writeVersionedMap<T extends string = string>(
-  storage: StorageAdapter,
-  key: string,
-  items: Record<T, string>
-): Promise<void> {
-  // Defensive copy
-  const copy: Record<string, string> = { ...items };
-  const payload: VersionedMapV1<T> = { __version: 1, items: copy as Record<T, string> };
-  await storage.set(key, payload as unknown as Record<string, string>);
-}
-
-function sortKeysByRecency<T extends string>(obj: Record<T, string>): T[] {
   try {
     return (
       Object.entries(obj)
@@ -82,8 +34,7 @@ function sortKeysByRecency<T extends string>(obj: Record<T, string>): T[] {
 export async function getRecentlyUsedModels(
   storage: StorageGetter
 ): Promise<ProviderAndModelKey[]> {
-  const items = await readVersionedMap<ProviderAndModelKey>(storage, RECENTLY_USED_MODELS_KEY);
-  return sortKeysByRecency<ProviderAndModelKey>(items);
+  return storage.get(RECENTLY_USED_MODELS_KEY).then(sortKeysByRecency<ProviderAndModelKey>);
 }
 
 export async function getSelectedProviderAndModelKey(
@@ -96,46 +47,59 @@ export async function addRecentlyUsedModel(
   storage: StorageAdapter,
   modelKey: ProviderAndModelKey
 ): Promise<void> {
-  const items = await readVersionedMap<ProviderAndModelKey>(storage, RECENTLY_USED_MODELS_KEY);
-  items[modelKey] = Date.now().toString();
-  return writeVersionedMap(storage, RECENTLY_USED_MODELS_KEY, items);
+  return storage.get(RECENTLY_USED_MODELS_KEY).then((existing) => {
+    return storage.set(RECENTLY_USED_MODELS_KEY, {
+      ...existing,
+      [modelKey]: Date.now().toString(),
+    });
+  });
 }
 
 export async function removeRecentlyUsedModels(
   storage: StorageAdapter,
   modelKeys: ProviderAndModelKey[]
 ): Promise<Record<string, string>> {
-  const items = await readVersionedMap<ProviderAndModelKey>(storage, RECENTLY_USED_MODELS_KEY);
+  const existing = await storage.get(RECENTLY_USED_MODELS_KEY);
+  if (existing === undefined) {
+    return {};
+  }
   for (const modelKey of modelKeys) {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete items[modelKey];
+    delete existing[modelKey];
   }
-  await writeVersionedMap(storage, RECENTLY_USED_MODELS_KEY, items);
-  return items;
+  return storage.set(RECENTLY_USED_MODELS_KEY, existing).then(() => existing);
 }
 
 export async function getProvidersWithCredentials(storage: StorageGetter): Promise<ProviderId[]> {
-  const items = await readVersionedMap<ProviderId>(storage, PROVIDERS_WITH_CREDENTIALS_KEY);
-  return Object.keys(items) as ProviderId[];
+  return storage
+    .get(PROVIDERS_WITH_CREDENTIALS_KEY)
+    .then((providers) => Object.keys(providers ?? {}) as ProviderId[]);
 }
 
 export async function addProviderWithCredentials(
   storage: StorageAdapter,
   providerId: ProviderId
 ): Promise<void> {
-  const items = await readVersionedMap<ProviderId>(storage, PROVIDERS_WITH_CREDENTIALS_KEY);
-  items[providerId] = Date.now().toString();
-  return writeVersionedMap(storage, PROVIDERS_WITH_CREDENTIALS_KEY, items);
+  return storage.get(PROVIDERS_WITH_CREDENTIALS_KEY).then((existing) => {
+    return storage.set(PROVIDERS_WITH_CREDENTIALS_KEY, {
+      ...existing,
+      [providerId]: Date.now().toString(),
+    });
+  });
 }
 
 export async function deleteProviderWithCredentials(
   storage: StorageAdapter,
   providerId: ProviderId
 ): Promise<void> {
-  const items = await readVersionedMap<ProviderId>(storage, PROVIDERS_WITH_CREDENTIALS_KEY);
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-  delete items[providerId];
-  await writeVersionedMap(storage, PROVIDERS_WITH_CREDENTIALS_KEY, items);
+  return storage.get(PROVIDERS_WITH_CREDENTIALS_KEY).then((existing) => {
+    if (existing === undefined) {
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete existing[providerId];
+    return storage.set(PROVIDERS_WITH_CREDENTIALS_KEY, existing);
+  });
 }
 
 function providerConfigKey(providerId: ProviderId): string {
@@ -154,17 +118,7 @@ export async function getProviderConfiguration(
   storage: StorageAdapter,
   providerId: ProviderId
 ): Promise<Record<string, string> | undefined> {
-  const config = await storage.get(providerConfigKey(providerId));
-  if (config === undefined) {
-    return undefined;
-  }
-  try {
-    assertRecordStringString(config);
-    return config;
-  } catch (error) {
-    console.error('Invalid provider configuration format:', error);
-    return undefined;
-  }
+  return storage.get(providerConfigKey(providerId));
 }
 
 export async function deleteProviderConfiguration(
