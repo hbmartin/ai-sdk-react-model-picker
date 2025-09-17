@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   lint-and-test:
@@ -14,37 +14,37 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run TypeScript compiler check
         run: npm run typecheck
-      
+
       - name: Run ESLint
         run: npm run lint
-      
+
       - name: Check code formatting with Prettier
         run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
-      
+
       - name: Run tests
-        run: npm test -- --run 2>/dev/null || echo "No tests configured yet"
-      
+        run: npm test -- --run
+
       - name: Build library
         run: npm run build
-      
+
       - name: Check bundle size
         run: |
           echo "Checking bundle sizes..."
           ls -lah dist/
           find dist -name "*.js" -o -name "*.cjs" | xargs -I {} sh -c 'echo "{}: $(du -h {} | cut -f1)"'
-      
+
       - name: Validate package.json
         run: |
           npx publint
@@ -54,28 +54,28 @@ jobs:
   compatibility:
     name: Check AI SDK Compatibility
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Install AI SDK providers
         run: |
           npm install --no-save @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google || true
         continue-on-error: true
-      
+
       - name: Build with AI SDK providers
         run: npm run build
-      
+
       - name: Check peer dependency compatibility
         run: |
           echo "Checking peer dependencies..."
@@ -84,28 +84,28 @@ jobs:
   code-quality:
     name: Code Quality Checks
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Check for unused dependencies
         run: npx depcheck --ignores="@types/*,@ai-sdk/*"
         continue-on-error: true
-      
+
       - name: Check for security vulnerabilities
         run: npm audit --audit-level=moderate
         continue-on-error: true
-      
+
       - name: License compatibility check
         run: npx license-checker --production --summary
         continue-on-error: true

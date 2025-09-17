@@ -38,12 +38,14 @@ export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAnd
 }
 
 export function idsFromKey(key: ProviderAndModelKey): { providerId: ProviderId; modelId: ModelId } {
-  const parts = key.split(KEY_DELIMITER);
-  // eslint-disable-next-line code-complete/no-magic-numbers-except-zero-one
-  if (parts.length !== 2) {
+  // Split only at the first delimiter to allow model IDs containing '/'
+  const idx = key.indexOf(KEY_DELIMITER);
+  if (idx === -1) {
     throw new TypeError('Invalid ProviderAndModelKey format');
   }
-  return { providerId: parts[0] as ProviderId, modelId: parts[1] as ModelId };
+  const providerId = key.slice(0, idx) as ProviderId;
+  const modelId = key.slice(idx + KEY_DELIMITER.length) as ModelId;
+  return { providerId, modelId };
 }
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -188,7 +190,6 @@ export interface IProviderRegistry {
   register(provider: AIProvider): ProviderId;
   getProvider(providerId: ProviderId): AIProvider;
   getAllProviders(): AIProvider[];
-  getAllModels(): ModelConfigWithProvider[];
   getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[];
   getProviderMetadata(providerId: ProviderId): ProviderMetadata;
   hasProvider(providerId: ProviderId): boolean;

@@ -28,8 +28,16 @@ export function Toggle({
         ${className}
       `}
       onClick={disabled ? undefined : onClick}
-      onKeyDown={disabled ? undefined : onClick}
-      onKeyUp={disabled ? undefined : onClick}
+      onKeyDown={
+        disabled
+          ? undefined
+          : (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onClick();
+              }
+            }
+      }
       role="button"
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}
@@ -39,7 +47,7 @@ export function Toggle({
       <div
         className={`
           text-center px-3 py-2 rounded-default transition-all duration-200 ease-in-out
-          ${selected ? 'bg-primary text-white shadow-sm' : 'text-foreground hover:bg-opacity-60'}
+          ${selected ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-opacity-60'}
         `}
       >
         {optionOne}
@@ -47,7 +55,7 @@ export function Toggle({
       <div
         className={`
           text-center px-3 py-2 rounded-default transition-all duration-200 ease-in-out
-          ${selected ? 'text-foreground hover:bg-opacity-60' : 'bg-primary text-white shadow-sm'}
+          ${selected ? 'text-foreground hover:bg-opacity-60' : 'bg-primary text-primary-foreground shadow-sm'}
         `}
       >
         {optionTwo}

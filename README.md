@@ -10,7 +10,7 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 
 ## Features
 
-🎯 **Controlled Components** - Fully controlled components with no internal state management  
+🎯 **Controlled Where It Matters** - Storage-driven selection with optional callbacks  
 🔧 **Provider Extensibility** - Easy-to-extend provider system with built-in validation  
 🎨 **Theme Aware** - Auto-detects VSCode, JetBrains IDEs, and web environments  
 ⚡ **AI SDK v5 Ready** - Direct integration with Vercel AI SDK  
@@ -35,7 +35,8 @@ npm install react react-dom react-hook-form
 
 # AI SDK providers (install as needed)
 npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
-npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere
+npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere @ai-sdk/amazon-bedrock
+npm install @openrouter/ai-sdk-provider
 ```
 
 ### Important: CSS Import
@@ -66,24 +67,21 @@ import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 import 'ai-sdk-react-model-picker/styles.css'; // Required!
 
 function App() {
-  const [selectedModelId, setSelectedModelId] = useState(null);
-
   // Setup providers and storage
   const storage = new MemoryStorageAdapter();
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
 
-  const handleModelChange = async (model) => {
-    setSelectedModelId(model.model.id);
-    // Ready to use with Vercel AI SDK
+  const handleModelChange = async (_model) => {
+    // Selection is persisted to storage by the component
+    // You can react to changes here if needed
   };
 
   return (
     <ModelSelect
       storage={storage}
       providerRegistry={registry}
-      selectedModelId={selectedModelId}
       onModelChange={handleModelChange}
     />
   );
@@ -155,29 +153,22 @@ import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 import 'ai-sdk-react-model-picker/styles.css';
 
 function App() {
-  const [selectedModelId, setSelectedModelId] = useState(null);
-
   // Setup providers and storage
   const storage = new MemoryStorageAdapter();
   const registry = new ProviderRegistry();
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
 
-  const handleModelChange = async (model) => {
-    setSelectedModelId(model.model.id);
-
-    // Ready to use with Vercel AI SDK
-    const aiModel = await model.provider.createInstance({
-      model: model.model.id,
-      apiKey: await storage.get(`${model.provider.id}:config`)['apiKey'],
-    });
+  const handleModelChange = async (_model) => {
+    // When you need a LanguageModelV2 instance for the selected model:
+    // import { getSdkLanguageModel } from 'ai-sdk-react-model-picker';
+    // const aiModel = await getSdkLanguageModel(storage);
   };
 
   return (
     <ModelSelect
       storage={storage}
       providerRegistry={registry}
-      selectedModelId={selectedModelId}
       onModelChange={handleModelChange}
     />
   );
@@ -224,6 +215,25 @@ class CustomStorage implements StorageAdapter {
     /* ... */
   }
 }
+
+Security note: The default `MemoryStorageAdapter` is not persistent and not secure. In production, inject a secure storage implementation appropriate for your platform, e.g. `localStorage` (web), `chrome.storage` (extensions), or secret storage APIs in IDEs.
+
+Example (web) `localStorage` adapter:
+
+```ts
+class LocalStorageAdapter implements StorageAdapter {
+  async get(key: string): Promise<Record<string, string> | undefined> {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : undefined;
+  }
+  async set(key: string, value: Record<string, string>): Promise<void> {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+  async remove(key: string): Promise<void> {
+    localStorage.removeItem(key);
+  }
+}
+```
 ```
 
 ## API Reference
@@ -237,16 +247,12 @@ interface ModelSelectProps {
   // Required
   storage: StorageAdapter;
   providerRegistry: IProviderRegistry;
-  selectedModelId: ModelId | null;
-  onModelChange: (model: ModelConfigWithProvider) => void;
+  onModelChange?: (model: ModelConfigWithProvider | undefined) => void;
 
   // Optional
   roles?: Role[];
   selectedRole?: string;
   onRoleChange?: (roleId: string) => void;
-  onConfigureProvider?: (providerId: ProviderId) => void;
-  onMissingConfiguration?: (keys: string[]) => void;
-  theme?: ThemeConfig;
   className?: string;
   disabled?: boolean;
 }
@@ -264,9 +270,6 @@ const registry = new ProviderRegistry();
 // Register providers
 registry.register(new OpenAIProvider());
 registry.register(new AnthropicProvider());
-
-// Get all models across providers
-const allModels = registry.getAllModels();
 
 // Get provider-specific models
 const openaiModels = registry.getModelsForProvider('openai');
@@ -480,7 +483,22 @@ Override default theme variables:
 
 ### Tailwind CSS Integration
 
-The library works with or without Tailwind CSS. If your app uses Tailwind, the components will inherit your theme automatically.
+The library works with or without Tailwind CSS:
+
+- No Tailwind: just import `ai-sdk-react-model-picker/styles.css` and you’re done.
+- With Tailwind: optionally add the preset to map your theme tokens to our CSS variables.
+
+Tailwind preset setup:
+
+```js
+// tailwind.config.js
+module.exports = {
+  presets: [require('ai-sdk-react-model-picker/tailwind-preset')],
+  // ...your config
+};
+```
+
+This enables classes like `bg-primary`, `text-foreground`, `bg-accent`, and semantic foregrounds like `text-primary-foreground` and `text-destructive-foreground` to follow your app’s theme.
 
 ## TypeScript Support
 
@@ -527,3 +545,16 @@ npm run dev
 - Copyright 2023 Continue Dev, Inc.
 - Copyright 2025 Harold Martin
 - Logos are the property of their respective creators.
+### Missing provider package / dynamic import error
+
+If you see an error like “OpenAI provider requires @ai-sdk/openai to be installed” when creating a model instance, install the corresponding AI SDK provider package as a peer dependency:
+
+```bash
+npm install @ai-sdk/openai # or @ai-sdk/anthropic, @ai-sdk/google, etc.
+```
+
+For OpenRouter support, install:
+
+```bash
+npm install @openrouter/ai-sdk-provider
+```
