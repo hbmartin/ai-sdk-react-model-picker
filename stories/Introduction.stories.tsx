@@ -68,7 +68,8 @@ export default function Example() {
           <h2>Components</h2>
           <ul>
             <li>
-              <strong>ModelSelect</strong> — end-to-end model picker with providers, roles, and persistence.
+              <strong>ModelSelect</strong> — end-to-end model picker with providers, roles, and
+              persistence.
             </li>
             <li>
               <strong>ModelCard</strong> — present model information with tags and docs link.
@@ -81,12 +82,11 @@ export default function Example() {
             </li>
           </ul>
         </div>
-      )
-    }
-  }
+      ),
+    },
+  },
 };
 
 export default meta;
 
 // This file intentionally exports no stories; it's a Docs-only page.
-

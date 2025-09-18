@@ -155,14 +155,12 @@ function App() {
   registry.register(new OpenAIProvider());
   registry.register(new AnthropicProvider());
 
-  const handleModelChange = async (_model) => {
-    // When you need a LanguageModelV2 instance for the selected model:
-    // import { getSdkLanguageModel } from 'ai-sdk-react-model-picker';
-    // const aiModel = await getSdkLanguageModel(storage);
-  };
-
   return (
-    <ModelSelect storage={storage} providerRegistry={registry} onModelChange={handleModelChange} />
+    <ModelSelect
+      storage={storage}
+      providerRegistry={registry}
+      onModelChange={(m) => console.log('Selected model:', m)}
+    />
   );
 }
 ```
@@ -213,25 +211,10 @@ Security note: The default `MemoryStorageAdapter` is not persistent and not secu
 
 ## API Reference
 
-### ModelSelect
+See guides for type-accurate props and APIs:
 
-Main component for model selection.
-
-```tsx
-interface ModelSelectProps {
-  // Required
-  storage: StorageAdapter;
-  providerRegistry: IProviderRegistry;
-  onModelChange?: (model: ModelConfigWithProvider | undefined) => void;
-
-  // Optional
-  roles?: Role[];
-  selectedRole?: string;
-  onRoleChange?: (roleId: string) => void;
-  className?: string;
-  disabled?: boolean;
-}
-```
+- Basics: docs/basics.md
+- With Context: docs/with-context.md
 
 ### Provider Registry
 
@@ -293,35 +276,10 @@ class CustomProvider extends AIProvider {
 }
 ```
 
-## Advanced Usage
+## Guides
 
-### With Context Provider
-
-For apps with multiple components that need model state:
-
-```tsx
-import { ModelPickerProvider } from 'ai-sdk-react-model-picker/context';
-
-function App() {
-  return (
-    <ModelPickerProvider
-      storage={storage}
-      providerRegistry={registry}
-      onConfigureProvider={(id) => console.log('Configure', id)}
-    >
-      <ModelSelect />
-      <ModelInfo />
-      <ChatInterface />
-    </ModelPickerProvider>
-  );
-}
-
-function ChatInterface() {
-  const { selectedModel, selectModel } = useModelSelection();
-
-  // Use selected model...
-}
-```
+- Basics: docs/basics.md
+- With Context: docs/with-context.md
 
 ### Role-Based Selection
 
