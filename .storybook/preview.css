@@ -1,0 +1,35 @@
+/* Storybook polish: fonts, spacing, readable docs */
+
+/* Prefer Inter if available; fall back to system stack */
+html, body, #storybook-root, .sbdocs, .sb-show-main {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Provide a pleasant reading width in Docs */
+.sbdocs.sbdocs-content, .docs-story {
+  max-width: 900px;
+}
+
+/* Breathing room around each story */
+.sb-wrapper {
+  padding: 24px;
+  background: var(--mp-background);
+  color: var(--mp-foreground);
+}
+
+/* Headings tune for docs */
+.sbdocs h1 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.sbdocs h2 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+.sbdocs h3 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+
+/* Code blocks readable against both themes */
+.sbdocs pre, .sbdocs code, code, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Tweak table spacing */
+.docblock-argstable table td, .docblock-argstable table th {
+  padding: 8px 12px;
+}
+
