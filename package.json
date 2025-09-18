@@ -8,7 +8,7 @@
   "keywords": [
     "ai",
     "ai-sdk",
-    "react",  
+    "react",
     "react-component",
     "react-library",
     "typescript",
@@ -81,10 +81,11 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "@ai-sdk/anthropic": ">=2.0.0",
     "@ai-sdk/amazon-bedrock": ">=2.0.0",
+    "@ai-sdk/anthropic": ">=2.0.0",
     "@ai-sdk/azure": ">=2.0.0",
     "@ai-sdk/cohere": ">=2.0.0",
+    "@ai-sdk/deepseek": ">=1.0.0",
     "@ai-sdk/google": ">=2.0.0",
     "@ai-sdk/mistral": ">=2.0.0",
     "@ai-sdk/openai": ">=2.0.0",
@@ -117,13 +118,17 @@
     },
     "@openrouter/ai-sdk-provider": {
       "optional": true
+    },
+    "@ai-sdk/deepseek": {
+      "optional": true
     }
   },
   "devDependencies": {
-    "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/amazon-bedrock": "^3.0.21",
+    "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/azure": "^2.0.29",
     "@ai-sdk/cohere": "^2.0.0",
+    "@ai-sdk/deepseek": "^1.0.18",
     "@ai-sdk/google": "^2.0.13",
     "@ai-sdk/mistral": "^2.0.0",
     "@ai-sdk/openai": "^2.0.29",
