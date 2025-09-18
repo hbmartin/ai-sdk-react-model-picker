@@ -185,9 +185,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
     if (rightEdge > window.innerWidth - padding) {
       left = Math.max(padding, window.innerWidth - optionsRect.width - padding);
     }
-    if (left < padding) {
-      left = padding;
-    }
+    left = Math.max(left, padding);
 
     setDropdownPosition({ top, left });
     setDropdownWidth(width);
@@ -269,21 +267,22 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
           if (focusable.length === 0) {
             return;
           }
-          const currentIndex = focusable.indexOf(document.activeElement);
+          const activeEl = document.activeElement;
+          const currentIndex = activeEl instanceof HTMLElement ? focusable.indexOf(activeEl) : -1;
           if (event.key === 'ArrowDown') {
             event.preventDefault();
             if (currentIndex === -1) {
               focusable[0].focus();
             } else {
-              const nextIndex = Math.min(focusable.length - 1, currentIndex + 1);
+              const nextIndex = (currentIndex + 1) % focusable.length;
               focusable[nextIndex].focus();
             }
           } else if (event.key === 'ArrowUp') {
             event.preventDefault();
             if (currentIndex === -1) {
-              focusable.at(-1).focus();
+              focusable.at(-1)?.focus();
             } else {
-              const prevIndex = Math.max(0, currentIndex - 1);
+              const prevIndex = (currentIndex - 1 + focusable.length) % focusable.length;
               focusable[prevIndex].focus();
             }
           }

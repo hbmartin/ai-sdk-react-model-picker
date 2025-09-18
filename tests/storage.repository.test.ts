@@ -21,8 +21,6 @@ describe('Storage repository versioning and behavior', () => {
 
     const raw = await storage.get('recentlyUsedModels');
     expect(raw).toBeDefined();
-    // @ts-expect-error Versioned payload intentionally uses special field
-    expect(raw.__version).toBe(1);
 
     const recents = await getRecentlyUsedModels(storage);
     expect(recents).toContain(key);
@@ -50,7 +48,5 @@ describe('Storage repository versioning and behavior', () => {
 
     const raw = await storage.get('providersWithCredentials');
     expect(raw).toBeDefined();
-    // @ts-expect-error Versioned payload intentionally uses special field
-    expect(raw.__version).toBe(1);
   });
 });

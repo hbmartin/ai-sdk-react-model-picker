@@ -43,7 +43,7 @@ interface ModelPickerContextValue {
   theme: ThemeConfig | undefined;
 
   // Actions
-  selectModel: (model: ModelConfigWithProvider) => void;
+  selectModel: (model: ModelConfigWithProvider | undefined) => void;
   selectRole: (roleId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | undefined) => void;
@@ -112,13 +112,7 @@ export function ModelPickerProvider({
   });
 
   // Get all models from providers
-  const allModels = useMemo(() => {
-    return providerRegistry
-      .getAllProviders()
-      .flatMap((provider) =>
-        provider.models.map((model) => ({ model, provider: provider.metadata }))
-      );
-  }, [providerRegistry]);
+  const allModels = useMemo(() => providerRegistry.getAllModels(), [providerRegistry]);
 
   // Find selected model
   const selectedModel = useMemo(() => {
@@ -129,8 +123,8 @@ export function ModelPickerProvider({
   }, [state.selectedModelId, allModels]);
 
   // Action creators
-  const selectModel = useCallback((model: ModelConfigWithProvider) => {
-    dispatch({ type: 'SET_MODEL', payload: model.model.id });
+  const selectModel = useCallback((model: ModelConfigWithProvider | undefined) => {
+    dispatch({ type: 'SET_MODEL', payload: model?.model.id });
   }, []);
 
   const selectRole = useCallback((roleId: string) => {
