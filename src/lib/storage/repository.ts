@@ -48,8 +48,9 @@ export async function addRecentlyUsedModel(
   modelKey: ProviderAndModelKey
 ): Promise<void> {
   return storage.get(RECENTLY_USED_MODELS_KEY).then((existing) => {
+    const base = existing ?? {};
     return storage.set(RECENTLY_USED_MODELS_KEY, {
-      ...existing,
+      ...base,
       [modelKey]: Date.now().toString(),
     });
   });
@@ -81,8 +82,9 @@ export async function addProviderWithCredentials(
   providerId: ProviderId
 ): Promise<void> {
   return storage.get(PROVIDERS_WITH_CREDENTIALS_KEY).then((existing) => {
+    const base = existing ?? {};
     return storage.set(PROVIDERS_WITH_CREDENTIALS_KEY, {
-      ...existing,
+      ...base,
       [providerId]: Date.now().toString(),
     });
   });

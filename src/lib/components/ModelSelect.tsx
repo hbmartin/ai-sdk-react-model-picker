@@ -73,7 +73,7 @@ export function ModelSelect({
         return selectedModel?.model.displayName ?? ADD_MODEL_LABEL;
       }
       case 'error': {
-        return isLoadingOrError.message ?? 'Error';
+        return isLoadingOrError.message ?? 'Failed to load models';
       }
     }
   }, [isLoadingOrError, selectedModel]);
@@ -103,7 +103,8 @@ export function ModelSelect({
       <Listbox value={selectedModel?.key} onChange={handleModelSelect}>
         <div className="relative flex">
           <ListboxButton
-            disabled={disabled || isLoadingOrError.state !== 'ready'}
+            disabled={disabled || isLoadingOrError.state === 'loading'}
+            aria-busy={isLoadingOrError.state === 'loading'}
             className="h-[18px] gap-1 border-none min-w-0 flex-1 text-muted hover:text-foreground py-0 px-1 text-xs"
             shouldOpenList={shouldOpenList}
           >
