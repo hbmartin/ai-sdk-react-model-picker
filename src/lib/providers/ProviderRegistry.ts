@@ -117,4 +117,10 @@ export class ProviderRegistry implements IProviderRegistry {
       provider.models.some((model) => model[capability] === true)
     );
   }
+
+  getAllModels(): ModelConfigWithProvider[] {
+    return this.getAllProviders().flatMap((provider) =>
+      provider.models.map((model) => ({ model, provider: provider.metadata }))
+    );
+  }
 }

@@ -9,6 +9,7 @@ import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
 
 const ADD_MODEL_ID = '__add_model__' as const;
+const ADD_MODEL_LABEL = 'Add Model Provider' as const;
 
 // eslint-disable-next-line sonarjs/prefer-read-only-props
 export function ModelSelect({
@@ -92,7 +93,7 @@ export function ModelSelect({
             shouldOpenList={shouldOpenList}
           >
             <span className="line-clamp-1 break-all hover:brightness-110 text-left">
-              {selectedModel?.model.displayName ?? 'Add Model Provider'}
+              {selectedModel?.model.displayName ?? ADD_MODEL_LABEL}
             </span>
             <ChevronDownIcon
               className="hidden h-2 w-2 flex-shrink-0 hover:brightness-110 min-[200px]:flex"
@@ -125,10 +126,10 @@ export function ModelSelect({
               )}
             </div>
             <hr className="bg-accent h-px border-0 m-0" />
-            <ListboxOption value={ADD_MODEL_ID}>
-              <div className="text-muted flex items-center my-1 hover:text-foreground text-xs font-semibold">
+            <ListboxOption value={ADD_MODEL_ID} className="text-muted hover:text-foreground">
+              <div className="flex items-center my-1 text-xs font-semibold">
                 <PlusIcon className="mr-2 h-3 w-3" />
-                Add Model Provider
+                {ADD_MODEL_LABEL}
               </div>
             </ListboxOption>
           </ListboxOptions>
@@ -150,6 +151,7 @@ export function ModelSelect({
           }}
           onProviderDeleted={(providerId) => {
             const model = deleteProvider(providerId);
+            context?.selectModel(model);
             onModelChange?.(model);
           }}
         />

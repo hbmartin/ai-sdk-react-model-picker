@@ -79,11 +79,7 @@ function App() {
   };
 
   return (
-    <ModelSelect
-      storage={storage}
-      providerRegistry={registry}
-      onModelChange={handleModelChange}
-    />
+    <ModelSelect storage={storage} providerRegistry={registry} onModelChange={handleModelChange} />
   );
 }
 
@@ -166,11 +162,7 @@ function App() {
   };
 
   return (
-    <ModelSelect
-      storage={storage}
-      providerRegistry={registry}
-      onModelChange={handleModelChange}
-    />
+    <ModelSelect storage={storage} providerRegistry={registry} onModelChange={handleModelChange} />
   );
 }
 ```
@@ -198,7 +190,7 @@ Built-in providers:
 
 Handle persistence of API keys and configuration:
 
-```tsx
+````tsx
 import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 
 const memoryStorage = new MemoryStorageAdapter();
@@ -216,25 +208,7 @@ class CustomStorage implements StorageAdapter {
   }
 }
 
-Security note: The default `MemoryStorageAdapter` is not persistent and not secure. In production, inject a secure storage implementation appropriate for your platform, e.g. `localStorage` (web), `chrome.storage` (extensions), or secret storage APIs in IDEs.
-
-Example (web) `localStorage` adapter:
-
-```ts
-class LocalStorageAdapter implements StorageAdapter {
-  async get(key: string): Promise<Record<string, string> | undefined> {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as Record<string, string>) : undefined;
-  }
-  async set(key: string, value: Record<string, string>): Promise<void> {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-  async remove(key: string): Promise<void> {
-    localStorage.removeItem(key);
-  }
-}
-```
-```
+Security note: The default `MemoryStorageAdapter` is not persistent and not secure. In production, inject a secure storage implementation appropriate for your platform, e.g. secret storage APIs in IDEs.
 
 ## API Reference
 
@@ -256,7 +230,7 @@ interface ModelSelectProps {
   className?: string;
   disabled?: boolean;
 }
-```
+````
 
 ### Provider Registry
 
@@ -545,6 +519,7 @@ npm run dev
 - Copyright 2023 Continue Dev, Inc.
 - Copyright 2025 Harold Martin
 - Logos are the property of their respective creators.
+
 ### Missing provider package / dynamic import error
 
 If you see an error like “OpenAI provider requires @ai-sdk/openai to be installed” when creating a model instance, install the corresponding AI SDK provider package as a peer dependency:

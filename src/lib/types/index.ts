@@ -40,11 +40,14 @@ export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAnd
 export function idsFromKey(key: ProviderAndModelKey): { providerId: ProviderId; modelId: ModelId } {
   // Split only at the first delimiter to allow model IDs containing '/'
   const idx = key.indexOf(KEY_DELIMITER);
-  if (idx === -1) {
-    throw new TypeError('Invalid ProviderAndModelKey format');
+  if (idx <= 0 || idx === key.length - KEY_DELIMITER.length) {
+    throw new TypeError('Invalid ProviderAndModelKey format, no delimiter found');
   }
   const providerId = key.slice(0, idx) as ProviderId;
   const modelId = key.slice(idx + KEY_DELIMITER.length) as ModelId;
+  if (modelId === '') {
+    throw new TypeError('Invalid ProviderAndModelKey format, model ID is empty');
+  }
   return { providerId, modelId };
 }
 
@@ -190,6 +193,7 @@ export interface IProviderRegistry {
   register(provider: AIProvider): ProviderId;
   getProvider(providerId: ProviderId): AIProvider;
   getAllProviders(): AIProvider[];
+  getAllModels(): ModelConfigWithProvider[];
   getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[];
   getProviderMetadata(providerId: ProviderId): ProviderMetadata;
   hasProvider(providerId: ProviderId): boolean;
