@@ -190,7 +190,7 @@ Built-in providers:
 
 Handle persistence of API keys and configuration:
 
-````tsx
+```tsx
 import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 
 const memoryStorage = new MemoryStorageAdapter();
@@ -207,6 +207,7 @@ class CustomStorage implements StorageAdapter {
     /* ... */
   }
 }
+```
 
 Security note: The default `MemoryStorageAdapter` is not persistent and not secure. In production, inject a secure storage implementation appropriate for your platform, e.g. secret storage APIs in IDEs.
 
@@ -230,7 +231,7 @@ interface ModelSelectProps {
   className?: string;
   disabled?: boolean;
 }
-````
+```
 
 ### Provider Registry
 
@@ -512,24 +513,11 @@ npm run dev
 4. Create provider icon component
 5. Add tests
 
-## License
+## Legal
 
 [Licensed under the Apache License, Version 2.0](LICENSE.txt)
 
 - Copyright 2023 Continue Dev, Inc.
 - Copyright 2025 Harold Martin
 - Logos are the property of their respective creators.
-
-### Missing provider package / dynamic import error
-
-If you see an error like “OpenAI provider requires @ai-sdk/openai to be installed” when creating a model instance, install the corresponding AI SDK provider package as a peer dependency:
-
-```bash
-npm install @ai-sdk/openai # or @ai-sdk/anthropic, @ai-sdk/google, etc.
-```
-
-For OpenRouter support, install:
-
-```bash
-npm install @openrouter/ai-sdk-provider
-```
+- Logo SVGs from [Simple Icons](https://simpleicons.org/) and [LobeHub Icons](https://icons.lobehub.com/)

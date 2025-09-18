@@ -240,6 +240,12 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
       'unicorn/consistent-function-scoping': 'off',
+      'unicorn/no-null': 'off',
+      '@typescript-eslint/no-extraneous-class': 'off',
+      'sonarjs/super-invocation': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      'code-complete/enforce-meaningful-names': 'off',
+      '@typescript-eslint/require-await': 'off',
     },
   },
   {
