@@ -53,6 +53,7 @@ export function useModelsWithConfiguredProvider(
   const [selectedModel, setSelectedModel] = useState<KeyedModelConfigWithProvider | undefined>(
     undefined
   );
+  const [isLoadingOrError, setIsLoadingOrError] = useState<boolean | string>(true);
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -179,8 +180,10 @@ export function useModelsWithConfiguredProvider(
             });
           })
         );
+        setIsLoadingOrError(false);
       } catch (error) {
         console.error('Failed to load recently used models:', error);
+        setIsLoadingOrError(error instanceof Error ? error.message : String(error));
       }
     }
     void loadRecentlyUsed();
@@ -192,5 +195,6 @@ export function useModelsWithConfiguredProvider(
     selectedModel,
     setSelectedProviderAndModel,
     deleteProvider,
+    isLoadingOrError,
   };
 }

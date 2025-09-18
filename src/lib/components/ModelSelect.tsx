@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { type ModelSelectProps, type ProviderAndModelKey, idsFromKey } from '../types';
 import { useOptionalModelPicker } from '../context';
 import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
@@ -35,6 +35,7 @@ export function ModelSelect({
     selectedModel,
     setSelectedProviderAndModel,
     deleteProvider,
+    isLoadingOrError,
   } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry);
 
   // Handle model selection
@@ -62,6 +63,16 @@ export function ModelSelect({
     }
     return true;
   }, [recentlyUsedModels, modelsWithCredentials]);
+
+  const buttonLabel: string = useMemo(() => {
+    if (isLoadingOrError === true) {
+      return 'Loading...';
+    }
+    if (isLoadingOrError === false) {
+      return selectedModel?.model.displayName ?? ADD_MODEL_LABEL;
+    }
+    return isLoadingOrError;
+  }, [isLoadingOrError, selectedModel]);
 
   return (
     <div className={`ai-sdk-model-picker ${className}`}>
@@ -93,7 +104,7 @@ export function ModelSelect({
             shouldOpenList={shouldOpenList}
           >
             <span className="line-clamp-1 break-all hover:brightness-110 text-left">
-              {selectedModel?.model.displayName ?? ADD_MODEL_LABEL}
+              {buttonLabel}
             </span>
             <ChevronDownIcon
               className="hidden h-2 w-2 flex-shrink-0 hover:brightness-110 min-[200px]:flex"
@@ -127,7 +138,7 @@ export function ModelSelect({
             </div>
             <hr className="bg-accent h-px border-0 m-0" />
             <ListboxOption value={ADD_MODEL_ID} className="text-muted hover:text-foreground">
-              <div className="flex items-center my-1 text-xs font-semibold">
+              <div className="flex items-center py-1 text-xs font-semibold">
                 <PlusIcon className="mr-2 h-3 w-3" />
                 {ADD_MODEL_LABEL}
               </div>
