@@ -180,12 +180,12 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
 
     // Calculate horizontal position (align with trigger), clamp to viewport
     let left = triggerRect.left;
-    const width = triggerRect.width;
-    const rightEdge = left + optionsRect.width;
-    if (rightEdge > window.innerWidth - padding) {
-      left = Math.max(padding, window.innerWidth - optionsRect.width - padding);
+    const width = Math.min(400, window.innerWidth - padding - left);
+
+    // If the left position is too close to the right edge of the viewport, move it to the left
+    if (left + width > window.innerWidth - padding) {
+      left = window.innerWidth - padding - width;
     }
-    left = Math.max(left, padding);
 
     setDropdownPosition({ top, left });
     setDropdownWidth(width);
@@ -245,7 +245,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
         ref={optionsRef}
         role="listbox"
         className={`
-        absolute z-50 max-w-xs mt-1 py-1
+        absolute z-50 max-w-md mt-1 py-1
         bg-background border border-solid border-border rounded
         max-h-60 overflow-auto
         ${className}

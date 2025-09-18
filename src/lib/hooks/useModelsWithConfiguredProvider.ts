@@ -53,6 +53,10 @@ export function useModelsWithConfiguredProvider(
   const [selectedModel, setSelectedModel] = useState<KeyedModelConfigWithProvider | undefined>(
     undefined
   );
+  const [isLoadingOrError, setIsLoadingOrError] = useState<{
+    state: 'loading' | 'ready' | 'error';
+    message?: string;
+  }>({ state: 'loading' });
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -139,8 +143,11 @@ export function useModelsWithConfiguredProvider(
   useEffect(() => {
     async function loadRecentlyUsed() {
       try {
-        const recentModelKeys = await getRecentlyUsedModels(storage);
-        const providersWithCredentials = await getProvidersWithCredentials(storage);
+        const [recentModelKeys, providersWithCredentials] = await Promise.all([
+          getRecentlyUsedModels(storage),
+          getProvidersWithCredentials(storage),
+        ]);
+
         const knownProviders = new Set([
           ...recentModelKeys.map((key) => idsFromKey(key).providerId),
           ...providersWithCredentials,
@@ -164,7 +171,7 @@ export function useModelsWithConfiguredProvider(
               key,
             };
           })
-          .filter((item) => item !== undefined);
+          .filter((item): item is KeyedModelConfigWithProvider => item !== undefined);
         setSelectedModel((prev) => prev ?? recentlyUsedModels[0]);
         setRecentlyUsedModels(recentlyUsedModels);
         setModelsWithCredentials(
@@ -179,8 +186,13 @@ export function useModelsWithConfiguredProvider(
             });
           })
         );
+        setIsLoadingOrError({ state: 'ready' });
       } catch (error) {
         console.error('Failed to load recently used models:', error);
+        setIsLoadingOrError({
+          state: 'error',
+          message: error instanceof Error ? error.message : String(error),
+        });
       }
     }
     void loadRecentlyUsed();
@@ -192,5 +204,6 @@ export function useModelsWithConfiguredProvider(
     selectedModel,
     setSelectedProviderAndModel,
     deleteProvider,
+    isLoadingOrError,
   };
 }

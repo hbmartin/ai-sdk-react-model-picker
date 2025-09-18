@@ -217,6 +217,11 @@ describe('useModelsWithConfiguredProvider', () => {
 
     const { result } = renderHook(() => useModelsWithConfiguredProvider(storage, registry));
 
+    // Wait until isLoadingOrError is ready
+    await waitFor(() => {
+      expect(result.current.isLoadingOrError.state).toBe('ready');
+    });
+
     // Select models from both providers so both are present in state
     await act(async () => {
       result.current.setSelectedProviderAndModel(p1, p1m1.id);
