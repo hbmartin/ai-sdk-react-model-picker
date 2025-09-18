@@ -179,8 +179,13 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
     }
 
     // Calculate horizontal position (align with trigger), clamp to viewport
-    const left = triggerRect.left;
+    let left = triggerRect.left;
     const width = Math.min(400, window.innerWidth - padding - left);
+
+    // If the left position is too close to the right edge of the viewport, move it to the left
+    if (left + width > window.innerWidth - padding) {
+      left = window.innerWidth - padding - width;
+    }
 
     setDropdownPosition({ top, left });
     setDropdownWidth(width);

@@ -65,13 +65,17 @@ export function ModelSelect({
   }, [recentlyUsedModels, modelsWithCredentials]);
 
   const buttonLabel: string = useMemo(() => {
-    if (isLoadingOrError === true) {
-      return 'Loading...';
+    switch (isLoadingOrError.state) {
+      case 'loading': {
+        return 'Loading...';
+      }
+      case 'ready': {
+        return selectedModel?.model.displayName ?? ADD_MODEL_LABEL;
+      }
+      case 'error': {
+        return isLoadingOrError.message ?? 'Error';
+      }
     }
-    if (isLoadingOrError === false) {
-      return selectedModel?.model.displayName ?? ADD_MODEL_LABEL;
-    }
-    return isLoadingOrError;
   }, [isLoadingOrError, selectedModel]);
 
   return (
@@ -99,7 +103,7 @@ export function ModelSelect({
       <Listbox value={selectedModel?.key} onChange={handleModelSelect}>
         <div className="relative flex">
           <ListboxButton
-            disabled={disabled}
+            disabled={disabled || isLoadingOrError.state !== 'ready'}
             className="h-[18px] gap-1 border-none min-w-0 flex-1 text-muted hover:text-foreground py-0 px-1 text-xs"
             shouldOpenList={shouldOpenList}
           >
