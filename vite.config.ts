@@ -38,6 +38,9 @@ export default defineConfig({
         '@ai-sdk/azure',
         '@ai-sdk/mistral',
         '@ai-sdk/cohere',
+        '@ai-sdk/amazon-bedrock',
+        'ai-sdk-provider-claude-code',
+        '@anthropic-ai/claude-code',
         'ai',
       ],
       output: {

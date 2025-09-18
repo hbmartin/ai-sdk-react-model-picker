@@ -65,6 +65,7 @@ export interface ProviderMetadata {
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
+  warning?: string;
 }
 
 // Provider instance parameters for AI SDK

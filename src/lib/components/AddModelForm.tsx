@@ -228,6 +228,10 @@ export function AddModelForm({
               </p>
             </div>
 
+            {selectedProvider?.metadata.warning !== undefined && (
+              <p className="mt-1 px-1 text-xs text-warning">{selectedProvider.metadata.warning}</p>
+            )}
+
             {selectedProvider?.configuration.fields.map(
               ({ key, label: fieldName, placeholder, required }) => (
                 <div key={key}>

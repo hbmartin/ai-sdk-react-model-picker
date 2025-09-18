@@ -2,6 +2,7 @@ import { createProviderId, type ProviderCtor, type ProviderId } from '../types';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
 import { BedrockProvider } from './BedrockProvider';
+import { ClaudeCodeProvider } from './ClaudeCodeProvider ';
 import { CohereProvider } from './CohereProvider';
 import { GoogleProvider } from './GoogleProvider';
 import { MistralProvider } from './MistralProvider';
@@ -35,6 +36,7 @@ export const allProviders = {
   [createProviderId('bedrock')]: BedrockProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
   [createProviderId('openrouter')]: OpenRouterProvider,
+  [createProviderId('claude-code')]: ClaudeCodeProvider,
 } satisfies Record<ProviderId, ProviderCtor>;
 
 // Helper function to create a registry with default providers

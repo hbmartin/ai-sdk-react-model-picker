@@ -8,7 +8,7 @@
   "keywords": [
     "ai",
     "ai-sdk",
-    "react",  
+    "react",
     "react-component",
     "react-library",
     "typescript",
@@ -81,14 +81,15 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "@ai-sdk/anthropic": ">=2.0.0",
     "@ai-sdk/amazon-bedrock": ">=2.0.0",
+    "@ai-sdk/anthropic": ">=2.0.0",
     "@ai-sdk/azure": ">=2.0.0",
     "@ai-sdk/cohere": ">=2.0.0",
     "@ai-sdk/google": ">=2.0.0",
     "@ai-sdk/mistral": ">=2.0.0",
     "@ai-sdk/openai": ">=2.0.0",
     "@openrouter/ai-sdk-provider": ">=1.0.0",
+    "ai-sdk-provider-claude-code": ">=1.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-hook-form": "^7.62.0"
@@ -117,11 +118,14 @@
     },
     "@openrouter/ai-sdk-provider": {
       "optional": true
+    },
+    "ai-sdk-provider-claude-code": {
+      "optional": true
     }
   },
   "devDependencies": {
-    "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/amazon-bedrock": "^3.0.21",
+    "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/azure": "^2.0.29",
     "@ai-sdk/cohere": "^2.0.0",
     "@ai-sdk/google": "^2.0.13",
@@ -143,6 +147,7 @@
     "@vitejs/plugin-react": "^5.0.3",
     "@vitest/ui": "^3.2.4",
     "ai": "^5.0.45",
+    "ai-sdk-provider-claude-code": "^1.1.4",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
