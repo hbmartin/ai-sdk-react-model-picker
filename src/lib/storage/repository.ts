@@ -4,6 +4,7 @@ import {
   type ProviderId,
   type StorageAdapter,
 } from '../types';
+import { getTelemetry } from '../telemetry';
 
 type StorageGetter = Pick<StorageAdapter, 'get'>;
 
@@ -15,7 +16,7 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
   try {
     assertRecordStringString(obj);
   } catch (error) {
-    console.error('Invalid storage format:', error);
+    getTelemetry()?.onStorageError?.('read', error as Error);
     return [];
   }
   try {
@@ -26,7 +27,7 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
         .map(([key]) => key as T)
     );
   } catch (error) {
-    console.error('Invalid value format:', error);
+    getTelemetry()?.onStorageError?.('read', error as Error);
     return [];
   }
 }

@@ -18,6 +18,7 @@ import type {
 } from '../types';
 import type { ModelPickerTelemetry } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
+import { setGlobalTelemetry } from '../telemetry';
 
 // State interface
 interface ModelPickerState {
@@ -131,9 +132,10 @@ export function ModelPickerProvider({
 
   // Initialize catalog with optional prefetch
   useMemo(() => {
+    setGlobalTelemetry(telemetry);
     void catalog.initialize(prefetch);
     return undefined;
-  }, [catalog, prefetch]);
+  }, [catalog, prefetch, telemetry]);
 
   // All models flattened from catalog snapshot (filter visible)
   const allModels = useMemo(() => {

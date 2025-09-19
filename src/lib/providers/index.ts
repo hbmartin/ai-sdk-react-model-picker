@@ -10,6 +10,7 @@ import { MoonshotProvider } from './MoonshotProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderRegistry } from './ProviderRegistry';
+import { getTelemetry } from '../telemetry';
 
 export type {
   AIProvider,
@@ -48,7 +49,8 @@ export function createDefaultRegistry(
     try {
       registry.register(new provider());
     } catch (error) {
-      console.error(`Provider not available:`, error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      getTelemetry()?.onProviderInitError?.(provider.name, err);
     }
   }
 
