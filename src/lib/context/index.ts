@@ -16,6 +16,9 @@ import type {
   ThemeConfig,
   ProviderId,
 } from '../types';
+import type { ModelPickerTelemetry } from '../types';
+import { ModelCatalog } from '../catalog/ModelCatalog';
+import { setGlobalTelemetry } from '../telemetry';
 
 // State interface
 interface ModelPickerState {
@@ -39,8 +42,11 @@ interface ModelPickerContextValue {
   allModels: ModelConfigWithProvider[];
   providerRegistry: IProviderRegistry;
   storage: StorageAdapter;
+  modelStorage: StorageAdapter;
   roles: Role[] | undefined;
   theme: ThemeConfig | undefined;
+  catalog: ModelCatalog;
+  telemetry?: ModelPickerTelemetry;
 
   // Actions
   selectModel: (model: ModelConfigWithProvider | undefined) => void;
@@ -51,6 +57,7 @@ interface ModelPickerContextValue {
   // Callbacks
   onConfigureProvider: (providerId: ProviderId) => void;
   onMissingConfiguration: (keys: string[]) => void;
+  refreshModels: (providerId?: ProviderId) => void;
 }
 
 const ModelPickerContext = createContext<ModelPickerContextValue | undefined>(undefined);
@@ -81,6 +88,9 @@ export interface ModelPickerProviderProps {
   children: ReactNode;
   providerRegistry: IProviderRegistry;
   storage: StorageAdapter;
+  modelStorage?: StorageAdapter;
+  telemetry?: ModelPickerTelemetry;
+  prefetch?: boolean;
   initialModelId?: ModelId;
   initialRole?: string;
   roles?: Role[];
@@ -97,6 +107,9 @@ export function ModelPickerProvider({
   children,
   providerRegistry,
   storage,
+  modelStorage,
+  telemetry,
+  prefetch = true,
   initialModelId,
   initialRole,
   roles,
@@ -111,8 +124,31 @@ export function ModelPickerProvider({
     error: undefined,
   });
 
-  // Get all models from providers
-  const allModels = useMemo(() => providerRegistry.getAllModels(), [providerRegistry]);
+  // Catalog instance
+  const catalog = useMemo(
+    () => new ModelCatalog(providerRegistry, storage, modelStorage ?? storage, telemetry),
+    [providerRegistry, storage, modelStorage, telemetry]
+  );
+
+  // Initialize catalog with optional prefetch
+  useMemo(() => {
+    setGlobalTelemetry(telemetry);
+    void catalog.initialize(prefetch);
+    return undefined;
+  }, [catalog, prefetch, telemetry]);
+
+  // All models flattened from catalog snapshot (filter visible)
+  const allModels = useMemo(() => {
+    const snapshot = catalog.getSnapshot();
+    const arr: ModelConfigWithProvider[] = [];
+    for (const entry of Object.values(snapshot)) {
+      for (const mp of entry.models) {
+        if (mp.model.visible === false) continue;
+        arr.push(mp);
+      }
+    }
+    return arr;
+  }, [catalog]);
 
   // Find selected model
   const selectedModel = useMemo(() => {
@@ -141,35 +177,54 @@ export function ModelPickerProvider({
   }, []);
 
   const contextValue = useMemo<ModelPickerContextValue>(
-    () => ({
-      state,
-      selectedModel,
-      allModels,
-      providerRegistry,
-      storage,
-      roles,
-      theme,
-      selectModel,
-      selectRole,
-      setLoading,
-      setError,
-      onConfigureProvider,
-      onMissingConfiguration,
-    }),
+    () => {
+      const base = {
+        state,
+        selectedModel,
+        allModels,
+        providerRegistry,
+        storage,
+        modelStorage: modelStorage ?? storage,
+        roles,
+        theme,
+        catalog,
+        selectModel,
+        selectRole,
+        setLoading,
+        setError,
+        onConfigureProvider,
+        onMissingConfiguration,
+        refreshModels: (providerId?: ProviderId) => {
+          if (providerId) {
+            void catalog.refresh(providerId);
+          } else {
+            void catalog.refreshAll();
+          }
+        },
+      } satisfies Omit<ModelPickerContextValue, 'telemetry'>;
+      if (telemetry !== undefined) {
+        (base as any).telemetry = telemetry;
+      }
+      return base as ModelPickerContextValue;
+    },
     [
       state,
       selectedModel,
       allModels,
       providerRegistry,
       storage,
+      modelStorage,
       roles,
       theme,
+      catalog,
+      telemetry,
       selectModel,
       selectRole,
       setLoading,
       setError,
       onConfigureProvider,
       onMissingConfiguration,
+      prefetch,
     ]
   );
 

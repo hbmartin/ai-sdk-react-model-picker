@@ -25,6 +25,8 @@ export class AzureProvider extends AIProvider {
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
+      origin: 'builtin',
+      visible: true,
     },
     {
       id: createModelId('gpt-4-turbo'),
@@ -33,6 +35,8 @@ export class AzureProvider extends AIProvider {
       contextLength: 128_000,
       supportsVision: true,
       supportsTools: true,
+      origin: 'builtin',
+      visible: true,
     },
     {
       id: createModelId('gpt-4'),
@@ -40,6 +44,8 @@ export class AzureProvider extends AIProvider {
       maxTokens: 8192,
       contextLength: 8192,
       supportsTools: true,
+      origin: 'builtin',
+      visible: true,
     },
     {
       id: createModelId('gpt-35-turbo'),
@@ -47,6 +53,8 @@ export class AzureProvider extends AIProvider {
       maxTokens: 4096,
       contextLength: 16_385,
       supportsTools: true,
+      origin: 'builtin',
+      visible: true,
     },
   ];
 

@@ -16,6 +16,7 @@ export function ModelSelect({
   storage,
   providerRegistry,
   onModelChange,
+  telemetry,
   roles,
   selectedRole,
   onRoleChange,
@@ -25,10 +26,16 @@ export function ModelSelect({
   const context = useOptionalModelPicker();
   const effectiveStorage = context?.storage ?? storage;
   const effectiveProviderRegistry = context?.providerRegistry ?? providerRegistry;
+  const effectiveTelemetry = context?.telemetry ?? telemetry;
+  const effectiveModelStorage = context?.modelStorage ?? effectiveStorage;
   const effectiveRoles = context?.roles ?? roles;
   const effectiveSelectedRole = context?.state.selectedRole ?? selectedRole;
   const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
+  const hookOptions: { telemetry?: import('../types').ModelPickerTelemetry; modelStorage?: import('../types').StorageAdapter; prefetch?: boolean } = {};
+  if (effectiveTelemetry !== undefined) hookOptions.telemetry = effectiveTelemetry;
+  if (effectiveModelStorage !== undefined) hookOptions.modelStorage = effectiveModelStorage;
+  hookOptions.prefetch = true;
   const {
     recentlyUsedModels,
     modelsWithCredentials,
@@ -36,7 +43,8 @@ export function ModelSelect({
     setSelectedProviderAndModel,
     deleteProvider,
     isLoadingOrError,
-  } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry);
+    refreshProviderModels,
+  } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry, hookOptions);
 
   // Handle model selection
   const handleModelSelect = (key: ProviderAndModelKey | typeof ADD_MODEL_ID) => {
@@ -159,6 +167,8 @@ export function ModelSelect({
           onClose={() => setShowAddModelForm(false)}
           onProviderConfigured={(provider) => {
             const modelWithProvider = setSelectedProviderAndModel(provider.id);
+            // Trigger background refresh for this provider after configuration
+            refreshProviderModels(provider.id);
             setShowAddModelForm(false);
             if (modelWithProvider) {
               context?.selectModel(modelWithProvider);

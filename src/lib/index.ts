@@ -22,6 +22,9 @@ export type { ModelPickerProviderProps } from './context';
 // VSCode/IDE integration hooks
 export { useVSCodeContext, getEnvironmentClasses, useUniversalTheme } from './hooks';
 export type { VSCodeContext, UniversalTheme } from './hooks';
+export { useProviderModels } from './hooks/useProviderModels';
+export { useModelsByProvider } from './hooks/useModelsByProvider';
+export { flattenAndSortAvailableModels } from './hooks/catalogUtils';
 
 // Providers
 export { createDefaultRegistry, allProviders } from './providers';
@@ -43,6 +46,7 @@ export type {
 export { MemoryStorageAdapter } from './storage';
 export { assertRecordStringString, idsFromKey } from './types';
 export { getSelectedProviderAndModelKey, getProviderConfiguration } from './storage/repository';
+export { ModelCatalog } from './catalog/ModelCatalog';
 
 // Types
 export type {

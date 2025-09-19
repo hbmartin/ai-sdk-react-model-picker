@@ -12,6 +12,9 @@ const KEY_DELIMITER = '/' as const;
 export type ProviderAndModelKey = `${ProviderId}${typeof KEY_DELIMITER}${ModelId}` &
   Brand<string, 'ProviderAndModelKey'>;
 
+// Model origin for catalog and persistence
+export type ModelOrigin = 'builtin' | 'api' | 'user';
+
 // Core model configuration
 export interface ModelConfig {
   id: ModelId;
@@ -21,6 +24,11 @@ export interface ModelConfig {
   supportsVision?: boolean;
   supportsTools?: boolean;
   contextLength?: number;
+  // Catalog-specific fields
+  origin?: ModelOrigin;
+  visible?: boolean;
+  discoveredAt?: number;
+  updatedAt?: number;
 }
 
 // Model with provider metadata attached
@@ -65,6 +73,8 @@ export interface ProviderMetadata {
   iconUrl?: string;
   documentationUrl?: string;
   apiKeyUrl?: string;
+  // Presence indicates the provider supports model list fetching
+  fetchModelListUrl?: string;
 }
 
 // Provider instance parameters for AI SDK
@@ -85,6 +95,16 @@ export interface StorageAdapter {
   get(key: string): PromiseLike<Record<string, string> | undefined>;
   set(key: string, value: Record<string, string>): PromiseLike<void>;
   remove(key: string): PromiseLike<void>;
+}
+
+// Telemetry interface for status/error reporting
+export interface ModelPickerTelemetry {
+  onFetchStart?: (providerId: ProviderId) => void;
+  onFetchSuccess?: (providerId: ProviderId, modelCount: number) => void;
+  onFetchError?: (providerId: ProviderId, error: Error) => void;
+  onStorageError?: (operation: 'read' | 'write', error: Error) => void;
+  onUserModelAdded?: (providerId: ProviderId, modelId: ModelId) => void;
+  onProviderInitError?: (provider: string, error: Error) => void;
 }
 
 function isObject(value: unknown): value is object {
@@ -202,12 +222,20 @@ export interface IProviderRegistry {
   hasProvider(providerId: ProviderId): boolean;
 }
 
+// Provider models status (for hooks backed by the catalog)
+export interface ProviderModelsStatus {
+  models: ModelConfigWithProvider[];
+  status: 'idle' | 'loading' | 'ready' | 'missing-config' | 'error';
+  error?: string;
+}
+
 // Component prop interfaces
 export interface ModelSelectProps {
   // Required props
   readonly storage: StorageAdapter;
   readonly providerRegistry: IProviderRegistry;
   readonly onModelChange?: (model: ModelConfigWithProvider | undefined) => void;
+  readonly telemetry?: ModelPickerTelemetry;
 
   // Optional configuration
   readonly roles?: Role[];

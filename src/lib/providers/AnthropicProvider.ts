@@ -25,6 +25,8 @@ export class AnthropicProvider extends AIProvider {
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
+      origin: 'builtin',
+      visible: true,
     },
     {
       id: createModelId('claude-opus-4-1-20250805'),
@@ -32,6 +34,8 @@ export class AnthropicProvider extends AIProvider {
       maxTokens: 200_000,
       supportsVision: true,
       supportsTools: true,
+      origin: 'builtin',
+      visible: true,
     },
     {
       id: createModelId('claude-3-5-haiku-20241022'),
@@ -39,6 +43,8 @@ export class AnthropicProvider extends AIProvider {
       maxTokens: 200_000,
       supportsVision: true,
       supportsTools: true,
+      origin: 'builtin',
+      visible: true,
     },
   ];
 
