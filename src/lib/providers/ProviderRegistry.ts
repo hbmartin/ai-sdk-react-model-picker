@@ -94,20 +94,6 @@ export class ProviderRegistry implements IProviderRegistry {
   }
 
   /**
-   * Get all models for a specific provider
-   * @param providerId The provider ID
-   * @returns Array of models for the provider
-   */
-  getModelsForProvider(providerId: ProviderId): ModelConfigWithProvider[] {
-    const provider = this.getProvider(providerId);
-
-    return provider.models.map((model) => ({
-      model,
-      provider: provider.metadata,
-    }));
-  }
-
-  /**
    * Find providers that support a specific capability
    * @param capability The capability to search for (e.g., vision, tools)
    * @returns Array of providers supporting the capability
@@ -115,12 +101,6 @@ export class ProviderRegistry implements IProviderRegistry {
   getProvidersByCapability(capability: keyof ModelConfigWithProvider['model']): AIProvider[] {
     return this.getAllProviders().filter((provider) =>
       provider.models.some((model) => model[capability] === true)
-    );
-  }
-
-  getAllModels(): ModelConfigWithProvider[] {
-    return this.getAllProviders().flatMap((provider) =>
-      provider.models.map((model) => ({ model, provider: provider.metadata }))
     );
   }
 }
