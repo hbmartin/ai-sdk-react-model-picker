@@ -234,6 +234,7 @@ export interface ModelSelectProps {
   readonly storage: StorageAdapter;
   readonly providerRegistry: IProviderRegistry;
   readonly onModelChange?: (model: ModelConfigWithProvider | undefined) => void;
+  readonly telemetry?: ModelPickerTelemetry;
 
   // Optional configuration
   readonly roles?: Role[];

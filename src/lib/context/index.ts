@@ -45,6 +45,7 @@ interface ModelPickerContextValue {
   roles: Role[] | undefined;
   theme: ThemeConfig | undefined;
   catalog: ModelCatalog;
+  telemetry?: ModelPickerTelemetry;
 
   // Actions
   selectModel: (model: ModelConfigWithProvider | undefined) => void;
@@ -184,6 +185,7 @@ export function ModelPickerProvider({
       roles,
       theme,
       catalog,
+      telemetry,
       selectModel,
       selectRole,
       setLoading,
@@ -208,6 +210,7 @@ export function ModelPickerProvider({
       roles,
       theme,
       catalog,
+      telemetry,
       selectModel,
       selectRole,
       setLoading,
