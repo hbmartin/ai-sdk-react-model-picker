@@ -41,6 +41,7 @@ export class ModelCatalog {
   private readonly byProvider = new Map<ProviderId, ProviderState>();
   private readonly listeners = new Set<() => void>();
   private readonly inFlight = new Set<ProviderId>();
+  private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {} as any;
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
@@ -60,6 +61,7 @@ export class ModelCatalog {
       }
       this.byProvider.set(provider.metadata.id, { status: 'idle', models: map });
     }
+    this.recomputeSnapshot();
     this.emit();
   }
 
@@ -75,6 +77,7 @@ export class ModelCatalog {
         }
       })
     );
+    this.recomputeSnapshot();
     this.emit();
 
     if (prefetch) {
@@ -97,11 +100,8 @@ export class ModelCatalog {
     for (const l of this.listeners) l();
   }
 
-  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
-    const out: Record<ProviderId, ProviderModelsStatus> = {} as Record<
-      ProviderId,
-      ProviderModelsStatus
-    >;
+  private recomputeSnapshot() {
+    const out: Record<ProviderId, ProviderModelsStatus> = {} as any;
     for (const provider of this.providerRegistry.getAllProviders()) {
       const pid = provider.metadata.id;
       const state = this.byProvider.get(pid);
@@ -113,14 +113,17 @@ export class ModelCatalog {
       const base: ProviderModelsStatus = {
         models: withProvider,
         status: state?.status ?? 'idle',
-      };
-      if (state?.error !== undefined) {
-        // Assign only when defined to satisfy exactOptionalPropertyTypes
-        (base as any).error = state.error;
+      } as ProviderModelsStatus;
+      if ((state as any)?.error !== undefined) {
+        (base as any).error = (state as any).error as string;
       }
       out[pid] = base;
     }
-    return out;
+    this.cachedSnapshot = out;
+  }
+
+  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
+    return this.cachedSnapshot;
   }
 
   private setStatus(providerId: ProviderId, status: ProviderModelsStatus['status'], error?: string) {
@@ -132,6 +135,7 @@ export class ModelCatalog {
       (st as any).error = error;
     }
     this.byProvider.set(providerId, st);
+    this.recomputeSnapshot();
     this.emit();
   }
 
@@ -189,6 +193,7 @@ export class ModelCatalog {
 
     this.byProvider.set(providerId, state);
     await this.persistNonBuiltin(providerId);
+    this.recomputeSnapshot();
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
@@ -244,6 +249,7 @@ export class ModelCatalog {
     this.byProvider.set(providerId, state);
     await this.persistNonBuiltin(providerId);
     this.telemetry?.onUserModelAdded?.(providerId, modelId);
+    this.recomputeSnapshot();
     this.emit();
   }
 
@@ -254,6 +260,7 @@ export class ModelCatalog {
     if (existing?.origin !== 'user') return; // only allow explicit removal of user entries
     state.models.delete(modelId);
     await this.persistNonBuiltin(providerId);
+    this.recomputeSnapshot();
     this.emit();
   }
 }
