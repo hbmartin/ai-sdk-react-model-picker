@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type StorageAdapter,
   type ProviderMetadata,
@@ -20,6 +20,9 @@ import {
   getRecentlyUsedModels,
   removeRecentlyUsedModels,
 } from '../storage/repository';
+import { ModelCatalog } from '../catalog/ModelCatalog';
+import { flattenAndSortAvailableModels } from './catalogUtils';
+import type { ModelPickerTelemetry, StorageAdapter as _Storage } from '../types';
 
 function buildProviderMaps(providers: AIProvider[]): {
   providerMetadata: Record<ProviderId, ProviderMetadata>;
@@ -44,7 +47,8 @@ function buildProviderMaps(providers: AIProvider[]): {
 
 export function useModelsWithConfiguredProvider(
   storage: StorageAdapter,
-  providerRegistry: IProviderRegistry
+  providerRegistry: IProviderRegistry,
+  options?: { telemetry?: ModelPickerTelemetry; modelStorage?: _Storage; prefetch?: boolean }
 ) {
   const [recentlyUsedModels, setRecentlyUsedModels] = useState<KeyedModelConfigWithProvider[]>([]);
   const [modelsWithCredentials, setModelsWithCredentials] = useState<
@@ -57,6 +61,18 @@ export function useModelsWithConfiguredProvider(
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
+
+  // Catalog instance tied to registry + storages
+  const catalogRef = useRef<ModelCatalog | undefined>(undefined);
+  if (catalogRef.current === undefined) {
+    catalogRef.current = new ModelCatalog(
+      providerRegistry,
+      storage,
+      options?.modelStorage ?? storage,
+      options?.telemetry
+    );
+  }
+  const catalog = catalogRef.current;
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -148,48 +164,39 @@ export function useModelsWithConfiguredProvider(
           getProvidersWithCredentials(storage),
         ]);
 
-        const knownProviders = new Set([
-          ...recentModelKeys.map((key) => idsFromKey(key).providerId),
-          ...providersWithCredentials,
-        ]);
-        const providers = [...knownProviders].map((providerId) => {
-          // TODO: don't fail if provider not found, use some error callback and skip it
-          return providerRegistry.getProvider(providerId);
-        });
-        const { providerMetadata, providerModels } = buildProviderMaps(providers);
+        // Initialize catalog (will seed builtin and load persisted; prefetch if asked)
+        await catalog.initialize(options?.prefetch !== false);
 
-        const recentlyUsedModels = recentModelKeys
+        // Build model maps from catalog snapshot
+        const snapshot = catalog.getSnapshot();
+        const providers = providersWithCredentials.filter((pid) => providerRegistry.hasProvider(pid));
+
+        // Recently used list, but only for models that currently exist in snapshot
+        const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
-            const model = providerModels.get(providerId)?.get(modelId);
-            if (model === undefined) {
-              return undefined;
-            }
-            providerModels.get(providerId)?.delete(modelId);
-            return {
-              model,
-              provider: providerMetadata[providerId],
-              key,
-            };
+            const entry = snapshot[providerId]?.models.find((m) => m.model.id === modelId);
+            if (!entry) return undefined;
+            return { ...entry, key } as KeyedModelConfigWithProvider;
           })
-          .filter((item): item is KeyedModelConfigWithProvider => item !== undefined);
-        setSelectedModel((prev) => prev ?? recentlyUsedModels[0]);
-        setRecentlyUsedModels(recentlyUsedModels);
+          .filter((x): x is KeyedModelConfigWithProvider => x !== undefined);
+        setSelectedModel((prev) => prev ?? recent[0]);
+        setRecentlyUsedModels(recent);
+
+        // Available models = flatten provider models from snapshot, filtered/sorted
+        const flattened = flattenAndSortAvailableModels(
+          Object.fromEntries(
+            providers.map((pid) => [pid, snapshot[pid] ?? { models: [], status: 'idle' }])
+          )
+        );
+        const known = new Set(recent.map((m) => m.key));
         setModelsWithCredentials(
-          [...providerModels.entries()].flatMap(([providerId, models]) => {
-            // eslint-disable-next-line sonarjs/no-nested-functions
-            return [...models.entries()].map(([_modelId, model]) => {
-              return {
-                model,
-                provider: providerMetadata[providerId],
-                key: providerAndModelKey({ model, provider: providerMetadata[providerId] }),
-              };
-            });
-          })
+          flattened
+            .filter((m) => !known.has(providerAndModelKey(m)))
+            .map((m) => ({ ...m, key: providerAndModelKey(m) }))
         );
         setIsLoadingOrError({ state: 'ready' });
       } catch (error) {
-        console.error('Failed to load recently used models:', error);
         setIsLoadingOrError({
           state: 'error',
           message: error instanceof Error ? error.message : String(error),
@@ -197,7 +204,8 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-  }, [storage, providerRegistry]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storage, providerRegistry, catalog]);
 
   return {
     recentlyUsedModels,
@@ -206,5 +214,6 @@ export function useModelsWithConfiguredProvider(
     setSelectedProviderAndModel,
     deleteProvider,
     isLoadingOrError,
+    refreshProviderModels: (providerId: ProviderId) => void catalog.refresh(providerId),
   };
 }
