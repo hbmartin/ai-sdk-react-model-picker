@@ -156,6 +156,52 @@ describe('ModelCatalog merge and persistence', () => {
     expect(after.some((x) => x.model.id === uid)).toBe(false);
   });
 
+  it('addUserModel prevents duplicate when id matches existing builtin exactly', async () => {
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+    // Attempt to add a user model with the same id as builtin 'b1'
+    const dupId = createModelId('b1');
+    const before = catalog.getSnapshot()[pid].models.filter((x) => x.model.id === dupId);
+    expect(before).toHaveLength(1);
+    expect(before[0]?.model.origin === 'builtin' || before[0]?.model.origin === undefined).toBe(true);
+    await catalog.addUserModel(pid, dupId);
+    const after = catalog.getSnapshot()[pid].models.filter((x) => x.model.id === dupId);
+    // Still only the builtin entry; no user duplicate created
+    expect(after).toHaveLength(1);
+    expect(after[0]?.model.origin).toBe('builtin');
+  });
+
+  it('addUserModel prevents duplicate when id matches existing API model exactly', async () => {
+    await addProviderWithCredentials(storage, pid);
+    await setProviderConfiguration(storage, pid, { token: 'x' });
+    provider.setFetchPayload([apiModel('dup')]);
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+    await catalog.refresh(pid);
+
+    const dupId = createModelId('dup');
+    const before = catalog.getSnapshot()[pid].models.filter((x) => x.model.id === dupId);
+    expect(before).toHaveLength(1);
+    expect(before[0]?.model.origin).toBe('api');
+    await catalog.addUserModel(pid, dupId);
+    const after = catalog.getSnapshot()[pid].models.filter((x) => x.model.id === dupId);
+    expect(after).toHaveLength(1);
+    expect(after[0]?.model.origin).toBe('api');
+  });
+
+  it('addUserModel treats different case as distinct id (exact match only)', async () => {
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+    // Builtin is "b1"; adding "B1" should add a new user entry
+    const newId = createModelId('B1');
+    await catalog.addUserModel(pid, newId);
+    const ids = catalog.getSnapshot()[pid].models.map((x) => x.model.id);
+    expect(ids).toContain(createModelId('b1'));
+    expect(ids).toContain(createModelId('B1'));
+    const entry = catalog.getSnapshot()[pid].models.find((x) => x.model.id === newId);
+    expect(entry?.model.origin).toBe('user');
+  });
+
   it('gates refresh when config is invalid and sets missing-config status', async () => {
     await addProviderWithCredentials(storage, pid);
     // No configuration set => invalid
@@ -177,4 +223,3 @@ describe('ModelCatalog merge and persistence', () => {
     expect(snap[pid].models.some((x) => x.model.id === createModelId('m1'))).toBe(true);
   });
 });
-
