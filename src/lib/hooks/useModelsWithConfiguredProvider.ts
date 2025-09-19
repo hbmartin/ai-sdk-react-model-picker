@@ -153,6 +153,7 @@ export function useModelsWithConfiguredProvider(
           ...providersWithCredentials,
         ]);
         const providers = [...knownProviders].map((providerId) => {
+          // TODO: don't fail if provider not found, use some error callback and skip it
           return providerRegistry.getProvider(providerId);
         });
         const { providerMetadata, providerModels } = buildProviderMaps(providers);
