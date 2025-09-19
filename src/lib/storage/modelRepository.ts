@@ -1,4 +1,5 @@
 import { type StorageAdapter, type ModelConfig, type ProviderId, assertRecordStringString } from '../types';
+import { getTelemetry } from '../telemetry';
 
 // Storage key helper for persisted models per provider
 function providerModelsKey(providerId: ProviderId): string {
@@ -57,8 +58,13 @@ export async function setPersistedModels(
   providerId: ProviderId,
   models: ModelConfig[]
 ): Promise<void> {
-  const env: PersistedModelsEnvelope = { v: 1, models };
-  const key = providerModelsKey(providerId);
-  // Use a single string field to store the JSON to keep adapter compat
-  await modelStorage.set(key, { __json: JSON.stringify(env) });
+  try {
+    const env: PersistedModelsEnvelope = { v: 1, models };
+    const key = providerModelsKey(providerId);
+    // Use a single string field to store the JSON to keep adapter compat
+    await modelStorage.set(key, { __json: JSON.stringify(env) });
+  } catch (error) {
+    getTelemetry()?.onStorageError?.('write', error as Error);
+    // Swallow to avoid crashing UI paths; telemetry reports the problem
+  }
 }
