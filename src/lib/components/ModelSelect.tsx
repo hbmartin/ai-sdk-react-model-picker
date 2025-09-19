@@ -32,6 +32,10 @@ export function ModelSelect({
   const effectiveSelectedRole = context?.state.selectedRole ?? selectedRole;
   const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
+  const hookOptions: { telemetry?: import('../types').ModelPickerTelemetry; modelStorage?: import('../types').StorageAdapter; prefetch?: boolean } = {};
+  if (effectiveTelemetry !== undefined) hookOptions.telemetry = effectiveTelemetry;
+  if (effectiveModelStorage !== undefined) hookOptions.modelStorage = effectiveModelStorage;
+  hookOptions.prefetch = true;
   const {
     recentlyUsedModels,
     modelsWithCredentials,
@@ -39,11 +43,8 @@ export function ModelSelect({
     setSelectedProviderAndModel,
     deleteProvider,
     isLoadingOrError,
-  } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry, {
-    telemetry: effectiveTelemetry,
-    modelStorage: effectiveModelStorage,
-    prefetch: true,
-  });
+    refreshProviderModels,
+  } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry, hookOptions);
 
   // Handle model selection
   const handleModelSelect = (key: ProviderAndModelKey | typeof ADD_MODEL_ID) => {

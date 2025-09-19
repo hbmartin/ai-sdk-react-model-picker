@@ -13,11 +13,9 @@ interface PersistedModelsEnvelope {
 }
 
 function isPersistedEnvelope(value: unknown): value is PersistedModelsEnvelope {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  const rec = value as Record<string, unknown>;
-  return rec.v === 1 && Array.isArray(rec.models);
+  if (typeof value !== 'object' || value === null) return false;
+  const anyVal = value as any;
+  return anyVal && anyVal['v'] === 1 && Array.isArray(anyVal['models']);
 }
 
 // Load all persisted models for a provider; returns an empty array on any error
@@ -29,9 +27,9 @@ export async function getPersistedModels(
     const raw = await modelStorage.get(providerModelsKey(providerId));
     if (!raw) return [];
     // StorageAdapter returns a record; we store envelope fields in this record
-    if ('__json' in raw) {
+    if ((raw as Record<string, string>)['__json'] !== undefined) {
       try {
-        const env = JSON.parse((raw as Record<string, string>).__json) as PersistedModelsEnvelope;
+        const env = JSON.parse((raw as Record<string, string>)['__json']) as PersistedModelsEnvelope;
         if (isPersistedEnvelope(env)) return env.models as ModelConfig[];
       } catch {
         // fall through
@@ -64,4 +62,3 @@ export async function setPersistedModels(
   // Use a single string field to store the JSON to keep adapter compat
   await modelStorage.set(key, { __json: JSON.stringify(env) });
 }
-

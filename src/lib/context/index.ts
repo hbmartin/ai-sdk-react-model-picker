@@ -175,31 +175,36 @@ export function ModelPickerProvider({
   }, []);
 
   const contextValue = useMemo<ModelPickerContextValue>(
-    () => ({
-      state,
-      selectedModel,
-      allModels,
-      providerRegistry,
-      storage,
-      modelStorage: modelStorage ?? storage,
-      roles,
-      theme,
-      catalog,
-      telemetry,
-      selectModel,
-      selectRole,
-      setLoading,
-      setError,
-      onConfigureProvider,
-      onMissingConfiguration,
-      refreshModels: (providerId?: ProviderId) => {
-        if (providerId) {
-          void catalog.refresh(providerId);
-        } else {
-          void catalog.refreshAll();
-        }
-      },
-    }),
+    () => {
+      const base = {
+        state,
+        selectedModel,
+        allModels,
+        providerRegistry,
+        storage,
+        modelStorage: modelStorage ?? storage,
+        roles,
+        theme,
+        catalog,
+        selectModel,
+        selectRole,
+        setLoading,
+        setError,
+        onConfigureProvider,
+        onMissingConfiguration,
+        refreshModels: (providerId?: ProviderId) => {
+          if (providerId) {
+            void catalog.refresh(providerId);
+          } else {
+            void catalog.refreshAll();
+          }
+        },
+      } satisfies Omit<ModelPickerContextValue, 'telemetry'>;
+      if (telemetry !== undefined) {
+        (base as any).telemetry = telemetry;
+      }
+      return base as ModelPickerContextValue;
+    },
     [
       state,
       selectedModel,

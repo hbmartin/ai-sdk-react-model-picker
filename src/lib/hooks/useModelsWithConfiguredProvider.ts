@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   type StorageAdapter,
-  type ProviderMetadata,
   type ModelId,
-  type ModelConfig,
   idsFromKey,
   type IProviderRegistry,
   type ModelConfigWithProvider,
   type ProviderId,
   providerAndModelKey,
-  type AIProvider,
   type KeyedModelConfigWithProvider,
 } from '../types';
 import {
@@ -24,26 +21,7 @@ import { ModelCatalog } from '../catalog/ModelCatalog';
 import { flattenAndSortAvailableModels } from './catalogUtils';
 import type { ModelPickerTelemetry, StorageAdapter as _Storage } from '../types';
 
-function buildProviderMaps(providers: AIProvider[]): {
-  providerMetadata: Record<ProviderId, ProviderMetadata>;
-  providerModels: Map<ProviderId, Map<ModelId, ModelConfig>>;
-} {
-  const providerMetadata: Record<ProviderId, ProviderMetadata> = {};
-  const providerModels = new Map<ProviderId, Map<ModelId, ModelConfig>>();
-
-  for (const prov of providers) {
-    providerMetadata[prov.metadata.id] = prov.metadata;
-    providerModels.set(
-      prov.metadata.id,
-      prov.models.reduce<Map<ModelId, ModelConfig>>((macc, model) => {
-        macc.set(model.id, model);
-        return macc;
-      }, new Map())
-    );
-  }
-
-  return { providerMetadata, providerModels };
-}
+// removed provider maps builder; catalog snapshot is used instead
 
 export function useModelsWithConfiguredProvider(
   storage: StorageAdapter,

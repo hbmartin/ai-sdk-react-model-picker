@@ -110,19 +110,27 @@ export class ModelCatalog {
         model: m,
         provider: provider.metadata,
       }));
-      out[pid] = {
+      const base: ProviderModelsStatus = {
         models: withProvider,
         status: state?.status ?? 'idle',
-        error: state?.error,
       };
+      if (state?.error !== undefined) {
+        // Assign only when defined to satisfy exactOptionalPropertyTypes
+        (base as any).error = state.error;
+      }
+      out[pid] = base;
     }
     return out;
   }
 
   private setStatus(providerId: ProviderId, status: ProviderModelsStatus['status'], error?: string) {
-    const st = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map() };
+    const st = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map<ModelId, ModelConfig>() };
     st.status = status;
-    st.error = error;
+    if (error === undefined) {
+      delete (st as any).error;
+    } else {
+      (st as any).error = error;
+    }
     this.byProvider.set(providerId, st);
     this.emit();
   }
@@ -217,7 +225,6 @@ export class ModelCatalog {
   }
 
   async addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
-    const provider = this.providerRegistry.getProvider(providerId);
     const state = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map() };
 
     if (state.models.has(modelId)) {
@@ -250,4 +257,3 @@ export class ModelCatalog {
     this.emit();
   }
 }
-
