@@ -17,9 +17,11 @@ import type {
   ThemeConfig,
   ProviderId,
 } from '../types';
+import { providerAndModelKey } from '../types';
 import type { ModelPickerTelemetry } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import { setGlobalTelemetry } from '../telemetry';
+import { addProviderWithCredentials, addRecentlyUsedModel } from '../storage/repository';
 
 // State interface
 interface ModelPickerState {
@@ -165,9 +167,16 @@ export function ModelPickerProvider({
   }, [state.selectedModelId, allModels]);
 
   // Action creators
-  const selectModel = useCallback((model: ModelConfigWithProvider | undefined) => {
-    dispatch({ type: 'SET_MODEL', payload: model?.model.id });
-  }, []);
+  const selectModel = useCallback(
+    (model: ModelConfigWithProvider | undefined) => {
+      dispatch({ type: 'SET_MODEL', payload: model?.model.id });
+      if (model !== undefined) {
+        void addProviderWithCredentials(storage, model.provider.id);
+        void addRecentlyUsedModel(storage, providerAndModelKey(model));
+      }
+    },
+    [storage]
+  );
 
   const selectRole = useCallback((roleId: string) => {
     dispatch({ type: 'SET_ROLE', payload: roleId });
