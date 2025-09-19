@@ -4,6 +4,7 @@ import {
   useReducer,
   useMemo,
   useCallback,
+  useSyncExternalStore,
   type ReactNode,
   createElement,
 } from 'react';
@@ -137,9 +138,14 @@ export function ModelPickerProvider({
     return undefined;
   }, [catalog, prefetch, telemetry]);
 
-  // All models flattened from catalog snapshot (filter visible)
+  // Subscribe to catalog updates and flatten visible models
+  const snapshot = useSyncExternalStore(
+    useCallback((onStoreChange: () => void) => catalog.subscribe(onStoreChange), [catalog]),
+    useCallback(() => catalog.getSnapshot(), [catalog]),
+    useCallback(() => catalog.getSnapshot(), [catalog])
+  );
+
   const allModels = useMemo(() => {
-    const snapshot = catalog.getSnapshot();
     const arr: ModelConfigWithProvider[] = [];
     for (const entry of Object.values(snapshot)) {
       for (const mp of entry.models) {
@@ -148,7 +154,7 @@ export function ModelPickerProvider({
       }
     }
     return arr;
-  }, [catalog]);
+  }, [snapshot]);
 
   // Find selected model
   const selectedModel = useMemo(() => {
