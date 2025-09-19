@@ -24,6 +24,8 @@ export class OpenAIProvider extends AIProvider {
       supportsVision: true,
       supportsTools: true,
       isDefault: true,
+      origin: 'builtin',
+      visible: true,
     },
     {
       id: createModelId('gpt-5-mini'),
@@ -31,6 +33,8 @@ export class OpenAIProvider extends AIProvider {
       maxTokens: 400_000,
       supportsVision: true,
       supportsTools: true,
+      origin: 'builtin',
+      visible: true,
     },
   ];
 

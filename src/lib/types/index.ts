@@ -25,8 +25,8 @@ export interface ModelConfig {
   supportsTools?: boolean;
   contextLength?: number;
   // Catalog-specific fields
-  origin: ModelOrigin;
-  visible: boolean;
+  origin?: ModelOrigin;
+  visible?: boolean;
   discoveredAt?: number;
   updatedAt?: number;
 }

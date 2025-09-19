@@ -222,3 +222,93 @@ All existing uses of console.* should be replaced by telemetry.
 - Test persistence round‑trips and recovery across page reloads.
 - Test hooks update flow (snapshot → refresh → update → sorting).
 
+
+
+## Step‑By‑Step Plan
+
+  - Types and Telemetry
+    - Add to src/lib/types/index.ts:
+      - export type ModelOrigin = 'builtin' | 'api' | 'user'
+      - Extend ModelConfig with origin, visible, discoveredAt?, updatedAt?
+      - export interface ProviderModelsStatus { models: ModelConfigWithProvider[]; status: 'idle' | 'loading' | 'ready' | 'missing-config' | 'error'; error?: string }
+      - export interface ModelPickerTelemetry { onFetchStart?; onFetchSuccess?; onFetchError?; onStorageError?; onUserModelAdded?; /* etc. */ }
+    - Optionally extend ProviderMetadata with fetchModelListUrl?: string (not used by UI now, safe to add).
+  - Provider Defaults
+    - Update each provider’s static models to include defaults for new fields:
+      - origin: 'builtin', visible: true (omit timestamps).
+    - No other changes to builtins.
+  - Model Repository Storage
+    - Add src/lib/storage/modelRepository.ts:
+      - Persisted per‑provider models under key models:<providerId>.
+      - API:
+        - getPersistedModels(modelStorage, providerId): Promise<ModelConfig[]> (filtered to visible === true by caller)
+        - setPersistedModels(modelStorage, providerId, models: ModelConfig[]): Promise<void>
+        - Internal helpers for merge/upsert preserving discoveredAt, updating updatedAt, marking stale api entries invisible.
+      - Only persist minimal fields present in ModelConfig; drop anything else from provider API.
+  - ModelCatalog Core
+    - Add src/lib/catalog/ModelCatalog.ts:
+      - Holds per‑provider state maps:
+        - builtin: from provider.models (normalized with origin: 'builtin', visible: true)
+        - persisted: from modelStorage (api + user)
+        - merged snapshot: builtin ∪ persisted ∪ fetched (API), deduped by model.id, “last write wins”
+      - Status per provider: idle | loading | ready | missing-config | error
+      - Subscribe/snapshot API for React: getSnapshot(), subscribe(listener)
+      - Methods:
+        - refresh(providerId, { force?: boolean }): gated by validateConfig(config).ok
+        - refreshAll() (respects gating)
+        - addUserModel(providerId, modelId):
+          - Reject exact duplicates (case‑sensitive).
+          - Insert origin: 'user', visible: true, set timestamps, persist and emit.
+        - removeUserModel(providerId, modelId): remove only user entries.
+      - Fetcher:
+        - Calls AIProvider.getModels() only when config is valid.
+        - Merges results: upsert api entries, hide stale prior api entries (visible: false), preserve discoveredAt, update updatedAt.
+        - Telemetry around fetch start/success/error; never retries.
+      - Dedupe concurrent refreshes per provider.
+  - Hooks on Catalog
+    - Add src/lib/hooks/useProviderModels.ts:
+      - Returns { models, status, error?, refresh } for one provider via useSyncExternalStore.
+    - Add src/lib/hooks/useModelsByProvider.ts:
+      - Returns a map Record<ProviderId, ProviderModelsStatus & { refresh: () => void }> for all providers with credentials (from providersWithCredentials storage).
+      - Accepts { prefetch?: boolean }; if true and config valid, triggers background refresh.
+    - Add helper flattenAndSortAvailableModels(map):
+      - Filters visible === true.
+      - Sorts by discoveredAt desc; if missing, provider name asc, then model display name asc.
+  - Re‑implement useModelsWithConfiguredProvider
+    - Rebuild src/lib/hooks/useModelsWithConfiguredProvider.ts on top of the catalog:
+      - “Recently Used” behavior and storage keys unchanged.
+      - “Available Models” uses catalog snapshot for providers in providersWithCredentials, filtered/sorted by helper.
+      - Return shape unchanged: recentlyUsedModels, modelsWithCredentials, selectedModel, setSelectedProviderAndModel, deleteProvider, isLoadingOrError.
+      - Add internal hook logic to call catalog.refresh(providerId) after setProviderConfiguration (config save) — invoked from ModelSelect’s onProviderConfigured flow.
+  - Context Integration
+    - Update src/lib/context/index.ts: to interrupt)
+      - ModelPickerProviderProps gains:
+        - modelStorage?: StorageAdapter (defaults to storage)
+        - prefetch?: boolean (default true, pending open question)
+        - telemetry?: ModelPickerTelemetry
+      - Expose catalog and refreshModels(providerId?) via context (no UI wire‑up).
+  - ModelSelect Updates
+    - Add optional telemetry?: ModelPickerTelemetry prop. When inside provider, prefer context telemetry; otherwise, use prop.
+    - No visual changes.
+    - Keep using useModelsWithConfiguredProvider; the reimplementation will transparently use the catalog.
+    - After onProviderConfigured, trigger catalog refresh for that provider via the hook.
+  - Telemetry Wiring
+    - Replace console.* with telemetry in new/updated modules:
+      - modelRepository, ModelCatalog, hooks we touch, ModelSelect changes, context changes.
+    - Use no‑op functions when telemetry not provided; do not fall back to console.
+  - Tests
+    - Add unit tests for:
+      - Merge logic: last‑write‑wins, preserve discoveredAt, hide stale API entries, respect user entries.
+      - Gating by config: missing-config vs ready.
+      - Persistence round‑trip for API/user entries.
+      - Hooks update flow: snapshot → (optional prefetch) → update → sorting.
+    - Keep existing useModelsWithConfiguredProvider tests; adapt expectations only if necessary (should stay green as UI contract is preserved).
+  - Docs
+    - Update README/docs:
+      - New props on ModelPickerProvider and ModelSelect.
+      - Catalog overview and new hooks APIs.
+      - Telemetry API and examples.
+      - Note: useAllModels() now reflects catalog snapshot.
+  - Non‑Goals for This PR
+    - No refresh UI.
+    - No removal of model methods from ProviderRegistry yet; we just stop using them from hooks/context.
