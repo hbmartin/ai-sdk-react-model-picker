@@ -1,8 +1,8 @@
 // vite.config.ts
-import { resolve } from 'path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import dts from 'vite-plugin-dts'
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import dts from 'vite-plugin-dts';
 
 export default defineConfig({
   plugins: [
@@ -11,7 +11,7 @@ export default defineConfig({
       include: ['src/lib/**/*'],
       rollupTypes: true,
       tsconfigPath: './tsconfig.app.json',
-    })
+    }),
   ],
   css: {
     postcss: './postcss.config.js',
@@ -22,8 +22,8 @@ export default defineConfig({
       formats: ['es', 'cjs'],
       name: 'AISDKReactModelPicker',
       fileName: (format) => {
-        const extension = format === 'es' ? 'js' : 'cjs'
-        return `index.${extension}`
+        const extension = format === 'es' ? 'js' : 'cjs';
+        return `index.${extension}`;
       },
     },
     rollupOptions: {
@@ -34,6 +34,7 @@ export default defineConfig({
         'react-hook-form',
         '@ai-sdk/openai',
         '@ai-sdk/anthropic',
+        '@ai-sdk/deepseek',
         '@ai-sdk/google',
         '@ai-sdk/azure',
         '@ai-sdk/mistral',
@@ -50,9 +51,9 @@ export default defineConfig({
           'react-hook-form': 'ReactHookForm',
         },
         assetFileNames: (assetInfo) => {
-          return assetInfo.name?.endsWith('.css') ? 'styles.css' : 'assets/[name][extname]'
+          return assetInfo.name?.endsWith('.css') ? 'styles.css' : 'assets/[name][extname]';
         },
       },
     },
   },
-})
+});
