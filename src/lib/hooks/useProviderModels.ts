@@ -1,7 +1,6 @@
-import { useEffect, useMemo } from 'react';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { ProviderId, ProviderModelsStatus } from '../types';
-import { ModelCatalog } from '../catalog/ModelCatalog';
+import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 export function useProviderModels(
   catalog: ModelCatalog,
@@ -16,14 +15,14 @@ export function useProviderModels(
     if (options?.prefetch === true) {
       void catalog.refresh(providerId).catch(() => undefined);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalog, providerId, options?.prefetch]);
 
-  const value = useMemo(() => map[providerId], [map, providerId]);
-
+  const value = useMemo<ProviderModelsStatus>(
+    () => map[providerId] ?? ({ models: [], status: 'idle' } as ProviderModelsStatus),
+    [map, providerId]
+  );
   return {
     ...value,
     refresh: () => void catalog.refresh(providerId),
   };
 }
-

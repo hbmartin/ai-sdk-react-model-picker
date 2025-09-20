@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSyncExternalStore } from 'react';
-import {
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import type {
+  ModelPickerTelemetry,
+  ProviderModelsStatus,
+  StorageAdapter as _Storage,
   type StorageAdapter,
   type ModelId,
   idsFromKey,
@@ -10,6 +12,7 @@ import {
   providerAndModelKey,
   type KeyedModelConfigWithProvider,
 } from '../types';
+import { ModelCatalog } from '../catalog/ModelCatalog';
 import {
   addProviderWithCredentials,
   addRecentlyUsedModel,
@@ -18,9 +21,7 @@ import {
   getRecentlyUsedModels,
   removeRecentlyUsedModels,
 } from '../storage/repository';
-import { ModelCatalog } from '../catalog/ModelCatalog';
 import { flattenAndSortAvailableModels } from './catalogUtils';
-import type { ModelPickerTelemetry, StorageAdapter as _Storage } from '../types';
 
 // removed provider maps builder; catalog snapshot is used instead
 
@@ -67,20 +68,23 @@ export function useModelsWithConfiguredProvider(
     void removeRecentlyUsedModels(storage, recentKeysToRemove);
 
     // Compute next state locally for consistency
-    const nextRecentlyUsed = recentlyUsedModels.filter((m) => m.provider.id !== providerId);
+    const nextRecentlyUsed = recentlyUsedModels.filter((model) => model.provider.id !== providerId);
     const nextProviders = providersWithCreds.filter((pid) => pid !== providerId);
     setProvidersWithCreds(nextProviders);
     setRecentlyUsedModels(nextRecentlyUsed);
 
     // Derive available after updates
     const map = Object.fromEntries(
-      nextProviders.map((pid) => [pid, catalog.getSnapshot()[pid] ?? { models: [], status: 'idle' }])
-    ) as Record<ProviderId, { models: ModelConfigWithProvider[]; status: string; error?: string }>;
+      nextProviders.map((pid) => [
+        pid,
+        catalog.getSnapshot()[pid] ?? { models: [], status: 'idle' },
+      ])
+    ) as Record<ProviderId, ProviderModelsStatus>;
     const flattened = flattenAndSortAvailableModels(map);
-    const known = new Set(nextRecentlyUsed.map((m) => m.key));
+    const known = new Set(nextRecentlyUsed.map((model) => model.key));
     const nextAvailable = flattened
-      .filter((m) => !known.has(providerAndModelKey(m)))
-      .map((m) => ({ ...m, key: providerAndModelKey(m) }));
+      .filter((model) => !known.has(providerAndModelKey(model)))
+      .map((model) => ({ ...model, key: providerAndModelKey(model) }));
 
     const modelToSelect = nextRecentlyUsed[0] ?? nextAvailable[0];
     setSelectedModel(modelToSelect);
@@ -111,9 +115,7 @@ export function useModelsWithConfiguredProvider(
     }
 
     // Ensure provider is tracked for availability
-    setProvidersWithCreds((prev) =>
-      prev.includes(providerId) ? prev : [providerId, ...prev]
-    );
+    setProvidersWithCreds((prev) => (prev.includes(providerId) ? prev : [providerId, ...prev]));
 
     // Update selection
     const modelKey = providerAndModelKey(modelWithProvider);
@@ -154,8 +156,10 @@ export function useModelsWithConfiguredProvider(
         const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
-            const entry = snap[providerId]?.models.find((m) => m.model.id === modelId);
-            if (!entry) return undefined;
+            const entry = snap[providerId].models.find((model) => model.model.id === modelId);
+            if (!entry) {
+              return undefined;
+            }
             return { ...entry, key } as KeyedModelConfigWithProvider;
           })
           .filter((x): x is KeyedModelConfigWithProvider => x !== undefined);
@@ -170,7 +174,6 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storage, providerRegistry, catalog, createdInternal, options?.prefetch]);
 
   // Subscribe to catalog to react to refresh updates
@@ -182,12 +185,12 @@ export function useModelsWithConfiguredProvider(
   const modelsWithCredentials: KeyedModelConfigWithProvider[] = useMemo(() => {
     const map = Object.fromEntries(
       providersWithCreds.map((pid) => [pid, snap[pid] ?? { models: [], status: 'idle' }])
-    ) as Record<ProviderId, { models: ModelConfigWithProvider[]; status: string; error?: string }>;
+    ) as Record<ProviderId, ProviderModelsStatus>;
     const flattened = flattenAndSortAvailableModels(map);
-    const known = new Set(recentlyUsedModels.map((m) => m.key));
+    const known = new Set(recentlyUsedModels.map((model) => model.key));
     return flattened
-      .filter((m) => !known.has(providerAndModelKey(m)))
-      .map((m) => ({ ...m, key: providerAndModelKey(m) }));
+      .filter((model) => !known.has(providerAndModelKey(model)))
+      .map((model) => ({ ...model, key: providerAndModelKey(model) }));
   }, [providersWithCreds, snap, recentlyUsedModels]);
 
   return {

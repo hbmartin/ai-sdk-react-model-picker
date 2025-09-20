@@ -1,21 +1,21 @@
-import {
-  type IProviderRegistry,
-  type ProviderId,
-  type ModelId,
-  type ModelConfig,
-  type ModelConfigWithProvider,
-  type ProviderModelsStatus,
-  type ModelPickerTelemetry,
+import type {
+  IProviderRegistry,
+  ProviderId,
+  ModelId,
+  ModelConfig,
+  ModelConfigWithProvider,
+  ProviderModelsStatus,
+  ModelPickerTelemetry,
+  StorageAdapter,
 } from '../types';
-import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
-import type { StorageAdapter } from '../types';
+import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 
-type ProviderState = {
+interface ProviderState {
   status: ProviderModelsStatus['status'];
   error?: string;
   models: Map<ModelId, ModelConfig>;
-};
+}
 
 function now() {
   return Date.now();
@@ -41,7 +41,7 @@ export class ModelCatalog {
   private readonly byProvider = new Map<ProviderId, ProviderState>();
   private readonly listeners = new Set<() => void>();
   private readonly inFlight = new Set<ProviderId>();
-  private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {} as any;
+  private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {};
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
@@ -56,8 +56,8 @@ export class ModelCatalog {
     for (const provider of this.providerRegistry.getAllProviders()) {
       const map = new Map<ModelId, ModelConfig>();
       for (const model of provider.models) {
-        const nm = normalizeBuiltin(model);
-        map.set(nm.id, nm);
+        const normalizedModel = normalizeBuiltin(model);
+        map.set(normalizedModel.id, normalizedModel);
       }
       this.byProvider.set(provider.metadata.id, { status: 'idle', models: map });
     }
@@ -97,43 +97,52 @@ export class ModelCatalog {
     };
   }
 
+  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
+    return this.cachedSnapshot;
+  }
+
   private emit() {
-    for (const l of this.listeners) l();
+    for (const listener of this.listeners) {
+      listener();
+    }
   }
 
   private recomputeSnapshot() {
-    const out: Record<ProviderId, ProviderModelsStatus> = {} as any;
+    const out: Record<ProviderId, ProviderModelsStatus> = {};
     for (const provider of this.providerRegistry.getAllProviders()) {
       const pid = provider.metadata.id;
       const state = this.byProvider.get(pid);
       const models = state?.models ?? new Map<ModelId, ModelConfig>();
-      const withProvider: ModelConfigWithProvider[] = [...models.values()].map((m) => ({
-        model: m,
+      const withProvider: ModelConfigWithProvider[] = [...models.values()].map((model) => ({
+        model,
         provider: provider.metadata,
       }));
       const base: ProviderModelsStatus = {
         models: withProvider,
         status: state?.status ?? 'idle',
       } as ProviderModelsStatus;
-      if ((state as any)?.error !== undefined) {
-        (base as any).error = (state as any).error as string;
+      if (state?.error !== undefined) {
+        base.error = state.error;
       }
       out[pid] = base;
     }
     this.cachedSnapshot = out;
   }
 
-  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
-    return this.cachedSnapshot;
-  }
-
-  private setStatus(providerId: ProviderId, status: ProviderModelsStatus['status'], error?: string) {
-    const st = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map<ModelId, ModelConfig>() };
+  private setStatus(
+    providerId: ProviderId,
+    status: ProviderModelsStatus['status'],
+    error?: string
+  ) {
+    const st = this.byProvider.get(providerId) ?? {
+      status: 'idle',
+      models: new Map<ModelId, ModelConfig>(),
+    };
     st.status = status;
     if (error === undefined) {
-      delete (st as any).error;
+      delete st.error;
     } else {
-      (st as any).error = error;
+      st.error = error;
     }
     this.byProvider.set(providerId, st);
     this.recomputeSnapshot();
@@ -142,11 +151,13 @@ export class ModelCatalog {
 
   private async persistNonBuiltin(providerId: ProviderId) {
     const state = this.byProvider.get(providerId);
-    if (!state) return;
+    if (!state) {
+      return;
+    }
     const keep: ModelConfig[] = [];
-    for (const m of state.models.values()) {
-      if (m.origin === 'api' || m.origin === 'user') {
-        keep.push(m);
+    for (const model of state.models.values()) {
+      if (model.origin === 'api' || model.origin === 'user') {
+        keep.push(model);
       }
     }
     await setPersistedModels(this.modelStorage, providerId, keep);
@@ -171,14 +182,12 @@ export class ModelCatalog {
     const ts = now();
 
     for (const raw of fetched) {
+      const discoveredAt = state.models.get(raw.id)?.discoveredAt;
       const m: ModelConfig = {
         ...raw,
         origin: 'api',
         visible: raw.visible ?? true,
-        discoveredAt:
-          state.models.get(raw.id)?.discoveredAt !== undefined
-            ? state.models.get(raw.id)!.discoveredAt
-            : ts,
+        discoveredAt: discoveredAt === undefined ? ts : discoveredAt,
         updatedAt: ts,
       };
       fetchedIds.add(m.id);
@@ -198,7 +207,12 @@ export class ModelCatalog {
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
-    if (this.inFlight.has(providerId)) return;
+    if (this.inFlight.has(providerId)) {
+      return;
+    }
+    if (!this.providerRegistry.hasProvider(providerId)) {
+      return;
+    }
     const provider = this.providerRegistry.getProvider(providerId);
     // Configuration gating
     const config = await getProviderConfiguration(this.storage, providerId);
@@ -226,7 +240,9 @@ export class ModelCatalog {
   }
 
   async refreshAll(): Promise<void> {
-    const providerIds = await getProvidersWithCredentials(this.storage);
+    const providerIds = (await getProvidersWithCredentials(this.storage)).filter((pid) =>
+      this.providerRegistry.hasProvider(pid)
+    );
     await Promise.all(providerIds.map((pid) => this.refresh(pid)));
   }
 
@@ -256,9 +272,13 @@ export class ModelCatalog {
 
   async removeUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
     const state = this.byProvider.get(providerId);
-    if (!state) return;
+    if (!state) {
+      return;
+    }
     const existing = state.models.get(modelId);
-    if (existing?.origin !== 'user') return; // only allow explicit removal of user entries
+    if (existing?.origin !== 'user') {
+      return;
+    } // only allow explicit removal of user entries
     state.models.delete(modelId);
     await this.persistNonBuiltin(providerId);
     this.recomputeSnapshot();

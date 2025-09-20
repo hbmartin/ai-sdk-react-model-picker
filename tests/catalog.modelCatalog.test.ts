@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
-import { MemoryStorageAdapter } from '../src/lib/storage';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
+import { MemoryStorageAdapter } from '../src/lib/storage';
+import {
+  addProviderWithCredentials,
+  setProviderConfiguration,
+} from '../src/lib/storage/repository';
 import {
   createProviderId,
   createModelId,
@@ -11,7 +15,6 @@ import {
   type ProviderId,
   type ProviderMetadata,
 } from '../src/lib/types';
-import { addProviderWithCredentials, setProviderConfiguration } from '../src/lib/storage/repository';
 
 const DummyIcon = (() => null) as unknown as ProviderMetadata['icon'];
 
@@ -21,7 +24,9 @@ function makeConfigAPI(requiredKey?: string) {
     fields: [],
     assertValidConfigAndRemoveEmptyKeys: () => {},
     validateConfig: (record: Record<string, string>) => {
-      const ok = requiredKey ? typeof record[requiredKey] === 'string' && record[requiredKey].length > 0 : true;
+      const ok = requiredKey
+        ? typeof record[requiredKey] === 'string' && record[requiredKey].length > 0
+        : true;
       return {
         ok,
         missingRequired: [],
@@ -81,7 +86,10 @@ describe('ModelCatalog merge and persistence', () => {
     storage = new MemoryStorageAdapter('test-catalog');
     modelStorage = new MemoryStorageAdapter('test-catalog-models');
     registry = new ProviderRegistry(undefined);
-    provider = new FakeProvider(pid, 'Prov', [builtin('b1', 'Builtin One'), builtin('b2', 'Builtin Two')]);
+    provider = new FakeProvider(pid, 'Prov', [
+      builtin('b1', 'Builtin One'),
+      builtin('b2', 'Builtin Two'),
+    ]);
     registry.register(provider);
   });
 
@@ -97,13 +105,17 @@ describe('ModelCatalog merge and persistence', () => {
     const map = catalog.getSnapshot();
     const models = map[pid].models;
     expect(models.some((x) => x.model.id === createModelId('b1'))).toBe(true);
-    expect(models.some((x) => x.model.id === createModelId('m1') && x.model.origin === 'api')).toBe(true);
+    expect(models.some((x) => x.model.id === createModelId('m1') && x.model.origin === 'api')).toBe(
+      true
+    );
 
     // Persisted models should contain only api/user
     const persistedRaw = await modelStorage.get(`models:${pid}`);
     expect(persistedRaw && typeof persistedRaw['__json'] === 'string').toBe(true);
     const env = JSON.parse(persistedRaw!['__json']);
-    expect(env.models.every((m: ModelConfig) => m.origin === 'api' || m.origin === 'user')).toBe(true);
+    expect(env.models.every((m: ModelConfig) => m.origin === 'api' || m.origin === 'user')).toBe(
+      true
+    );
   });
 
   it('marks stale API models as invisible but keeps them persisted', async () => {
@@ -131,12 +143,16 @@ describe('ModelCatalog merge and persistence', () => {
     const catalog = new ModelCatalog(registry, storage, modelStorage);
     await catalog.initialize(false);
     await catalog.refresh(pid);
-    const before = catalog.getSnapshot()[pid].models.find((x) => x.model.id === createModelId('m1'))!.model;
+    const before = catalog
+      .getSnapshot()
+      [pid].models.find((x) => x.model.id === createModelId('m1'))!.model;
     expect(before.discoveredAt).toBeDefined();
 
     provider.setFetchPayload([apiModel('m1', 'API One')]);
     await catalog.refresh(pid);
-    const after = catalog.getSnapshot()[pid].models.find((x) => x.model.id === createModelId('m1'))!.model;
+    const after = catalog
+      .getSnapshot()
+      [pid].models.find((x) => x.model.id === createModelId('m1'))!.model;
     expect(after.discoveredAt).toBe(before.discoveredAt);
     expect((after.updatedAt ?? 0) >= (before.updatedAt ?? 0)).toBe(true);
   });
@@ -163,7 +179,9 @@ describe('ModelCatalog merge and persistence', () => {
     const dupId = createModelId('b1');
     const before = catalog.getSnapshot()[pid].models.filter((x) => x.model.id === dupId);
     expect(before).toHaveLength(1);
-    expect(before[0]?.model.origin === 'builtin' || before[0]?.model.origin === undefined).toBe(true);
+    expect(before[0]?.model.origin === 'builtin' || before[0]?.model.origin === undefined).toBe(
+      true
+    );
     await catalog.addUserModel(pid, dupId);
     const after = catalog.getSnapshot()[pid].models.filter((x) => x.model.id === dupId);
     // Still only the builtin entry; no user duplicate created

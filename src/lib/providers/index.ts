@@ -1,4 +1,5 @@
 import { createProviderId, type ProviderCtor, type ProviderId } from '../types';
+import { getTelemetry } from '../telemetry';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
 import { BedrockProvider } from './BedrockProvider';
@@ -10,7 +11,6 @@ import { MoonshotProvider } from './MoonshotProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderRegistry } from './ProviderRegistry';
-import { getTelemetry } from '../telemetry';
 
 export type {
   AIProvider,
