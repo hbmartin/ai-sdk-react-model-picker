@@ -107,12 +107,10 @@ export class ModelCatalog {
       this.ensurePersistedLoaded(providerId).catch(() => undefined);
     }
 
-    if (providerExists) {
-      scheduleMicrotaskSafe(() => {
-        this.recomputeSnapshot();
-        this.emit();
-      });
-    }
+    scheduleMicrotaskSafe(() => {
+      this.recomputeSnapshot();
+      this.emit();
+    });
 
     return state;
   }

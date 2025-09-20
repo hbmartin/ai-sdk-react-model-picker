@@ -85,6 +85,13 @@ function createDeferred<T>() {
   return { promise, resolve, reject } as const;
 }
 
+async function flushMicrotasks(iterations = 3) {
+  for (let i = 0; i < iterations; i += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.resolve();
+  }
+}
+
 describe('ModelCatalog merge and persistence', () => {
   let storage: MemoryStorageAdapter;
   let modelStorage: MemoryStorageAdapter;
@@ -296,5 +303,38 @@ describe('ModelCatalog merge and persistence', () => {
     expect(snapshot[newPid].models.some((m) => m.model.id === createModelId('late-default'))).toBe(
       true
     );
+  });
+
+  it('processes rapid provider registrations without starving pending microtasks', async () => {
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+
+    const initialSnapshot = catalog.getSnapshot();
+    const initialKeys = Object.keys(initialSnapshot).sort();
+
+    const emissions: string[] = [];
+    const unsubscribe = catalog.subscribe(() => {
+      const snapshot = catalog.getSnapshot();
+      emissions.push(Object.keys(snapshot).sort().join('|'));
+    });
+
+    const additions: ProviderId[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      const newPid = createProviderId(`rapid-${i}`);
+      additions.push(newPid);
+      const provider = new FakeProvider(newPid, `Rapid ${i}`, [builtin(`rapid-model-${i}`)]);
+      registry.register(provider);
+      catalog.getSnapshot();
+    }
+
+    await flushMicrotasks(6);
+
+    const finalSnapshot = catalog.getSnapshot();
+    const expectedKeys = [...initialKeys, ...additions.map((pid) => pid)].sort();
+    expect(Object.keys(finalSnapshot).sort()).toEqual(expectedKeys);
+    expect(emissions.length).toBeGreaterThanOrEqual(additions.length);
+    expect(emissions.at(-1)).toBe(expectedKeys.join('|'));
+
+    unsubscribe();
   });
 });
