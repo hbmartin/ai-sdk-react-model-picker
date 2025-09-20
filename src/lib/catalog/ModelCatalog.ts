@@ -67,10 +67,10 @@ export class ModelCatalog {
 
   // Load persisted models and optionally prefetch
   async initialize(prefetch = true): Promise<void> {
-    const providerIds = await getProvidersWithCredentials(this.storage);
+    const allProviderIds = this.providerRegistry.getAllProviders().map((p) => p.metadata.id);
+    // Load persisted models for ALL providers so offline state still shows known models
     await Promise.all(
-      providerIds.map(async (pid) => {
-        if (!this.providerRegistry.hasProvider(pid)) return;
+      allProviderIds.map(async (pid) => {
         const persisted = await getPersistedModels(this.modelStorage, pid);
         if (persisted.length > 0) {
           this.mergePersisted(pid, persisted);
@@ -81,8 +81,9 @@ export class ModelCatalog {
     this.emit();
 
     if (prefetch) {
+      const providerIdsWithCreds = await getProvidersWithCredentials(this.storage);
       await Promise.all(
-        providerIds.map(async (pid) => {
+        providerIdsWithCreds.map(async (pid) => {
           await this.refresh(pid).catch(() => undefined);
         })
       );

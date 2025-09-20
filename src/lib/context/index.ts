@@ -4,6 +4,7 @@ import {
   useReducer,
   useMemo,
   useCallback,
+  useSyncExternalStore,
   type ReactNode,
   createElement,
 } from 'react';
@@ -16,9 +17,11 @@ import type {
   ThemeConfig,
   ProviderId,
 } from '../types';
+import { providerAndModelKey } from '../types';
 import type { ModelPickerTelemetry } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import { setGlobalTelemetry } from '../telemetry';
+import { addProviderWithCredentials, addRecentlyUsedModel } from '../storage/repository';
 
 // State interface
 interface ModelPickerState {
@@ -137,9 +140,14 @@ export function ModelPickerProvider({
     return undefined;
   }, [catalog, prefetch, telemetry]);
 
-  // All models flattened from catalog snapshot (filter visible)
+  // Subscribe to catalog updates and flatten visible models
+  const snapshot = useSyncExternalStore(
+    useCallback((onStoreChange: () => void) => catalog.subscribe(onStoreChange), [catalog]),
+    useCallback(() => catalog.getSnapshot(), [catalog]),
+    useCallback(() => catalog.getSnapshot(), [catalog])
+  );
+
   const allModels = useMemo(() => {
-    const snapshot = catalog.getSnapshot();
     const arr: ModelConfigWithProvider[] = [];
     for (const entry of Object.values(snapshot)) {
       for (const mp of entry.models) {
@@ -148,7 +156,7 @@ export function ModelPickerProvider({
       }
     }
     return arr;
-  }, [catalog]);
+  }, [snapshot]);
 
   // Find selected model
   const selectedModel = useMemo(() => {
@@ -159,9 +167,16 @@ export function ModelPickerProvider({
   }, [state.selectedModelId, allModels]);
 
   // Action creators
-  const selectModel = useCallback((model: ModelConfigWithProvider | undefined) => {
-    dispatch({ type: 'SET_MODEL', payload: model?.model.id });
-  }, []);
+  const selectModel = useCallback(
+    (model: ModelConfigWithProvider | undefined) => {
+      dispatch({ type: 'SET_MODEL', payload: model?.model.id });
+      if (model !== undefined) {
+        void addProviderWithCredentials(storage, model.provider.id);
+        void addRecentlyUsedModel(storage, providerAndModelKey(model));
+      }
+    },
+    [storage]
+  );
 
   const selectRole = useCallback((roleId: string) => {
     dispatch({ type: 'SET_ROLE', payload: roleId });

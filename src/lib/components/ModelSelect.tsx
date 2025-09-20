@@ -32,10 +32,18 @@ export function ModelSelect({
   const effectiveSelectedRole = context?.state.selectedRole ?? selectedRole;
   const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const hookOptions: { telemetry?: import('../types').ModelPickerTelemetry; modelStorage?: import('../types').StorageAdapter; prefetch?: boolean } = {};
+  const hookOptions: {
+    telemetry?: import('../types').ModelPickerTelemetry;
+    modelStorage?: import('../types').StorageAdapter;
+    prefetch?: boolean;
+    catalog?: import('../catalog/ModelCatalog').ModelCatalog;
+    manageStorage?: boolean;
+  } = {};
   if (effectiveTelemetry !== undefined) hookOptions.telemetry = effectiveTelemetry;
   if (effectiveModelStorage !== undefined) hookOptions.modelStorage = effectiveModelStorage;
   hookOptions.prefetch = true;
+  if (context?.catalog !== undefined) hookOptions.catalog = context.catalog;
+  if (context !== undefined) hookOptions.manageStorage = false;
   const {
     recentlyUsedModels,
     modelsWithCredentials,
