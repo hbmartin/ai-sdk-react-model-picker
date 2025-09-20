@@ -208,8 +208,10 @@ export function useModelsWithConfiguredProvider(
         const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
-            const entry = snap[providerId].models.find((model) => model.model.id === modelId);
-            if (!entry) {
+            const providerEntry = snap[providerId];
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/no-nested-functions
+            const entry = providerEntry?.models.find((model) => model.model.id === modelId);
+            if (entry === undefined) {
               return undefined;
             }
             return { ...entry, key } as KeyedModelConfigWithProvider;
