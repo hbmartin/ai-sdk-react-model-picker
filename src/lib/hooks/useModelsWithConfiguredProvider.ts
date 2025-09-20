@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { idsFromKey, providerAndModelKey } from '../types';
 import type {
   ModelPickerTelemetry,
-  StorageAdapter as _Storage,
   StorageAdapter,
   ModelId,
   IProviderRegistry,
@@ -22,12 +21,12 @@ import {
 import { deriveAvailableModels } from './catalogUtils';
 import { useCatalogSnapshot } from './useCatalogSnapshot';
 
-type CatalogState = {
+interface CatalogState {
   catalog: ModelCatalog;
   storage: StorageAdapter;
   modelStorage: StorageAdapter;
   providerRegistry: IProviderRegistry;
-};
+}
 
 interface CatalogLifecycleOptions {
   telemetry?: ModelPickerTelemetry;
@@ -41,8 +40,7 @@ function useCatalogLifecycle(
   options: CatalogLifecycleOptions
 ) {
   const catalogStateRef = useRef<CatalogState>();
-  const ownsCatalogRef = useRef(false);
-  const pendingInitializationRef = useRef(false);
+  const pendingInitializationRef = useRef<'internal' | undefined>(undefined);
 
   const manageCatalog = options.catalog === undefined;
   const modelStorageAdapter = options.modelStorage ?? storage;
@@ -67,13 +65,11 @@ function useCatalogLifecycle(
         modelStorage: modelStorageAdapter,
         providerRegistry,
       };
-      pendingInitializationRef.current = true;
+      pendingInitializationRef.current = 'internal';
     }
-    ownsCatalogRef.current = true;
   } else {
     catalogStateRef.current = undefined;
-    ownsCatalogRef.current = false;
-    pendingInitializationRef.current = false;
+    pendingInitializationRef.current = undefined;
   }
 
   const catalog = manageCatalog
@@ -83,23 +79,25 @@ function useCatalogLifecycle(
   catalog.setTelemetry(options.telemetry);
 
   const consumePendingInitialization = useCallback(() => {
-    const shouldReset = pendingInitializationRef.current;
-    pendingInitializationRef.current = false;
-    return shouldReset;
+    const token = pendingInitializationRef.current;
+    pendingInitializationRef.current = undefined;
+    return token === 'internal';
   }, []);
 
-  return { catalog, ownsCatalog: ownsCatalogRef.current, consumePendingInitialization };
+  return { catalog, consumePendingInitialization };
+}
+
+export interface UseModelsWithConfiguredProviderOptions {
+  telemetry?: ModelPickerTelemetry;
+  modelStorage?: StorageAdapter;
+  prefetch?: boolean;
+  catalog?: ModelCatalog;
 }
 
 export function useModelsWithConfiguredProvider(
   storage: StorageAdapter,
   providerRegistry: IProviderRegistry,
-  options?: {
-    telemetry?: ModelPickerTelemetry;
-    modelStorage?: _Storage;
-    prefetch?: boolean;
-    catalog?: ModelCatalog;
-  }
+  options?: UseModelsWithConfiguredProviderOptions
 ) {
   const [recentlyUsedModels, setRecentlyUsedModels] = useState<KeyedModelConfigWithProvider[]>([]);
   const [providersWithCreds, setProvidersWithCreds] = useState<ProviderId[]>([]);
@@ -110,15 +108,11 @@ export function useModelsWithConfiguredProvider(
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
-  const { catalog, ownsCatalog, consumePendingInitialization } = useCatalogLifecycle(
-    storage,
-    providerRegistry,
-    {
-      telemetry: options?.telemetry,
-      modelStorage: options?.modelStorage,
-      catalog: options?.catalog,
-    }
-  );
+  const { catalog, consumePendingInitialization } = useCatalogLifecycle(storage, providerRegistry, {
+    telemetry: options?.telemetry,
+    modelStorage: options?.modelStorage,
+    catalog: options?.catalog,
+  });
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -199,7 +193,7 @@ export function useModelsWithConfiguredProvider(
         ]);
 
         // Initialize catalog (only if we own the instance)
-        if (shouldReset && ownsCatalog) {
+        if (shouldReset) {
           await catalog.initialize(options?.prefetch !== false);
         }
 
@@ -232,14 +226,7 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-  }, [
-    storage,
-    providerRegistry,
-    catalog,
-    options?.prefetch,
-    consumePendingInitialization,
-    ownsCatalog,
-  ]);
+  }, [storage, providerRegistry, catalog, options?.prefetch, consumePendingInitialization]);
 
   // Subscribe to catalog to react to refresh updates
   const snap = useCatalogSnapshot(catalog);
