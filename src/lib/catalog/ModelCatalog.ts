@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 import type {
   IProviderRegistry,
   ProviderId,
@@ -37,13 +38,13 @@ function normalizePersisted(model: ModelConfig): ModelConfig {
   };
 }
 
-function scheduleMicrotaskSafe(fn: () => void) {
+function scheduleMicrotaskSafe(func: () => void) {
   if (typeof queueMicrotask === 'function') {
-    queueMicrotask(fn);
+    queueMicrotask(func);
     return;
   }
   Promise.resolve()
-    .then(fn)
+    .then(func)
     .catch(() => undefined);
 }
 
@@ -55,7 +56,7 @@ export class ModelCatalog {
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
   private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {};
   private knownProvidersSignature = '';
-  private telemetry?: ModelPickerTelemetry;
+  private telemetry?: ModelPickerTelemetry | undefined;
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
@@ -145,11 +146,14 @@ export class ModelCatalog {
   }
 
   // Load persisted models and optionally prefetch
-  async initialize(prefetch = true): Promise<void> {
-    const allProviderIds = this.providerRegistry.getAllProviders().map((p) => p.metadata.id);
+  // eslint-disable-next-line code-complete/no-boolean-params
+  async initialize(prefetch: boolean = true): Promise<void> {
+    const allProviderIds = this.providerRegistry
+      .getAllProviders()
+      .map((provider) => provider.metadata.id);
     // Load persisted models for ALL providers so offline state still shows known models
     await Promise.all(
-      allProviderIds.map(async (pid) => {
+      allProviderIds.map(async (pid: ProviderId) => {
         this.ensureProviderState(pid);
         await this.ensurePersistedLoaded(pid);
       })
@@ -160,7 +164,7 @@ export class ModelCatalog {
     if (prefetch) {
       const providerIdsWithCreds = await getProvidersWithCredentials(this.storage);
       await Promise.all(
-        providerIdsWithCreds.map(async (pid) => {
+        providerIdsWithCreds.map(async (pid: ProviderId) => {
           await this.refresh(pid).catch(() => undefined);
         })
       );
@@ -178,7 +182,8 @@ export class ModelCatalog {
     const signature = this.providerRegistry
       .getAllProviders()
       .map((provider) => provider.metadata.id)
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      // eslint-disable-next-line code-complete/enforce-meaningful-names, sonarjs/no-nested-conditional
+      .toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
       .join('|');
     if (signature !== this.knownProvidersSignature) {
       scheduleMicrotaskSafe(() => {
@@ -276,25 +281,25 @@ export class ModelCatalog {
   private async mergeApi(providerId: ProviderId, fetched: ModelConfig[]) {
     const state = this.ensureProviderState(providerId);
     const fetchedIds = new Set<ModelId>();
-    const ts = now();
+    const timestamp = now();
 
     for (const raw of fetched) {
       const discoveredAt = state.models.get(raw.id)?.discoveredAt;
-      const m: ModelConfig = {
+      const modelConfig: ModelConfig = {
         ...raw,
         origin: 'api',
         visible: raw.visible ?? true,
-        discoveredAt: discoveredAt === undefined ? ts : discoveredAt,
-        updatedAt: ts,
+        discoveredAt: discoveredAt ?? timestamp,
+        updatedAt: timestamp,
       };
-      fetchedIds.add(m.id);
-      state.models.set(m.id, m);
+      fetchedIds.add(modelConfig.id);
+      state.models.set(modelConfig.id, modelConfig);
     }
 
     // Hide stale API entries (keep in storage but not visible)
-    for (const [id, m] of state.models.entries()) {
-      if (m.origin === 'api' && !fetchedIds.has(id)) {
-        state.models.set(id, { ...m, visible: false, updatedAt: ts });
+    for (const [id, modelConfig] of state.models.entries()) {
+      if (modelConfig.origin === 'api' && !fetchedIds.has(id)) {
+        state.models.set(id, { ...modelConfig, visible: false, updatedAt: timestamp });
       }
     }
 
@@ -351,14 +356,14 @@ export class ModelCatalog {
       // exact duplicate not allowed
       return;
     }
-    const ts = now();
+    const timestamp = now();
     const model: ModelConfig = {
       id: modelId,
       displayName: String(modelId),
       origin: 'user',
       visible: true,
-      discoveredAt: ts,
-      updatedAt: ts,
+      discoveredAt: timestamp,
+      updatedAt: timestamp,
     };
     state.models.set(modelId, model);
     this.byProvider.set(providerId, state);

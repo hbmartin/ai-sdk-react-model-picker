@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { idsFromKey, providerAndModelKey } from '../types';
 import type {
   ModelPickerTelemetry,
@@ -20,6 +20,7 @@ import {
   removeRecentlyUsedModels,
 } from '../storage/repository';
 import { deriveAvailableModels } from './catalogUtils';
+import { useCatalogSnapshot } from './useCatalogSnapshot';
 
 type CatalogState = {
   catalog: ModelCatalog;
@@ -88,14 +89,6 @@ function useCatalogLifecycle(
   }, []);
 
   return { catalog, ownsCatalog: ownsCatalogRef.current, consumePendingInitialization };
-}
-
-function useCatalogSnapshot(catalog: ModelCatalog) {
-  const subscribe = useCallback((onStoreChange: () => void) => catalog.subscribe(onStoreChange), [
-    catalog,
-  ]);
-  const getSnapshot = useCallback(() => catalog.getSnapshot(), [catalog]);
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 export function useModelsWithConfiguredProvider(

@@ -4,8 +4,7 @@ import {
   useReducer,
   useMemo,
   useCallback,
-  useSyncExternalStore,
-  type ReactNode,
+\  type ReactNode,
   createElement,
   useEffect,
 } from 'react';
@@ -21,6 +20,7 @@ import type {
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import { setGlobalTelemetry } from '../telemetry';
+import { useCatalogSnapshot } from '../hooks/useCatalogSnapshot';
 
 // State interface
 interface ModelPickerState {
@@ -143,11 +143,7 @@ export function ModelPickerProvider({
   }, [catalog, prefetch]);
 
   // Subscribe to catalog updates and flatten visible models
-  const snapshot = useSyncExternalStore(
-    useCallback((onStoreChange: () => void) => catalog.subscribe(onStoreChange), [catalog]),
-    useCallback(() => catalog.getSnapshot(), [catalog]),
-    useCallback(() => catalog.getSnapshot(), [catalog])
-  );
+  const snapshot = useCatalogSnapshot(catalog);
 
   const allModels = useMemo(() => {
     const arr: ModelConfigWithProvider[] = [];

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { ProviderId, ProviderModelsStatus } from '../types';
+import { useCatalogSnapshot } from './useCatalogSnapshot';
 import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 export function useProviderModels(
@@ -7,9 +8,7 @@ export function useProviderModels(
   providerId: ProviderId,
   options?: { prefetch?: boolean }
 ): ProviderModelsStatus & { refresh: () => void } {
-  const subscribe = (onStoreChange: () => void) => catalog.subscribe(onStoreChange);
-  const getSnapshot = () => catalog.getSnapshot();
-  const map = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const map = useCatalogSnapshot(catalog);
 
   useEffect(() => {
     if (options?.prefetch === true) {
