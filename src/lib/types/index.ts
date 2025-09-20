@@ -97,16 +97,6 @@ export interface StorageAdapter {
   remove(key: string): PromiseLike<void>;
 }
 
-// Telemetry interface for status/error reporting
-export interface ModelPickerTelemetry {
-  onFetchStart?: (providerId: ProviderId) => void;
-  onFetchSuccess?: (providerId: ProviderId, modelCount: number) => void;
-  onFetchError?: (providerId: ProviderId, error: Error) => void;
-  onStorageError?: (operation: 'read' | 'write', error: Error) => void;
-  onUserModelAdded?: (providerId: ProviderId, modelId: ModelId) => void;
-  onProviderInitError?: (provider: string, error: Error) => void;
-}
-
 function isObject(value: unknown): value is object {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

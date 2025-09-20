@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { useEffect } from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import { useModelsWithConfiguredProvider } from '../src/lib/hooks/useModelsWithConfiguredProvider';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
+import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
 import {
   addRecentlyUsedModel,
   addProviderWithCredentials,
@@ -21,6 +23,7 @@ import {
   providerAndModelKey,
   type ProviderAndModelKey,
   type AIProvider,
+  type ModelPickerTelemetry,
 } from '../src/lib/types';
 
 // Minimal icon stub
@@ -277,5 +280,130 @@ describe('useModelsWithConfiguredProvider', () => {
       expect(result.current.isLoadingOrError.state).toBe('ready');
       expect(result.current.recentlyUsedModels[0]?.model.id).toBe(m2.id);
     });
+  });
+});
+
+describe('useModelsWithConfiguredProvider lifecycle', () => {
+  it('initializes internal catalog once per dependency change and swaps instances for new storage', async () => {
+    const initSpy = vi.spyOn(ModelCatalog.prototype, 'initialize');
+    const registry = new ProviderRegistry(undefined);
+    const storageA = new MemoryStorageAdapter('lifecycle-internal-a');
+
+    const { rerender, result } = renderHook(
+      ({ storage, reg }: { storage: MemoryStorageAdapter; reg: ProviderRegistry }) =>
+        useModelsWithConfiguredProvider(storage, reg, { prefetch: false }),
+      { initialProps: { storage: storageA, reg: registry } }
+    );
+
+    try {
+      await waitFor(() => expect(result.current.isLoadingOrError.state).toBe('ready'));
+      await waitFor(() => expect(initSpy).toHaveBeenCalledTimes(1));
+      const firstInstance = initSpy.mock.instances[0];
+
+      rerender({ storage: storageA, reg: registry });
+      await waitFor(() => expect(result.current.isLoadingOrError.state).toBe('ready'));
+      expect(initSpy).toHaveBeenCalledTimes(1);
+
+      const storageB = new MemoryStorageAdapter('lifecycle-internal-b');
+      rerender({ storage: storageB, reg: registry });
+      await waitFor(() => expect(initSpy).toHaveBeenCalledTimes(2));
+      const secondInstance = initSpy.mock.instances[1];
+      expect(secondInstance).not.toBe(firstInstance);
+
+      rerender({ storage: storageB, reg: registry });
+      await waitFor(() => expect(result.current.isLoadingOrError.state).toBe('ready'));
+      expect(initSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      initSpy.mockRestore();
+    }
+  });
+
+  it('avoids initializing when supplied an external catalog instance', async () => {
+    const registry = new ProviderRegistry(undefined);
+    const storage = new MemoryStorageAdapter('lifecycle-external-storage');
+    const modelStorage = new MemoryStorageAdapter('lifecycle-external-model');
+    const externalCatalog = new ModelCatalog(registry, storage, modelStorage);
+    await externalCatalog.initialize(false);
+    const externalInitSpy = vi.spyOn(externalCatalog, 'initialize');
+    externalInitSpy.mockClear();
+
+    const { rerender, result } = renderHook(
+      ({ telemetry }: { telemetry?: ModelPickerTelemetry }) =>
+        useModelsWithConfiguredProvider(storage, registry, {
+          prefetch: false,
+          catalog: externalCatalog,
+          telemetry,
+        }),
+      { initialProps: { telemetry: undefined } }
+    );
+
+    await waitFor(() => expect(result.current.isLoadingOrError.state).toBe('ready'));
+    expect(externalInitSpy).not.toHaveBeenCalled();
+
+    rerender({ telemetry: undefined });
+    await waitFor(() => expect(result.current.isLoadingOrError.state).toBe('ready'));
+    expect(externalInitSpy).not.toHaveBeenCalled();
+
+    externalInitSpy.mockRestore();
+  });
+
+  it('resets derived state during reinitialization without exposing stale selections', async () => {
+    const initSpy = vi.spyOn(ModelCatalog.prototype, 'initialize');
+    const storageA = new MemoryStorageAdapter('lifecycle-reset-a');
+    const modelStorage = new MemoryStorageAdapter('lifecycle-reset-model');
+    const registry = new ProviderRegistry(undefined);
+    const pid = createProviderId('reset-prov');
+    const defaultModel = makeModel('default', 'Default', true);
+    const altModel = makeModel('alt', 'Alt');
+    registry.register(new FakeProvider(pid, 'Reset Provider', [defaultModel, altModel]));
+    await addProviderWithCredentials(storageA, pid);
+
+    const statusLog: Array<'loading' | 'ready' | 'error'> = [];
+    const { result, rerender } = renderHook(
+      ({ storage }: { storage: MemoryStorageAdapter }) => {
+        const hookResult = useModelsWithConfiguredProvider(storage, registry, {
+          prefetch: false,
+          modelStorage,
+        });
+        useEffect(() => {
+          statusLog.push(hookResult.isLoadingOrError.state);
+        }, [hookResult.isLoadingOrError.state]);
+        return hookResult;
+      },
+      { initialProps: { storage: storageA } }
+    );
+
+    try {
+      await waitFor(() => statusLog.length >= 2);
+      expect(statusLog[0]).toBe('loading');
+      expect(statusLog[1]).toBe('ready');
+
+      await waitFor(() => result.current.modelsWithCredentials.length > 0);
+      await act(async () => {
+        result.current.setSelectedProviderAndModel(pid, altModel.id);
+      });
+      await waitFor(() => result.current.selectedModel?.model.id === altModel.id);
+      expect(result.current.recentlyUsedModels[0]?.model.id).toBe(altModel.id);
+
+      const storageB = new MemoryStorageAdapter('lifecycle-reset-b');
+      act(() => {
+        rerender({ storage: storageB });
+      });
+
+      await waitFor(() => statusLog[statusLog.length - 1] === 'loading');
+      expect(result.current.selectedModel).toBeUndefined();
+      expect(result.current.recentlyUsedModels).toEqual([]);
+      expect(result.current.modelsWithCredentials).toEqual([]);
+
+      await waitFor(() => statusLog.length >= 4);
+      expect(statusLog[statusLog.length - 2]).toBe('loading');
+      expect(statusLog[statusLog.length - 1]).toBe('ready');
+      expect(result.current.isLoadingOrError.state).toBe('ready');
+      expect(result.current.selectedModel).toBeUndefined();
+
+      await waitFor(() => expect(initSpy).toHaveBeenCalledTimes(2));
+    } finally {
+      initSpy.mockRestore();
+    }
   });
 });

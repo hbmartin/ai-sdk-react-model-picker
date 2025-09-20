@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 import type {
   IProviderRegistry,
   ProviderId,
@@ -37,13 +38,13 @@ function normalizePersisted(model: ModelConfig): ModelConfig {
   };
 }
 
-function scheduleMicrotaskSafe(fn: () => void) {
+function scheduleMicrotaskSafe(func: () => void) {
   if (typeof queueMicrotask === 'function') {
-    queueMicrotask(fn);
+    queueMicrotask(func);
     return;
   }
   Promise.resolve()
-    .then(fn)
+    .then(func)
     .catch(() => undefined);
 }
 
@@ -55,7 +56,10 @@ export class ModelCatalog {
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
   private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {};
   private knownProvidersSignature = '';
-  private telemetry?: ModelPickerTelemetry;
+  private telemetry?: ModelPickerTelemetry | undefined;
+  private notificationDepth = 0;
+  private isSnapshotDirty = false;
+  private notificationScheduled = false;
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
@@ -67,6 +71,50 @@ export class ModelCatalog {
     this.seedBuiltin();
   }
 
+  private notify(immediate = true, force = false) {
+    this.isSnapshotDirty = true;
+    if (this.notificationDepth > 0 && !force) {
+      return;
+    }
+
+    if (immediate || force) {
+      this.flushNotifications();
+      return;
+    }
+
+    if (!this.notificationScheduled) {
+      this.notificationScheduled = true;
+      scheduleMicrotaskSafe(() => {
+        this.notificationScheduled = false;
+        if (this.notificationDepth === 0) {
+          this.flushNotifications();
+        }
+      });
+    }
+  }
+
+  private flushNotifications() {
+    this.notificationScheduled = false;
+    if (!this.isSnapshotDirty) {
+      return;
+    }
+    this.isSnapshotDirty = false;
+    this.recomputeSnapshot();
+    this.emit();
+  }
+
+  private async runInNotificationBatch<T>(fn: () => Promise<T> | T): Promise<T> {
+    this.notificationDepth += 1;
+    try {
+      return await fn();
+    } finally {
+      this.notificationDepth -= 1;
+      if (this.notificationDepth === 0) {
+        this.flushNotifications();
+      }
+    }
+  }
+
   private seedBuiltin() {
     for (const provider of this.providerRegistry.getAllProviders()) {
       const map = new Map<ModelId, ModelConfig>();
@@ -76,8 +124,7 @@ export class ModelCatalog {
       }
       this.byProvider.set(provider.metadata.id, { status: 'idle', models: map });
     }
-    this.recomputeSnapshot();
-    this.emit();
+    this.notify();
   }
 
   private ensureProviderState(providerId: ProviderId): ProviderState {
@@ -106,12 +153,9 @@ export class ModelCatalog {
       this.ensurePersistedLoaded(providerId).catch(() => undefined);
     }
 
-    if (providerExists) {
-      scheduleMicrotaskSafe(() => {
-        this.recomputeSnapshot();
-        this.emit();
-      });
-    }
+    scheduleMicrotaskSafe(() => {
+      this.notify();
+    });
 
     return state;
   }
@@ -145,25 +189,30 @@ export class ModelCatalog {
   }
 
   // Load persisted models and optionally prefetch
-  async initialize(prefetch = true): Promise<void> {
-    const allProviderIds = this.providerRegistry.getAllProviders().map((p) => p.metadata.id);
+  // eslint-disable-next-line code-complete/no-boolean-params
+  async initialize(prefetch: boolean = true): Promise<void> {
+    const allProviderIds = this.providerRegistry
+      .getAllProviders()
+      .map((provider) => provider.metadata.id);
     // Load persisted models for ALL providers so offline state still shows known models
-    await Promise.all(
-      allProviderIds.map(async (pid) => {
-        this.ensureProviderState(pid);
-        await this.ensurePersistedLoaded(pid);
-      })
-    );
-    this.recomputeSnapshot();
-    this.emit();
+    await this.runInNotificationBatch(async () => {
+      await Promise.all(
+        allProviderIds.map(async (pid: ProviderId) => {
+          this.ensureProviderState(pid);
+          await this.ensurePersistedLoaded(pid);
+        })
+      );
+    });
 
     if (prefetch) {
       const providerIdsWithCreds = await getProvidersWithCredentials(this.storage);
-      await Promise.all(
-        providerIdsWithCreds.map(async (pid) => {
-          await this.refresh(pid).catch(() => undefined);
-        })
-      );
+      await this.runInNotificationBatch(async () => {
+        await Promise.all(
+          providerIdsWithCreds.map(async (pid: ProviderId) => {
+            await this.refresh(pid).catch(() => undefined);
+          })
+        );
+      });
     }
   }
 
@@ -178,12 +227,12 @@ export class ModelCatalog {
     const signature = this.providerRegistry
       .getAllProviders()
       .map((provider) => provider.metadata.id)
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      // eslint-disable-next-line code-complete/enforce-meaningful-names, sonarjs/no-nested-conditional
+      .toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
       .join('|');
     if (signature !== this.knownProvidersSignature) {
       scheduleMicrotaskSafe(() => {
-        this.recomputeSnapshot();
-        this.emit();
+        this.notify();
       });
     }
     return this.cachedSnapshot;
@@ -240,8 +289,7 @@ export class ModelCatalog {
       st.error = error;
     }
     this.byProvider.set(providerId, st);
-    this.recomputeSnapshot();
-    this.emit();
+    this.notify(true, true);
   }
 
   private async persistNonBuiltin(providerId: ProviderId) {
@@ -269,39 +317,37 @@ export class ModelCatalog {
       state.models.set(nm.id, nm);
     }
     this.byProvider.set(providerId, state);
-    this.recomputeSnapshot();
-    this.emit();
+    this.notify();
   }
 
   private async mergeApi(providerId: ProviderId, fetched: ModelConfig[]) {
     const state = this.ensureProviderState(providerId);
     const fetchedIds = new Set<ModelId>();
-    const ts = now();
+    const timestamp = now();
 
     for (const raw of fetched) {
       const discoveredAt = state.models.get(raw.id)?.discoveredAt;
-      const m: ModelConfig = {
+      const modelConfig: ModelConfig = {
         ...raw,
         origin: 'api',
         visible: raw.visible ?? true,
-        discoveredAt: discoveredAt === undefined ? ts : discoveredAt,
-        updatedAt: ts,
+        discoveredAt: discoveredAt ?? timestamp,
+        updatedAt: timestamp,
       };
-      fetchedIds.add(m.id);
-      state.models.set(m.id, m);
+      fetchedIds.add(modelConfig.id);
+      state.models.set(modelConfig.id, modelConfig);
     }
 
     // Hide stale API entries (keep in storage but not visible)
-    for (const [id, m] of state.models.entries()) {
-      if (m.origin === 'api' && !fetchedIds.has(id)) {
-        state.models.set(id, { ...m, visible: false, updatedAt: ts });
+    for (const [id, modelConfig] of state.models.entries()) {
+      if (modelConfig.origin === 'api' && !fetchedIds.has(id)) {
+        state.models.set(id, { ...modelConfig, visible: false, updatedAt: timestamp });
       }
     }
 
     this.byProvider.set(providerId, state);
     await this.persistNonBuiltin(providerId);
-    this.recomputeSnapshot();
-    this.emit();
+    this.notify(false);
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
@@ -341,7 +387,9 @@ export class ModelCatalog {
     const providerIds = (await getProvidersWithCredentials(this.storage)).filter((pid) =>
       this.providerRegistry.hasProvider(pid)
     );
-    await Promise.all(providerIds.map((pid) => this.refresh(pid)));
+    await this.runInNotificationBatch(async () => {
+      await Promise.all(providerIds.map((pid) => this.refresh(pid)));
+    });
   }
 
   async addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
@@ -351,21 +399,20 @@ export class ModelCatalog {
       // exact duplicate not allowed
       return;
     }
-    const ts = now();
+    const timestamp = now();
     const model: ModelConfig = {
       id: modelId,
       displayName: String(modelId),
       origin: 'user',
       visible: true,
-      discoveredAt: ts,
-      updatedAt: ts,
+      discoveredAt: timestamp,
+      updatedAt: timestamp,
     };
     state.models.set(modelId, model);
     this.byProvider.set(providerId, state);
     await this.persistNonBuiltin(providerId);
     this.telemetry?.onUserModelAdded?.(providerId, modelId);
-    this.recomputeSnapshot();
-    this.emit();
+    this.notify();
   }
 
   async removeUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
@@ -379,7 +426,6 @@ export class ModelCatalog {
     } // only allow explicit removal of user entries
     state.models.delete(modelId);
     await this.persistNonBuiltin(providerId);
-    this.recomputeSnapshot();
-    this.emit();
+    this.notify();
   }
 }

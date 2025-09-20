@@ -7,7 +7,10 @@ import {
   idsFromKey,
 } from '../types';
 import { useOptionalModelPicker } from '../context';
-import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
+import {
+  useModelsWithConfiguredProvider,
+  type UseModelsWithConfiguredProviderOptions,
+} from '../hooks/useModelsWithConfiguredProvider';
 import { ChevronDownIcon, PlusIcon } from '../icons';
 import { AddModelForm } from './AddModelForm';
 import { ModelOption } from './ModelOption';
@@ -39,13 +42,7 @@ export function ModelSelect({
   const effectiveSelectedRole = context?.state.selectedRole ?? selectedRole;
   const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const hookOptions: {
-    telemetry?: ModelPickerTelemetry;
-    modelStorage?: StorageAdapter;
-    prefetch?: boolean;
-    catalog?: ModelCatalog;
-    manageStorage?: boolean;
-  } = {};
+  const hookOptions: UseModelsWithConfiguredProviderOptions = {};
   if (effectiveTelemetry !== undefined) {
     hookOptions.telemetry = effectiveTelemetry;
   }
@@ -53,9 +50,6 @@ export function ModelSelect({
   hookOptions.prefetch = true;
   if (context?.catalog !== undefined) {
     hookOptions.catalog = context.catalog;
-  }
-  if (context !== undefined) {
-    hookOptions.manageStorage = false;
   }
   const {
     recentlyUsedModels,
