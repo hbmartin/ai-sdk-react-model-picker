@@ -131,14 +131,18 @@ export function ModelPickerProvider({
   // Catalog instance
   const catalog = useMemo(
     () => new ModelCatalog(providerRegistry, storage, modelStorage ?? storage, telemetry),
-    [providerRegistry, storage, modelStorage, telemetry]
+    [providerRegistry, storage, modelStorage]
   );
+
+  useEffect(() => {
+    setGlobalTelemetry(telemetry);
+    catalog.setTelemetry(telemetry);
+  }, [catalog, telemetry]);
 
   // Initialize catalog with optional prefetch
   useEffect(() => {
-    setGlobalTelemetry(telemetry);
     void catalog.initialize(prefetch);
-  }, [catalog, prefetch, telemetry]);
+  }, [catalog, prefetch]);
 
   // Subscribe to catalog updates and flatten visible models
   const snapshot = useSyncExternalStore(
@@ -150,11 +154,11 @@ export function ModelPickerProvider({
   const allModels = useMemo(() => {
     const arr: ModelConfigWithProvider[] = [];
     for (const entry of Object.values(snapshot)) {
-      for (const mp of entry.models) {
-        if (mp.model.visible === false) {
+      for (const modelWithProvider of entry.models) {
+        if (modelWithProvider.model.visible === false) {
           continue;
         }
-        arr.push(mp);
+        arr.push(modelWithProvider);
       }
     }
     return arr;

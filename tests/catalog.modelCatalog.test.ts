@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
@@ -73,6 +73,16 @@ function builtin(id: string, name?: string): ModelConfig {
 function apiModel(id: string, name?: string): ModelConfig {
   // API payload may omit origin/visible; catalog normalizes
   return { id: createModelId(id), displayName: name ?? id } as ModelConfig;
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject } as const;
 }
 
 describe('ModelCatalog merge and persistence', () => {
@@ -239,5 +249,52 @@ describe('ModelCatalog merge and persistence', () => {
     const snap = catalog.getSnapshot();
     expect(snap[pid].status).toBe('ready');
     expect(snap[pid].models.some((x) => x.model.id === createModelId('m1'))).toBe(true);
+  });
+
+  it('prevents overlapping refresh sequences for the same provider', async () => {
+    await addProviderWithCredentials(storage, pid);
+    await setProviderConfiguration(storage, pid, { token: 'x' });
+
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+
+    const deferred = createDeferred<ModelConfig[]>();
+    const getModelsSpy = vi.fn(() => deferred.promise);
+    (provider as any).getModels = getModelsSpy;
+
+    const first = catalog.refresh(pid);
+    const second = catalog.refresh(pid);
+
+    await second;
+
+    deferred.resolve([apiModel('latest')]);
+    await first;
+
+    expect(getModelsSpy).toHaveBeenCalledTimes(1);
+
+    const snapshot = catalog.getSnapshot();
+    expect(snapshot[pid].status).toBe('ready');
+    expect(snapshot[pid].models.some((entry) => entry.model.id === createModelId('latest'))).toBe(
+      true
+    );
+  });
+
+  it('adds newly registered providers to the snapshot with builtin models', async () => {
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+
+    const newPid = createProviderId('late');
+    const lateProvider = new FakeProvider(newPid, 'Late', [builtin('late-default', 'Late Default')]);
+    registry.register(lateProvider);
+
+    catalog.getSnapshot();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const snapshot = catalog.getSnapshot();
+    expect(snapshot[newPid]).toBeDefined();
+    expect(snapshot[newPid].models.some((m) => m.model.id === createModelId('late-default'))).toBe(
+      true
+    );
   });
 });

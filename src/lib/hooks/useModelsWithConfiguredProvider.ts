@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { idsFromKey, providerAndModelKey } from '../types';
 import type {
   ModelPickerTelemetry,
   ProviderModelsStatus,
   StorageAdapter as _Storage,
-  type StorageAdapter,
-  type ModelId,
-  idsFromKey,
-  type IProviderRegistry,
-  type ModelConfigWithProvider,
-  type ProviderId,
-  providerAndModelKey,
-  type KeyedModelConfigWithProvider,
+  StorageAdapter,
+  ModelId,
+  IProviderRegistry,
+  ModelConfigWithProvider,
+  ProviderId,
+  KeyedModelConfigWithProvider,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import {
@@ -46,19 +45,48 @@ export function useModelsWithConfiguredProvider(
     message?: string;
   }>({ state: 'loading' });
 
-  // Catalog instance tied to registry + storages
-  const catalogRef = useRef<ModelCatalog | undefined>(undefined);
+  const catalogStateRef = useRef<{
+    catalog: ModelCatalog;
+    storage: StorageAdapter;
+    modelStorage: StorageAdapter;
+    providerRegistry: IProviderRegistry;
+  }>();
+
+  const manageCatalog = options?.catalog === undefined;
+  const modelStorageAdapter = options?.modelStorage ?? storage;
+
   let createdInternal = false;
-  if (options?.catalog === undefined && catalogRef.current === undefined) {
-    catalogRef.current = new ModelCatalog(
-      providerRegistry,
-      storage,
-      options?.modelStorage ?? storage,
-      options?.telemetry
-    );
-    createdInternal = true;
+  if (manageCatalog) {
+    const current = catalogStateRef.current;
+    const needsNew =
+      current === undefined ||
+      current.storage !== storage ||
+      current.modelStorage !== modelStorageAdapter ||
+      current.providerRegistry !== providerRegistry;
+    if (needsNew) {
+      const newCatalog = new ModelCatalog(
+        providerRegistry,
+        storage,
+        modelStorageAdapter,
+        options?.telemetry
+      );
+      catalogStateRef.current = {
+        catalog: newCatalog,
+        storage,
+        modelStorage: modelStorageAdapter,
+        providerRegistry,
+      };
+      createdInternal = true;
+    }
+  } else {
+    catalogStateRef.current = undefined;
   }
-  const catalog = options?.catalog ?? (catalogRef.current as ModelCatalog);
+
+  const catalog = manageCatalog
+    ? (catalogStateRef.current as { catalog: ModelCatalog }).catalog
+    : options.catalog!;
+
+  catalog.setTelemetry(options?.telemetry);
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -135,6 +163,13 @@ export function useModelsWithConfiguredProvider(
   useEffect(() => {
     async function loadRecentlyUsed() {
       try {
+        if (createdInternal) {
+          setSelectedModel(undefined);
+          setProvidersWithCreds([]);
+          setRecentlyUsedModels([]);
+        }
+        setIsLoadingOrError({ state: 'loading' });
+
         const [recentModelKeys, providersWithCredentials] = await Promise.all([
           getRecentlyUsedModels(storage),
           getProvidersWithCredentials(storage),
