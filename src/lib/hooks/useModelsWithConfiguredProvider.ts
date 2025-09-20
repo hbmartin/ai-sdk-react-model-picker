@@ -106,7 +106,6 @@ export function useModelsWithConfiguredProvider(
     modelStorage?: _Storage;
     prefetch?: boolean;
     catalog?: ModelCatalog;
-    manageStorage?: boolean;
   }
 ) {
   const [recentlyUsedModels, setRecentlyUsedModels] = useState<KeyedModelConfigWithProvider[]>([]);
@@ -168,10 +167,8 @@ export function useModelsWithConfiguredProvider(
 
     // Save selection to storage
     const modelWithProvider = { model, provider: provider.metadata };
-    if (options?.manageStorage !== false) {
-      void addProviderWithCredentials(storage, providerId);
-      void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
-    }
+    void addProviderWithCredentials(storage, providerId);
+    void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
 
     // Ensure provider is tracked for availability
     setProvidersWithCreds((prev) => (prev.includes(providerId) ? prev : [providerId, ...prev]));

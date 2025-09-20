@@ -9,7 +9,6 @@ import {
   createElement,
   useEffect,
 } from 'react';
-import { providerAndModelKey } from '../types';
 import type {
   ModelConfigWithProvider,
   IProviderRegistry,
@@ -21,7 +20,6 @@ import type {
   ModelPickerTelemetry,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
-import { addProviderWithCredentials, addRecentlyUsedModel } from '../storage/repository';
 import { setGlobalTelemetry } from '../telemetry';
 
 // State interface
@@ -173,16 +171,9 @@ export function ModelPickerProvider({
   }, [state.selectedModelId, allModels]);
 
   // Action creators
-  const selectModel = useCallback(
-    (model: ModelConfigWithProvider | undefined) => {
-      dispatch({ type: 'SET_MODEL', payload: model?.model.id });
-      if (model !== undefined) {
-        void addProviderWithCredentials(storage, model.provider.id);
-        void addRecentlyUsedModel(storage, providerAndModelKey(model));
-      }
-    },
-    [storage]
-  );
+  const selectModel = useCallback((model: ModelConfigWithProvider | undefined) => {
+    dispatch({ type: 'SET_MODEL', payload: model?.model.id });
+  }, []);
 
   const selectRole = useCallback((roleId: string) => {
     dispatch({ type: 'SET_ROLE', payload: roleId });

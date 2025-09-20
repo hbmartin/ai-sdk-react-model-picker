@@ -44,7 +44,6 @@ export function ModelSelect({
     modelStorage?: StorageAdapter;
     prefetch?: boolean;
     catalog?: ModelCatalog;
-    manageStorage?: boolean;
   } = {};
   if (effectiveTelemetry !== undefined) {
     hookOptions.telemetry = effectiveTelemetry;
@@ -53,9 +52,6 @@ export function ModelSelect({
   hookOptions.prefetch = true;
   if (context?.catalog !== undefined) {
     hookOptions.catalog = context.catalog;
-  }
-  if (context !== undefined) {
-    hookOptions.manageStorage = false;
   }
   const {
     recentlyUsedModels,
