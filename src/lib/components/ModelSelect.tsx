@@ -1,5 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import { type ModelSelectProps, type ProviderAndModelKey, idsFromKey } from '../types';
+import {
+  type ModelPickerTelemetry,
+  type ModelSelectProps,
+  type ProviderAndModelKey,
+  type StorageAdapter,
+  idsFromKey,
+} from '../types';
 import { useOptionalModelPicker } from '../context';
 import { useModelsWithConfiguredProvider } from '../hooks/useModelsWithConfiguredProvider';
 import { ChevronDownIcon, PlusIcon } from '../icons';
@@ -7,6 +13,7 @@ import { AddModelForm } from './AddModelForm';
 import { ModelOption } from './ModelOption';
 import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
+import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 const ADD_MODEL_ID = '__add_model__' as const;
 const ADD_MODEL_LABEL = 'Add Model Provider' as const;
@@ -33,17 +40,23 @@ export function ModelSelect({
   const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
   const hookOptions: {
-    telemetry?: import('../types').ModelPickerTelemetry;
-    modelStorage?: import('../types').StorageAdapter;
+    telemetry?: ModelPickerTelemetry;
+    modelStorage?: StorageAdapter;
     prefetch?: boolean;
-    catalog?: import('../catalog/ModelCatalog').ModelCatalog;
+    catalog?: ModelCatalog;
     manageStorage?: boolean;
   } = {};
-  if (effectiveTelemetry !== undefined) hookOptions.telemetry = effectiveTelemetry;
-  if (effectiveModelStorage !== undefined) hookOptions.modelStorage = effectiveModelStorage;
+  if (effectiveTelemetry !== undefined) {
+    hookOptions.telemetry = effectiveTelemetry;
+  }
+  hookOptions.modelStorage = effectiveModelStorage;
   hookOptions.prefetch = true;
-  if (context?.catalog !== undefined) hookOptions.catalog = context.catalog;
-  if (context !== undefined) hookOptions.manageStorage = false;
+  if (context?.catalog !== undefined) {
+    hookOptions.catalog = context.catalog;
+  }
+  if (context !== undefined) {
+    hookOptions.manageStorage = false;
+  }
   const {
     recentlyUsedModels,
     modelsWithCredentials,

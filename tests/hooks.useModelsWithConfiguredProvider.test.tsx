@@ -244,4 +244,38 @@ describe('useModelsWithConfiguredProvider', () => {
     expect(result.current.recentlyUsedModels.every((x) => x.provider.id !== p2)).toBe(true);
     expect(result.current.modelsWithCredentials.every((x) => x.provider.id !== p2)).toBe(true);
   });
+
+  it('reinitializes when storage adapter instance changes', async () => {
+    const storageA = new MemoryStorageAdapter('test-6a');
+    const storageB = new MemoryStorageAdapter('test-6b');
+    const registry = new ProviderRegistry(undefined);
+
+    const provId = createProviderId('swap');
+    const m1 = makeModel('swap-a', 'Swap A', true);
+    const m2 = makeModel('swap-b', 'Swap B');
+    registry.register(new FakeProvider(provId, 'Swap Provider', [m1, m2]));
+
+    await addProviderWithCredentials(storageA, provId);
+    await addRecentlyUsedModel(storageA, keyFor(provId, m1.id));
+
+    await addProviderWithCredentials(storageB, provId);
+    await addRecentlyUsedModel(storageB, keyFor(provId, m2.id));
+
+    const { result, rerender } = renderHook(
+      ({ storage }) => useModelsWithConfiguredProvider(storage, registry),
+      { initialProps: { storage: storageA } }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoadingOrError.state).toBe('ready');
+      expect(result.current.recentlyUsedModels[0]?.model.id).toBe(m1.id);
+    });
+
+    rerender({ storage: storageB });
+
+    await waitFor(() => {
+      expect(result.current.isLoadingOrError.state).toBe('ready');
+      expect(result.current.recentlyUsedModels[0]?.model.id).toBe(m2.id);
+    });
+  });
 });

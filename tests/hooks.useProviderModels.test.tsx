@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { useProviderModels } from '../src/lib/hooks/useProviderModels';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
-import { MemoryStorageAdapter } from '../src/lib/storage';
+import { useProviderModels } from '../src/lib/hooks/useProviderModels';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
+import { MemoryStorageAdapter } from '../src/lib/storage';
+import {
+  addProviderWithCredentials,
+  setProviderConfiguration,
+} from '../src/lib/storage/repository';
 import {
   createProviderId,
   createModelId,
@@ -13,7 +17,6 @@ import {
   type ProviderId,
   type ProviderMetadata,
 } from '../src/lib/types';
-import { addProviderWithCredentials, setProviderConfiguration } from '../src/lib/storage/repository';
 
 const DummyIcon = (() => null) as unknown as ProviderMetadata['icon'];
 
@@ -84,4 +87,3 @@ describe('useProviderModels', () => {
     });
   });
 });
-

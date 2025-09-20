@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { useModelsByProvider } from '../src/lib/hooks/useModelsByProvider';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
-import { MemoryStorageAdapter } from '../src/lib/storage';
+import { useModelsByProvider } from '../src/lib/hooks/useModelsByProvider';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
+import { MemoryStorageAdapter } from '../src/lib/storage';
+import {
+  addProviderWithCredentials,
+  setProviderConfiguration,
+} from '../src/lib/storage/repository';
 import {
   createProviderId,
   createModelId,
@@ -13,7 +17,6 @@ import {
   type ProviderId,
   type ProviderMetadata,
 } from '../src/lib/types';
-import { addProviderWithCredentials, setProviderConfiguration } from '../src/lib/storage/repository';
 
 const DummyIcon = (() => null) as unknown as ProviderMetadata['icon'];
 
@@ -84,10 +87,14 @@ describe('useModelsByProvider', () => {
 
     await waitFor(() => {
       expect(result.current[p1.metadata.id].status).toBe('ready');
-      expect(result.current[p1.metadata.id].models.some((x) => x.model.id === createModelId('m1'))).toBe(true);
+      expect(
+        result.current[p1.metadata.id].models.some((x) => x.model.id === createModelId('m1'))
+      ).toBe(true);
     });
     // p2 should exist with idle status and only builtins
-    expect(result.current[p2.metadata.id].status === 'idle' || result.current[p2.metadata.id].status === 'ready').toBe(true);
+    expect(
+      result.current[p2.metadata.id].status === 'idle' ||
+        result.current[p2.metadata.id].status === 'ready'
+    ).toBe(true);
   });
 });
-

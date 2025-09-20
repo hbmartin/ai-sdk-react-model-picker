@@ -1,21 +1,21 @@
-import {
-  type IProviderRegistry,
-  type ProviderId,
-  type ModelId,
-  type ModelConfig,
-  type ModelConfigWithProvider,
-  type ProviderModelsStatus,
-  type ModelPickerTelemetry,
+import type {
+  IProviderRegistry,
+  ProviderId,
+  ModelId,
+  ModelConfig,
+  ModelConfigWithProvider,
+  ProviderModelsStatus,
+  ModelPickerTelemetry,
+  StorageAdapter,
 } from '../types';
-import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
-import type { StorageAdapter } from '../types';
+import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 
-type ProviderState = {
+interface ProviderState {
   status: ProviderModelsStatus['status'];
   error?: string;
   models: Map<ModelId, ModelConfig>;
-};
+}
 
 function now() {
   return Date.now();
@@ -37,18 +37,33 @@ function normalizePersisted(model: ModelConfig): ModelConfig {
   };
 }
 
+function scheduleMicrotaskSafe(fn: () => void) {
+  if (typeof queueMicrotask === 'function') {
+    queueMicrotask(fn);
+    return;
+  }
+  Promise.resolve()
+    .then(fn)
+    .catch(() => undefined);
+}
+
 export class ModelCatalog {
   private readonly byProvider = new Map<ProviderId, ProviderState>();
   private readonly listeners = new Set<() => void>();
   private readonly inFlight = new Set<ProviderId>();
-  private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {} as any;
+  private readonly hydratedProviders = new Set<ProviderId>();
+  private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
+  private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {};
+  private knownProvidersSignature = '';
+  private telemetry?: ModelPickerTelemetry;
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
     private readonly storage: StorageAdapter,
     private readonly modelStorage: StorageAdapter,
-    private readonly telemetry?: ModelPickerTelemetry
+    telemetry?: ModelPickerTelemetry
   ) {
+    this.telemetry = telemetry;
     this.seedBuiltin();
   }
 
@@ -56,13 +71,77 @@ export class ModelCatalog {
     for (const provider of this.providerRegistry.getAllProviders()) {
       const map = new Map<ModelId, ModelConfig>();
       for (const model of provider.models) {
-        const nm = normalizeBuiltin(model);
-        map.set(nm.id, nm);
+        const normalizedModel = normalizeBuiltin(model);
+        map.set(normalizedModel.id, normalizedModel);
       }
       this.byProvider.set(provider.metadata.id, { status: 'idle', models: map });
     }
     this.recomputeSnapshot();
     this.emit();
+  }
+
+  private ensureProviderState(providerId: ProviderId): ProviderState {
+    let state = this.byProvider.get(providerId);
+    if (state !== undefined) {
+      return state;
+    }
+
+    const providerExists = this.providerRegistry.hasProvider(providerId);
+    if (!providerExists) {
+      state = { status: 'idle', models: new Map<ModelId, ModelConfig>() };
+      this.byProvider.set(providerId, state);
+      return state;
+    }
+
+    const provider = this.providerRegistry.getProvider(providerId);
+    const map = new Map<ModelId, ModelConfig>();
+    for (const model of provider.models) {
+      const normalizedModel = normalizeBuiltin(model);
+      map.set(normalizedModel.id, normalizedModel);
+    }
+    state = { status: 'idle', models: map };
+    this.byProvider.set(providerId, state);
+
+    if (!this.hydratedProviders.has(providerId) && !this.pendingHydrations.has(providerId)) {
+      this.ensurePersistedLoaded(providerId).catch(() => undefined);
+    }
+
+    if (providerExists) {
+      scheduleMicrotaskSafe(() => {
+        this.recomputeSnapshot();
+        this.emit();
+      });
+    }
+
+    return state;
+  }
+
+  private async ensurePersistedLoaded(providerId: ProviderId): Promise<void> {
+    if (this.hydratedProviders.has(providerId)) {
+      return;
+    }
+    const existing = this.pendingHydrations.get(providerId);
+    if (existing !== undefined) {
+      await existing;
+      return;
+    }
+
+    const run = (async () => {
+      try {
+        const persisted = await getPersistedModels(this.modelStorage, providerId);
+        if (persisted.length > 0) {
+          this.mergePersisted(providerId, persisted);
+        }
+      } finally {
+        this.hydratedProviders.add(providerId);
+      }
+    })();
+
+    const wrapped = run.finally(() => {
+      this.pendingHydrations.delete(providerId);
+    });
+    this.pendingHydrations.set(providerId, wrapped);
+    await wrapped;
   }
 
   // Load persisted models and optionally prefetch
@@ -71,10 +150,8 @@ export class ModelCatalog {
     // Load persisted models for ALL providers so offline state still shows known models
     await Promise.all(
       allProviderIds.map(async (pid) => {
-        const persisted = await getPersistedModels(this.modelStorage, pid);
-        if (persisted.length > 0) {
-          this.mergePersisted(pid, persisted);
-        }
+        this.ensureProviderState(pid);
+        await this.ensurePersistedLoaded(pid);
       })
     );
     this.recomputeSnapshot();
@@ -97,43 +174,70 @@ export class ModelCatalog {
     };
   }
 
+  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
+    const signature = this.providerRegistry
+      .getAllProviders()
+      .map((provider) => provider.metadata.id)
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      .join('|');
+    if (signature !== this.knownProvidersSignature) {
+      scheduleMicrotaskSafe(() => {
+        this.recomputeSnapshot();
+        this.emit();
+      });
+    }
+    return this.cachedSnapshot;
+  }
+
+  setTelemetry(telemetry?: ModelPickerTelemetry) {
+    this.telemetry = telemetry;
+  }
+
   private emit() {
-    for (const l of this.listeners) l();
+    for (const listener of this.listeners) {
+      listener();
+    }
   }
 
   private recomputeSnapshot() {
-    const out: Record<ProviderId, ProviderModelsStatus> = {} as any;
-    for (const provider of this.providerRegistry.getAllProviders()) {
+    const providers = this.providerRegistry.getAllProviders();
+    const signature = providers
+      .map((provider) => provider.metadata.id)
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      .join('|');
+    const out: Record<ProviderId, ProviderModelsStatus> = {};
+    for (const provider of providers) {
       const pid = provider.metadata.id;
-      const state = this.byProvider.get(pid);
+      const state = this.ensureProviderState(pid);
       const models = state?.models ?? new Map<ModelId, ModelConfig>();
-      const withProvider: ModelConfigWithProvider[] = [...models.values()].map((m) => ({
-        model: m,
+      const withProvider: ModelConfigWithProvider[] = [...models.values()].map((model) => ({
+        model,
         provider: provider.metadata,
       }));
       const base: ProviderModelsStatus = {
         models: withProvider,
         status: state?.status ?? 'idle',
       } as ProviderModelsStatus;
-      if ((state as any)?.error !== undefined) {
-        (base as any).error = (state as any).error as string;
+      if (state?.error !== undefined) {
+        base.error = state.error;
       }
       out[pid] = base;
     }
     this.cachedSnapshot = out;
+    this.knownProvidersSignature = signature;
   }
 
-  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
-    return this.cachedSnapshot;
-  }
-
-  private setStatus(providerId: ProviderId, status: ProviderModelsStatus['status'], error?: string) {
-    const st = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map<ModelId, ModelConfig>() };
+  private setStatus(
+    providerId: ProviderId,
+    status: ProviderModelsStatus['status'],
+    error?: string
+  ) {
+    const st = this.ensureProviderState(providerId);
     st.status = status;
     if (error === undefined) {
-      delete (st as any).error;
+      delete st.error;
     } else {
-      (st as any).error = error;
+      st.error = error;
     }
     this.byProvider.set(providerId, st);
     this.recomputeSnapshot();
@@ -142,18 +246,20 @@ export class ModelCatalog {
 
   private async persistNonBuiltin(providerId: ProviderId) {
     const state = this.byProvider.get(providerId);
-    if (!state) return;
+    if (!state) {
+      return;
+    }
     const keep: ModelConfig[] = [];
-    for (const m of state.models.values()) {
-      if (m.origin === 'api' || m.origin === 'user') {
-        keep.push(m);
+    for (const model of state.models.values()) {
+      if (model.origin === 'api' || model.origin === 'user') {
+        keep.push(model);
       }
     }
     await setPersistedModels(this.modelStorage, providerId, keep);
   }
 
   private mergePersisted(providerId: ProviderId, models: ModelConfig[]) {
-    const state = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map() };
+    const state = this.ensureProviderState(providerId);
     for (const m of models) {
       const nm = normalizePersisted(m);
       const existing = state.models.get(nm.id);
@@ -163,22 +269,22 @@ export class ModelCatalog {
       state.models.set(nm.id, nm);
     }
     this.byProvider.set(providerId, state);
+    this.recomputeSnapshot();
+    this.emit();
   }
 
   private async mergeApi(providerId: ProviderId, fetched: ModelConfig[]) {
-    const state = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map() };
+    const state = this.ensureProviderState(providerId);
     const fetchedIds = new Set<ModelId>();
     const ts = now();
 
     for (const raw of fetched) {
+      const discoveredAt = state.models.get(raw.id)?.discoveredAt;
       const m: ModelConfig = {
         ...raw,
         origin: 'api',
         visible: raw.visible ?? true,
-        discoveredAt:
-          state.models.get(raw.id)?.discoveredAt !== undefined
-            ? state.models.get(raw.id)!.discoveredAt
-            : ts,
+        discoveredAt: discoveredAt === undefined ? ts : discoveredAt,
         updatedAt: ts,
       };
       fetchedIds.add(m.id);
@@ -195,21 +301,27 @@ export class ModelCatalog {
     this.byProvider.set(providerId, state);
     await this.persistNonBuiltin(providerId);
     this.recomputeSnapshot();
+    this.emit();
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
-    if (this.inFlight.has(providerId)) return;
-    const provider = this.providerRegistry.getProvider(providerId);
-    // Configuration gating
-    const config = await getProviderConfiguration(this.storage, providerId);
-    const valid = config ? provider.configuration.validateConfig(config).ok : false;
-    if (!valid && !opts?.force) {
-      this.setStatus(providerId, 'missing-config');
+    if (this.inFlight.has(providerId)) {
       return;
     }
-
+    if (!this.providerRegistry.hasProvider(providerId)) {
+      return;
+    }
+    const provider = this.providerRegistry.getProvider(providerId);
+    this.ensureProviderState(providerId);
+    this.inFlight.add(providerId);
     try {
-      this.inFlight.add(providerId);
+      const config = await getProviderConfiguration(this.storage, providerId);
+      const valid = config ? provider.configuration.validateConfig(config).ok : false;
+      if (!valid && !opts?.force) {
+        this.setStatus(providerId, 'missing-config');
+        return;
+      }
+
       this.setStatus(providerId, 'loading');
       this.telemetry?.onFetchStart?.(providerId);
       const models = await provider.getModels();
@@ -226,12 +338,14 @@ export class ModelCatalog {
   }
 
   async refreshAll(): Promise<void> {
-    const providerIds = await getProvidersWithCredentials(this.storage);
+    const providerIds = (await getProvidersWithCredentials(this.storage)).filter((pid) =>
+      this.providerRegistry.hasProvider(pid)
+    );
     await Promise.all(providerIds.map((pid) => this.refresh(pid)));
   }
 
   async addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
-    const state = this.byProvider.get(providerId) ?? { status: 'idle', models: new Map() };
+    const state = this.ensureProviderState(providerId);
 
     if (state.models.has(modelId)) {
       // exact duplicate not allowed
@@ -256,9 +370,13 @@ export class ModelCatalog {
 
   async removeUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
     const state = this.byProvider.get(providerId);
-    if (!state) return;
+    if (!state) {
+      return;
+    }
     const existing = state.models.get(modelId);
-    if (existing?.origin !== 'user') return; // only allow explicit removal of user entries
+    if (existing?.origin !== 'user') {
+      return;
+    } // only allow explicit removal of user entries
     state.models.delete(modelId);
     await this.persistNonBuiltin(providerId);
     this.recomputeSnapshot();

@@ -9,4 +9,3 @@ export function setGlobalTelemetry(t?: ModelPickerTelemetry) {
 export function getTelemetry(): ModelPickerTelemetry | undefined {
   return globalTelemetry;
 }
-
