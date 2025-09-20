@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import type { ProviderId, ProviderModelsStatus } from '../types';
-import { ModelCatalog } from '../catalog/ModelCatalog';
+import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 export function useModelsByProvider(
   catalog: ModelCatalog,
@@ -17,15 +16,13 @@ export function useModelsByProvider(
     }
   }, [catalog, options?.prefetch]);
 
-  const out: Record<ProviderId, ProviderModelsStatus & { refresh: () => void }> = {} as any;
-  for (const key of Object.keys(map) as ProviderId[]) {
-    Object.assign(out, {
-      [key]: {
-        ...map[key],
-        refresh: () => void catalog.refresh(key),
+  return Object.fromEntries(
+    Object.entries(map).map(([key, status]) => [
+      key,
+      {
+        ...status,
+        refresh: () => void catalog.refresh(key as ProviderId),
       },
-    });
-  }
-  return out;
+    ])
+  ) as Record<ProviderId, ProviderModelsStatus & { refresh: () => void }>;
 }
-

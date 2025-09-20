@@ -7,7 +7,9 @@ import {
   useSyncExternalStore,
   type ReactNode,
   createElement,
+  useEffect,
 } from 'react';
+import { providerAndModelKey } from '../types';
 import type {
   ModelConfigWithProvider,
   IProviderRegistry,
@@ -16,12 +18,11 @@ import type {
   Role,
   ThemeConfig,
   ProviderId,
+  ModelPickerTelemetry,
 } from '../types';
-import { providerAndModelKey } from '../types';
-import type { ModelPickerTelemetry } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
-import { setGlobalTelemetry } from '../telemetry';
 import { addProviderWithCredentials, addRecentlyUsedModel } from '../storage/repository';
+import { setGlobalTelemetry } from '../telemetry';
 
 // State interface
 interface ModelPickerState {
@@ -130,15 +131,18 @@ export function ModelPickerProvider({
   // Catalog instance
   const catalog = useMemo(
     () => new ModelCatalog(providerRegistry, storage, modelStorage ?? storage, telemetry),
-    [providerRegistry, storage, modelStorage, telemetry]
+    [providerRegistry, storage, modelStorage]
   );
 
-  // Initialize catalog with optional prefetch
-  useMemo(() => {
+  useEffect(() => {
     setGlobalTelemetry(telemetry);
+    catalog.setTelemetry(telemetry);
+  }, [catalog, telemetry]);
+
+  // Initialize catalog with optional prefetch
+  useEffect(() => {
     void catalog.initialize(prefetch);
-    return undefined;
-  }, [catalog, prefetch, telemetry]);
+  }, [catalog, prefetch]);
 
   // Subscribe to catalog updates and flatten visible models
   const snapshot = useSyncExternalStore(
@@ -150,9 +154,11 @@ export function ModelPickerProvider({
   const allModels = useMemo(() => {
     const arr: ModelConfigWithProvider[] = [];
     for (const entry of Object.values(snapshot)) {
-      for (const mp of entry.models) {
-        if (mp.model.visible === false) continue;
-        arr.push(mp);
+      for (const modelWithProvider of entry.models) {
+        if (modelWithProvider.model.visible === false) {
+          continue;
+        }
+        arr.push(modelWithProvider);
       }
     }
     return arr;
@@ -191,57 +197,53 @@ export function ModelPickerProvider({
     dispatch({ type: 'SET_ERROR', payload: error });
   }, []);
 
-  const contextValue = useMemo<ModelPickerContextValue>(
-    () => {
-      const base = {
-        state,
-        selectedModel,
-        allModels,
-        providerRegistry,
-        storage,
-        modelStorage: modelStorage ?? storage,
-        roles,
-        theme,
-        catalog,
-        selectModel,
-        selectRole,
-        setLoading,
-        setError,
-        onConfigureProvider,
-        onMissingConfiguration,
-        refreshModels: (providerId?: ProviderId) => {
-          if (providerId) {
-            void catalog.refresh(providerId);
-          } else {
-            void catalog.refreshAll();
-          }
-        },
-      } satisfies Omit<ModelPickerContextValue, 'telemetry'>;
-      if (telemetry !== undefined) {
-        (base as any).telemetry = telemetry;
-      }
-      return base as ModelPickerContextValue;
-    },
-    [
+  const contextValue = useMemo<ModelPickerContextValue>(() => {
+    const base = {
       state,
       selectedModel,
       allModels,
       providerRegistry,
       storage,
-      modelStorage,
+      modelStorage: modelStorage ?? storage,
       roles,
       theme,
       catalog,
-      telemetry,
       selectModel,
       selectRole,
       setLoading,
       setError,
       onConfigureProvider,
       onMissingConfiguration,
-      prefetch,
-    ]
-  );
+      refreshModels: (providerId?: ProviderId) => {
+        if (providerId) {
+          void catalog.refresh(providerId);
+        } else {
+          void catalog.refreshAll();
+        }
+      },
+    } satisfies Omit<ModelPickerContextValue, 'telemetry'>;
+    if (telemetry !== undefined) {
+      (base as ModelPickerContextValue).telemetry = telemetry;
+    }
+    return base as ModelPickerContextValue;
+  }, [
+    state,
+    selectedModel,
+    allModels,
+    providerRegistry,
+    storage,
+    modelStorage,
+    roles,
+    theme,
+    catalog,
+    telemetry,
+    selectModel,
+    selectRole,
+    setLoading,
+    setError,
+    onConfigureProvider,
+    onMissingConfiguration,
+  ]);
 
   return createElement(ModelPickerContext.Provider, { value: contextValue }, children);
 }

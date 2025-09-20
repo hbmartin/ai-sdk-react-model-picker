@@ -1,4 +1,9 @@
-import { type StorageAdapter, type ModelConfig, type ProviderId, assertRecordStringString } from '../types';
+import {
+  type StorageAdapter,
+  type ModelConfig,
+  type ProviderId,
+  assertRecordStringString,
+} from '../types';
 import { getTelemetry } from '../telemetry';
 
 // Storage key helper for persisted models per provider
@@ -14,7 +19,9 @@ interface PersistedModelsEnvelope {
 }
 
 function isPersistedEnvelope(value: unknown): value is PersistedModelsEnvelope {
-  if (typeof value !== 'object' || value === null) return false;
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
   const anyVal = value as any;
   return anyVal && anyVal['v'] === 1 && Array.isArray(anyVal['models']);
 }
@@ -26,12 +33,16 @@ export async function getPersistedModels(
 ): Promise<ModelConfig[]> {
   try {
     const raw = await modelStorage.get(providerModelsKey(providerId));
-    if (!raw) return [];
+    if (!raw) {
+      return [];
+    }
     // StorageAdapter returns a record; we store envelope fields in this record
-    if ((raw as Record<string, string>)['__json'] !== undefined) {
+    if (raw['__json'] !== undefined) {
       try {
-        const env = JSON.parse((raw as Record<string, string>)['__json']) as PersistedModelsEnvelope;
-        if (isPersistedEnvelope(env)) return env.models as ModelConfig[];
+        const env = JSON.parse(raw['__json']) as PersistedModelsEnvelope;
+        if (isPersistedEnvelope(env)) {
+          return env.models;
+        }
       } catch {
         // fall through
       }
@@ -39,15 +50,19 @@ export async function getPersistedModels(
     // Fallback: legacy layout where each key is an index
     assertRecordStringString(raw);
     const values = Object.values(raw);
-    if (values.length === 0) return [];
+    if (values.length === 0) {
+      return [];
+    }
     try {
-      const env = JSON.parse(values[0]!) as PersistedModelsEnvelope;
-      if (isPersistedEnvelope(env)) return env.models as ModelConfig[];
+      const env = JSON.parse(values[0]) as PersistedModelsEnvelope;
+      if (isPersistedEnvelope(env)) {
+        return env.models;
+      }
     } catch {
       // ignore
     }
-  } catch {
-    // ignore read errors; caller may surface via telemetry
+  } catch (error) {
+    getTelemetry()?.onStorageError?.('read', error as Error);
   }
   return [];
 }
