@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { idsFromKey, providerAndModelKey } from '../types';
 import type {
   ModelPickerTelemetry,
-  ProviderModelsStatus,
   StorageAdapter as _Storage,
   StorageAdapter,
   ModelId,
@@ -20,9 +19,84 @@ import {
   getRecentlyUsedModels,
   removeRecentlyUsedModels,
 } from '../storage/repository';
-import { flattenAndSortAvailableModels } from './catalogUtils';
+import { deriveAvailableModels } from './catalogUtils';
 
-// removed provider maps builder; catalog snapshot is used instead
+type CatalogState = {
+  catalog: ModelCatalog;
+  storage: StorageAdapter;
+  modelStorage: StorageAdapter;
+  providerRegistry: IProviderRegistry;
+};
+
+interface CatalogLifecycleOptions {
+  telemetry?: ModelPickerTelemetry;
+  modelStorage?: StorageAdapter;
+  catalog?: ModelCatalog;
+}
+
+function useCatalogLifecycle(
+  storage: StorageAdapter,
+  providerRegistry: IProviderRegistry,
+  options: CatalogLifecycleOptions
+) {
+  const catalogStateRef = useRef<CatalogState>();
+  const ownsCatalogRef = useRef(false);
+  const pendingInitializationRef = useRef(false);
+
+  const manageCatalog = options.catalog === undefined;
+  const modelStorageAdapter = options.modelStorage ?? storage;
+
+  if (manageCatalog) {
+    const current = catalogStateRef.current;
+    const needsNew =
+      current === undefined ||
+      current.storage !== storage ||
+      current.modelStorage !== modelStorageAdapter ||
+      current.providerRegistry !== providerRegistry;
+    if (needsNew) {
+      const newCatalog = new ModelCatalog(
+        providerRegistry,
+        storage,
+        modelStorageAdapter,
+        options.telemetry
+      );
+      catalogStateRef.current = {
+        catalog: newCatalog,
+        storage,
+        modelStorage: modelStorageAdapter,
+        providerRegistry,
+      };
+      pendingInitializationRef.current = true;
+    }
+    ownsCatalogRef.current = true;
+  } else {
+    catalogStateRef.current = undefined;
+    ownsCatalogRef.current = false;
+    pendingInitializationRef.current = false;
+  }
+
+  const catalog = manageCatalog
+    ? (catalogStateRef.current as CatalogState).catalog
+    : options.catalog!;
+
+  catalog.setTelemetry(options.telemetry);
+
+  const consumePendingInitialization = useCallback(() => {
+    const shouldReset = pendingInitializationRef.current;
+    pendingInitializationRef.current = false;
+    return shouldReset;
+  }, []);
+
+  return { catalog, ownsCatalog: ownsCatalogRef.current, consumePendingInitialization };
+}
+
+function useCatalogSnapshot(catalog: ModelCatalog) {
+  const subscribe = useCallback((onStoreChange: () => void) => catalog.subscribe(onStoreChange), [
+    catalog,
+  ]);
+  const getSnapshot = useCallback(() => catalog.getSnapshot(), [catalog]);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
 
 export function useModelsWithConfiguredProvider(
   storage: StorageAdapter,
@@ -44,49 +118,15 @@ export function useModelsWithConfiguredProvider(
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
-
-  const catalogStateRef = useRef<{
-    catalog: ModelCatalog;
-    storage: StorageAdapter;
-    modelStorage: StorageAdapter;
-    providerRegistry: IProviderRegistry;
-  }>();
-
-  const manageCatalog = options?.catalog === undefined;
-  const modelStorageAdapter = options?.modelStorage ?? storage;
-
-  let createdInternal = false;
-  if (manageCatalog) {
-    const current = catalogStateRef.current;
-    const needsNew =
-      current === undefined ||
-      current.storage !== storage ||
-      current.modelStorage !== modelStorageAdapter ||
-      current.providerRegistry !== providerRegistry;
-    if (needsNew) {
-      const newCatalog = new ModelCatalog(
-        providerRegistry,
-        storage,
-        modelStorageAdapter,
-        options?.telemetry
-      );
-      catalogStateRef.current = {
-        catalog: newCatalog,
-        storage,
-        modelStorage: modelStorageAdapter,
-        providerRegistry,
-      };
-      createdInternal = true;
+  const { catalog, ownsCatalog, consumePendingInitialization } = useCatalogLifecycle(
+    storage,
+    providerRegistry,
+    {
+      telemetry: options?.telemetry,
+      modelStorage: options?.modelStorage,
+      catalog: options?.catalog,
     }
-  } else {
-    catalogStateRef.current = undefined;
-  }
-
-  const catalog = manageCatalog
-    ? (catalogStateRef.current as { catalog: ModelCatalog }).catalog
-    : options.catalog!;
-
-  catalog.setTelemetry(options?.telemetry);
+  );
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -102,17 +142,8 @@ export function useModelsWithConfiguredProvider(
     setRecentlyUsedModels(nextRecentlyUsed);
 
     // Derive available after updates
-    const map = Object.fromEntries(
-      nextProviders.map((pid) => [
-        pid,
-        catalog.getSnapshot()[pid] ?? { models: [], status: 'idle' },
-      ])
-    ) as Record<ProviderId, ProviderModelsStatus>;
-    const flattened = flattenAndSortAvailableModels(map);
-    const known = new Set(nextRecentlyUsed.map((model) => model.key));
-    const nextAvailable = flattened
-      .filter((model) => !known.has(providerAndModelKey(model)))
-      .map((model) => ({ ...model, key: providerAndModelKey(model) }));
+    const nextSnapshot = catalog.getSnapshot();
+    const nextAvailable = deriveAvailableModels(nextSnapshot, nextProviders, nextRecentlyUsed);
 
     const modelToSelect = nextRecentlyUsed[0] ?? nextAvailable[0];
     setSelectedModel(modelToSelect);
@@ -161,9 +192,11 @@ export function useModelsWithConfiguredProvider(
   };
 
   useEffect(() => {
+    const shouldReset = consumePendingInitialization();
+
     async function loadRecentlyUsed() {
       try {
-        if (createdInternal) {
+        if (shouldReset) {
           setSelectedModel(undefined);
           setProvidersWithCreds([]);
           setRecentlyUsedModels([]);
@@ -176,7 +209,7 @@ export function useModelsWithConfiguredProvider(
         ]);
 
         // Initialize catalog (only if we own the instance)
-        if (createdInternal) {
+        if (shouldReset && ownsCatalog) {
           await catalog.initialize(options?.prefetch !== false);
         }
 
@@ -209,24 +242,23 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-  }, [storage, providerRegistry, catalog, createdInternal, options?.prefetch]);
+  }, [
+    storage,
+    providerRegistry,
+    catalog,
+    options?.prefetch,
+    consumePendingInitialization,
+    ownsCatalog,
+  ]);
 
   // Subscribe to catalog to react to refresh updates
-  const subscribe = (onStoreChange: () => void) => catalog.subscribe(onStoreChange);
-  const getSnapshot = () => catalog.getSnapshot();
-  const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const snap = useCatalogSnapshot(catalog);
 
   // Available models derived from current snapshot and providers with credentials
-  const modelsWithCredentials: KeyedModelConfigWithProvider[] = useMemo(() => {
-    const map = Object.fromEntries(
-      providersWithCreds.map((pid) => [pid, snap[pid] ?? { models: [], status: 'idle' }])
-    ) as Record<ProviderId, ProviderModelsStatus>;
-    const flattened = flattenAndSortAvailableModels(map);
-    const known = new Set(recentlyUsedModels.map((model) => model.key));
-    return flattened
-      .filter((model) => !known.has(providerAndModelKey(model)))
-      .map((model) => ({ ...model, key: providerAndModelKey(model) }));
-  }, [providersWithCreds, snap, recentlyUsedModels]);
+  const modelsWithCredentials: KeyedModelConfigWithProvider[] = useMemo(
+    () => deriveAvailableModels(snap, providersWithCreds, recentlyUsedModels),
+    [providersWithCreds, snap, recentlyUsedModels]
+  );
 
   return {
     recentlyUsedModels,
