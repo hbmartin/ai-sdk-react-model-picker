@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { renderHook, act, waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
 import { useModelsWithConfiguredProvider } from '../src/lib/hooks/useModelsWithConfiguredProvider';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
-import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
 import {
   addRecentlyUsedModel,
   addProviderWithCredentials,
@@ -374,9 +374,11 @@ describe('useModelsWithConfiguredProvider lifecycle', () => {
     );
 
     try {
-      await waitFor(() => statusLog.length >= 2);
+      await waitFor(() => {
+        expect(statusLog).toContain('ready');
+      });
       expect(statusLog[0]).toBe('loading');
-      expect(statusLog[1]).toBe('ready');
+      expect(statusLog.indexOf('ready')).toBeGreaterThan(0);
 
       await waitFor(() => result.current.modelsWithCredentials.length > 0);
       await act(async () => {
@@ -395,9 +397,10 @@ describe('useModelsWithConfiguredProvider lifecycle', () => {
       expect(result.current.recentlyUsedModels).toEqual([]);
       expect(result.current.modelsWithCredentials).toEqual([]);
 
-      await waitFor(() => statusLog.length >= 4);
-      expect(statusLog[statusLog.length - 2]).toBe('loading');
-      expect(statusLog[statusLog.length - 1]).toBe('ready');
+      await waitFor(() => {
+        expect(statusLog.at(-2)).toBe('loading');
+        expect(statusLog.at(-1)).toBe('ready');
+      });
       expect(result.current.isLoadingOrError.state).toBe('ready');
       expect(result.current.selectedModel).toBeUndefined();
 

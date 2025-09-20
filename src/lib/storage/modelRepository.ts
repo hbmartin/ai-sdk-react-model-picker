@@ -37,6 +37,7 @@ export async function getPersistedModels(
       return [];
     }
     // StorageAdapter returns a record; we store envelope fields in this record
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (raw['__json'] !== undefined) {
       try {
         const env = JSON.parse(raw['__json']) as PersistedModelsEnvelope;

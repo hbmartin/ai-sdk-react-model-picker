@@ -41,7 +41,7 @@ class FakeProvider extends (class {} as { new (): AIProvider }) {
   readonly models: ModelConfig[];
   private payload: ModelConfig[] = [];
   constructor(id: ProviderId, name: string, models: ModelConfig[]) {
-    // @ts-expect-error abstract
+    // @ts-expect-error abstract so this is ok
     super();
     this.metadata = { id, name, icon: DummyIcon } as ProviderMetadata;
     this.models = models;

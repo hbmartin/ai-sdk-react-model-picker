@@ -72,9 +72,7 @@ function useCatalogLifecycle(
     pendingInitializationRef.current = undefined;
   }
 
-  const catalog = manageCatalog
-    ? (catalogStateRef.current as CatalogState).catalog
-    : options.catalog!;
+  const catalog = manageCatalog ? catalogStateRef.current.catalog : options.catalog!;
 
   catalog.setTelemetry(options.telemetry);
 

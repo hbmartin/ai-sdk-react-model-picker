@@ -4,7 +4,7 @@ import {
   useReducer,
   useMemo,
   useCallback,
-\  type ReactNode,
+  type ReactNode,
   createElement,
   useEffect,
 } from 'react';
@@ -16,11 +16,10 @@ import type {
   Role,
   ThemeConfig,
   ProviderId,
-  ModelPickerTelemetry,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
-import { setGlobalTelemetry } from '../telemetry';
 import { useCatalogSnapshot } from '../hooks/useCatalogSnapshot';
+import { setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
 
 // State interface
 interface ModelPickerState {

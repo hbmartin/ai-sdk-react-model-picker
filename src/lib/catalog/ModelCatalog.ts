@@ -227,8 +227,8 @@ export class ModelCatalog {
     const signature = this.providerRegistry
       .getAllProviders()
       .map((provider) => provider.metadata.id)
-      // eslint-disable-next-line code-complete/enforce-meaningful-names, sonarjs/no-nested-conditional
-      .toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      // eslint-disable-next-line sonarjs/no-alphabetical-sort
+      .toSorted()
       .join('|');
     if (signature !== this.knownProvidersSignature) {
       scheduleMicrotaskSafe(() => {
@@ -347,7 +347,7 @@ export class ModelCatalog {
 
     this.byProvider.set(providerId, state);
     await this.persistNonBuiltin(providerId);
-    this.notify(false);
+    this.notify();
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
