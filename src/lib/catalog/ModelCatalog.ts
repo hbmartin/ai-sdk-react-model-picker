@@ -6,17 +6,17 @@ import type {
   ModelConfig,
   ModelConfigWithProvider,
   ProviderModelsStatus,
-  ModelPickerTelemetry,
   StorageAdapter,
 } from '../types';
-import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
-
-interface ProviderState {
-  status: ProviderModelsStatus['status'];
-  error?: string;
-  models: Map<ModelId, ModelConfig>;
-}
+import type { ModelPickerTelemetry } from '../telemetry';
+import {
+  CatalogStore,
+  type CatalogProviderState,
+  type CatalogState,
+  type CatalogSnapshot,
+} from './CatalogStore';
+import { CatalogPersistence } from './CatalogPersistence';
 
 function now() {
   return Date.now();
@@ -48,122 +48,253 @@ function scheduleMicrotaskSafe(func: () => void) {
     .catch(() => undefined);
 }
 
+function modelsToRecord(models: ModelConfig[]): Record<ModelId, ModelConfig> {
+  const out = {} as Record<ModelId, ModelConfig>;
+  for (const model of models) {
+    out[model.id] = model;
+  }
+  return out;
+}
+
+function setModel(
+  record: Record<ModelId, ModelConfig>,
+  model: ModelConfig
+): Record<ModelId, ModelConfig> {
+  if (record[model.id] === model) {
+    return record;
+  }
+  return {
+    ...record,
+    [model.id]: model,
+  };
+}
+
+function removeModel(
+  record: Record<ModelId, ModelConfig>,
+  modelId: ModelId
+): Record<ModelId, ModelConfig> {
+  if (record[modelId] === undefined) {
+    return record;
+  }
+  const next = { ...record } as Record<ModelId, ModelConfig>;
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete next[modelId];
+  return next;
+}
+
 export class ModelCatalog {
-  private readonly byProvider = new Map<ProviderId, ProviderState>();
-  private readonly listeners = new Set<() => void>();
-  private readonly inFlight = new Set<ProviderId>();
-  private readonly hydratedProviders = new Set<ProviderId>();
+  private readonly store: CatalogStore;
+
+  private readonly persistence: CatalogPersistence;
+
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
-  private cachedSnapshot: Record<ProviderId, ProviderModelsStatus> = {};
-  private knownProvidersSignature = '';
+
+  private readonly pendingRefreshes = new Map<ProviderId, Promise<void>>();
+
+  private knownProvidersSignature: string;
+
   private telemetry?: ModelPickerTelemetry | undefined;
-  private notificationDepth = 0;
-  private isSnapshotDirty = false;
-  private notificationScheduled = false;
+
+  private signatureSyncScheduled = false;
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
     private readonly storage: StorageAdapter,
-    private readonly modelStorage: StorageAdapter,
+    modelStorage: StorageAdapter,
     telemetry?: ModelPickerTelemetry
   ) {
+    this.persistence = new CatalogPersistence(modelStorage);
     this.telemetry = telemetry;
-    this.seedBuiltin();
+    const initialState = this.buildInitialState();
+    this.store = new CatalogStore(initialState, this.createSnapshotProjector());
+    this.knownProvidersSignature = this.computeProviderSignature();
   }
 
-  private notify(immediate = true, force = false) {
-    this.isSnapshotDirty = true;
-    if (this.notificationDepth > 0 && !force) {
-      return;
-    }
+  subscribe(listener: () => void): () => void {
+    return this.store.subscribe(listener);
+  }
 
-    if (immediate || force) {
-      this.flushNotifications();
-      return;
+  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
+    const signature = this.computeProviderSignature();
+    if (signature !== this.knownProvidersSignature) {
+      this.scheduleProviderSync(signature);
     }
+    return this.store.getSnapshot();
+  }
 
-    if (!this.notificationScheduled) {
-      this.notificationScheduled = true;
-      scheduleMicrotaskSafe(() => {
-        this.notificationScheduled = false;
-        if (this.notificationDepth === 0) {
-          this.flushNotifications();
+  setTelemetry(telemetry?: ModelPickerTelemetry) {
+    this.telemetry = telemetry;
+  }
+
+  private createSnapshotProjector() {
+    return (state: CatalogState): CatalogSnapshot => {
+      const snapshot: Record<ProviderId, ProviderModelsStatus> = {};
+      for (const provider of this.providerRegistry.getAllProviders()) {
+        const providerId = provider.metadata.id;
+        const providerState = state.providers[providerId] ?? this.createStateFromProvider(provider);
+        const models: ModelConfigWithProvider[] = Object.values(providerState.models).map((model) => ({
+          model,
+          provider: provider.metadata,
+        }));
+        const base: ProviderModelsStatus = {
+          models,
+          status: providerState.status,
+        };
+        if (providerState.error !== undefined) {
+          base.error = providerState.error;
         }
-      });
-    }
+        snapshot[providerId] = base;
+      }
+      return snapshot;
+    };
   }
 
-  private flushNotifications() {
-    this.notificationScheduled = false;
-    if (!this.isSnapshotDirty) {
+  private buildInitialState(): CatalogState {
+    const providers = this.providerRegistry.getAllProviders();
+    const stateProviders: Record<ProviderId, CatalogProviderState> = {};
+    for (const provider of providers) {
+      stateProviders[provider.metadata.id] = this.createStateFromProvider(provider);
+    }
+    return { providers: stateProviders };
+  }
+
+  private createStateFromProvider(provider: { models: ModelConfig[] }): CatalogProviderState {
+    const builtin = provider.models.map(normalizeBuiltin);
+    return {
+      status: 'idle',
+      models: modelsToRecord(builtin),
+      hydrated: false,
+    };
+  }
+
+  private computeProviderSignature(): string {
+    return this.providerRegistry
+      .getAllProviders()
+      .map((provider) => provider.metadata.id)
+      // eslint-disable-next-line sonarjs/no-alphabetical-sort
+      .toSorted()
+      .join('|');
+  }
+
+  private scheduleProviderSync(signature: string): void {
+    if (this.signatureSyncScheduled) {
       return;
     }
-    this.isSnapshotDirty = false;
-    this.recomputeSnapshot();
-    this.emit();
-  }
-
-  private async runInNotificationBatch<T>(fn: () => Promise<T> | T): Promise<T> {
-    this.notificationDepth += 1;
-    try {
-      return await fn();
-    } finally {
-      this.notificationDepth -= 1;
-      if (this.notificationDepth === 0) {
-        this.flushNotifications();
-      }
-    }
-  }
-
-  private seedBuiltin() {
-    for (const provider of this.providerRegistry.getAllProviders()) {
-      const map = new Map<ModelId, ModelConfig>();
-      for (const model of provider.models) {
-        const normalizedModel = normalizeBuiltin(model);
-        map.set(normalizedModel.id, normalizedModel);
-      }
-      this.byProvider.set(provider.metadata.id, { status: 'idle', models: map });
-    }
-    this.notify();
-  }
-
-  private ensureProviderState(providerId: ProviderId): ProviderState {
-    let state = this.byProvider.get(providerId);
-    if (state !== undefined) {
-      return state;
-    }
-
-    const providerExists = this.providerRegistry.hasProvider(providerId);
-    if (!providerExists) {
-      state = { status: 'idle', models: new Map<ModelId, ModelConfig>() };
-      this.byProvider.set(providerId, state);
-      return state;
-    }
-
-    const provider = this.providerRegistry.getProvider(providerId);
-    const map = new Map<ModelId, ModelConfig>();
-    for (const model of provider.models) {
-      const normalizedModel = normalizeBuiltin(model);
-      map.set(normalizedModel.id, normalizedModel);
-    }
-    state = { status: 'idle', models: map };
-    this.byProvider.set(providerId, state);
-
-    if (!this.hydratedProviders.has(providerId) && !this.pendingHydrations.has(providerId)) {
-      this.ensurePersistedLoaded(providerId).catch(() => undefined);
-    }
-
+    this.signatureSyncScheduled = true;
     scheduleMicrotaskSafe(() => {
-      this.notify();
+      this.applyProviderSync(signature);
+    });
+  }
+
+  private applyProviderSync(signature: string): void {
+    this.signatureSyncScheduled = false;
+    const providers = this.providerRegistry.getAllProviders();
+    let added = false;
+    this.store.updateState((state) => {
+      const nextProviders = { ...state.providers } as Record<ProviderId, CatalogProviderState>;
+      for (const provider of providers) {
+        const providerId = provider.metadata.id;
+        if (nextProviders[providerId] === undefined) {
+          nextProviders[providerId] = this.createStateFromProvider(provider);
+          added = true;
+        }
+      }
+      if (!added) {
+        return state;
+      }
+      return {
+        ...state,
+        providers: nextProviders,
+      };
+    });
+    this.knownProvidersSignature = signature;
+    if (!added) {
+      this.store.recomputeSnapshot();
+    }
+  }
+
+  private ensureProviderState(providerId: ProviderId): CatalogProviderState {
+    const current = this.store.getState().providers[providerId];
+    if (current !== undefined) {
+      return current;
+    }
+
+    let state = this.createStateFromProvider({ models: [] });
+    if (this.providerRegistry.hasProvider(providerId)) {
+      const provider = this.providerRegistry.getProvider(providerId);
+      state = this.createStateFromProvider(provider);
+    }
+
+    this.store.updateState((catalogState) => {
+      if (catalogState.providers[providerId] !== undefined) {
+        return catalogState;
+      }
+      return {
+        ...catalogState,
+        providers: {
+          ...catalogState.providers,
+          [providerId]: state,
+        },
+      };
     });
 
     return state;
   }
 
+  private updateProvider(
+    providerId: ProviderId,
+    updater: (state: CatalogProviderState) => CatalogProviderState
+  ): void {
+    this.store.updateState((state) => {
+      const current = state.providers[providerId];
+      if (current === undefined) {
+        return state;
+      }
+      const updated = updater(current);
+      if (Object.is(updated, current)) {
+        return state;
+      }
+      return {
+        ...state,
+        providers: {
+          ...state.providers,
+          [providerId]: updated,
+        },
+      };
+    });
+  }
+
+  private setPending(
+    providerId: ProviderId,
+    key: 'hydrate' | 'refresh',
+    value: boolean
+  ): void {
+    this.updateProvider(providerId, (state) => {
+      const currentPending = state.pending ?? {};
+      const nextPending = { ...currentPending };
+      if (value) {
+        nextPending[key] = true;
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete nextPending[key];
+      }
+      const pending = Object.keys(nextPending).length > 0 ? nextPending : undefined;
+      if (pending === state.pending) {
+        return state;
+      }
+      return {
+        ...state,
+        pending,
+      };
+    });
+  }
+
   private async ensurePersistedLoaded(providerId: ProviderId): Promise<void> {
-    if (this.hydratedProviders.has(providerId)) {
+    const state = this.ensureProviderState(providerId);
+    if (state.hydrated) {
       return;
     }
+
     const existing = this.pendingHydrations.get(providerId);
     if (existing !== undefined) {
       await existing;
@@ -171,13 +302,23 @@ export class ModelCatalog {
     }
 
     const run = (async () => {
+      this.setPending(providerId, 'hydrate', true);
       try {
-        const persisted = await getPersistedModels(this.modelStorage, providerId);
+        const persisted = await this.persistence.load(providerId);
         if (persisted.length > 0) {
           this.mergePersisted(providerId, persisted);
         }
       } finally {
-        this.hydratedProviders.add(providerId);
+        this.setPending(providerId, 'hydrate', false);
+        this.updateProvider(providerId, (prev) => {
+          if (prev.hydrated) {
+            return prev;
+          }
+          return {
+            ...prev,
+            hydrated: true,
+          };
+        });
       }
     })();
 
@@ -188,92 +329,30 @@ export class ModelCatalog {
     await wrapped;
   }
 
-  // Load persisted models and optionally prefetch
-  // eslint-disable-next-line code-complete/no-boolean-params
   async initialize(prefetch: boolean = true): Promise<void> {
-    const allProviderIds = this.providerRegistry
+    const providerIds = this.providerRegistry
       .getAllProviders()
       .map((provider) => provider.metadata.id);
-    // Load persisted models for ALL providers so offline state still shows known models
-    await this.runInNotificationBatch(async () => {
-      await Promise.all(
-        allProviderIds.map(async (pid: ProviderId) => {
-          this.ensureProviderState(pid);
-          await this.ensurePersistedLoaded(pid);
-        })
-      );
-    });
+
+    await Promise.all(
+      providerIds.map(async (providerId) => {
+        this.ensureProviderState(providerId);
+        await this.ensurePersistedLoaded(providerId);
+      })
+    );
 
     if (prefetch) {
       const providerIdsWithCreds = await getProvidersWithCredentials(this.storage);
-      await this.runInNotificationBatch(async () => {
-        await Promise.all(
-          providerIdsWithCreds.map(async (pid: ProviderId) => {
-            await this.refresh(pid).catch(() => undefined);
-          })
-        );
-      });
+      await Promise.all(
+        providerIdsWithCreds.map(async (providerId: ProviderId) => {
+          try {
+            await this.refresh(providerId);
+          } catch {
+            // ignore individual refresh failures during bulk prefetch
+          }
+        })
+      );
     }
-  }
-
-  subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
-
-  getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
-    const signature = this.providerRegistry
-      .getAllProviders()
-      .map((provider) => provider.metadata.id)
-      // eslint-disable-next-line sonarjs/no-alphabetical-sort
-      .toSorted()
-      .join('|');
-    if (signature !== this.knownProvidersSignature) {
-      scheduleMicrotaskSafe(() => {
-        this.notify();
-      });
-    }
-    return this.cachedSnapshot;
-  }
-
-  setTelemetry(telemetry?: ModelPickerTelemetry) {
-    this.telemetry = telemetry;
-  }
-
-  private emit() {
-    for (const listener of this.listeners) {
-      listener();
-    }
-  }
-
-  private recomputeSnapshot() {
-    const providers = this.providerRegistry.getAllProviders();
-    const signature = providers
-      .map((provider) => provider.metadata.id)
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-      .join('|');
-    const out: Record<ProviderId, ProviderModelsStatus> = {};
-    for (const provider of providers) {
-      const pid = provider.metadata.id;
-      const state = this.ensureProviderState(pid);
-      const models = state?.models ?? new Map<ModelId, ModelConfig>();
-      const withProvider: ModelConfigWithProvider[] = [...models.values()].map((model) => ({
-        model,
-        provider: provider.metadata,
-      }));
-      const base: ProviderModelsStatus = {
-        models: withProvider,
-        status: state?.status ?? 'idle',
-      } as ProviderModelsStatus;
-      if (state?.error !== undefined) {
-        base.error = state.error;
-      }
-      out[pid] = base;
-    }
-    this.cachedSnapshot = out;
-    this.knownProvidersSignature = signature;
   }
 
   private setStatus(
@@ -281,86 +360,124 @@ export class ModelCatalog {
     status: ProviderModelsStatus['status'],
     error?: string
   ) {
-    const st = this.ensureProviderState(providerId);
-    st.status = status;
-    if (error === undefined) {
-      delete st.error;
-    } else {
-      st.error = error;
-    }
-    this.byProvider.set(providerId, st);
-    this.notify(true, true);
+    this.ensureProviderState(providerId);
+    this.updateProvider(providerId, (state) => {
+      if (state.status === status && state.error === error) {
+        return state;
+      }
+      return {
+        ...state,
+        status,
+        error,
+      };
+    });
   }
 
   private async persistNonBuiltin(providerId: ProviderId) {
-    const state = this.byProvider.get(providerId);
+    const state = this.store.getState().providers[providerId];
     if (!state) {
       return;
     }
     const keep: ModelConfig[] = [];
-    for (const model of state.models.values()) {
+    for (const model of Object.values(state.models)) {
       if (model.origin === 'api' || model.origin === 'user') {
         keep.push(model);
       }
     }
-    await setPersistedModels(this.modelStorage, providerId, keep);
+    await this.persistence.save(providerId, keep);
   }
 
   private mergePersisted(providerId: ProviderId, models: ModelConfig[]) {
-    const state = this.ensureProviderState(providerId);
-    for (const m of models) {
-      const nm = normalizePersisted(m);
-      const existing = state.models.get(nm.id);
-      if (existing?.discoveredAt !== undefined && nm.discoveredAt === undefined) {
-        nm.discoveredAt = existing.discoveredAt;
+    const normalized = models.map(normalizePersisted);
+    this.updateProvider(providerId, (state) => {
+      let changed = !state.hydrated;
+      let nextModels = state.models;
+      for (const model of normalized) {
+        const existing = nextModels[model.id];
+        if (existing?.discoveredAt !== undefined && model.discoveredAt === undefined) {
+          model.discoveredAt = existing.discoveredAt;
+        }
+        const updated = setModel(nextModels, model);
+        if (updated !== nextModels) {
+          changed = true;
+          nextModels = updated;
+        }
       }
-      state.models.set(nm.id, nm);
-    }
-    this.byProvider.set(providerId, state);
-    this.notify();
+      if (!changed) {
+        return {
+          ...state,
+          hydrated: true,
+        };
+      }
+      return {
+        ...state,
+        models: nextModels,
+        hydrated: true,
+      };
+    });
   }
 
   private async mergeApi(providerId: ProviderId, fetched: ModelConfig[]) {
-    const state = this.ensureProviderState(providerId);
-    const fetchedIds = new Set<ModelId>();
     const timestamp = now();
-
-    for (const raw of fetched) {
-      const discoveredAt = state.models.get(raw.id)?.discoveredAt;
-      const modelConfig: ModelConfig = {
-        ...raw,
-        origin: 'api',
-        visible: raw.visible ?? true,
-        discoveredAt: discoveredAt ?? timestamp,
-        updatedAt: timestamp,
-      };
-      fetchedIds.add(modelConfig.id);
-      state.models.set(modelConfig.id, modelConfig);
-    }
-
-    // Hide stale API entries (keep in storage but not visible)
-    for (const [id, modelConfig] of state.models.entries()) {
-      if (modelConfig.origin === 'api' && !fetchedIds.has(id)) {
-        state.models.set(id, { ...modelConfig, visible: false, updatedAt: timestamp });
+    const normalized = fetched.map((raw) => ({
+      ...raw,
+      origin: 'api' as const,
+      visible: raw.visible ?? true,
+    }));
+    this.updateProvider(providerId, (state) => {
+      const fetchedIds = new Set<ModelId>();
+      let nextModels = state.models;
+      for (const raw of normalized) {
+        const previous = nextModels[raw.id];
+        const discoveredAt = previous?.discoveredAt ?? timestamp;
+        const modelConfig: ModelConfig = {
+          ...raw,
+          discoveredAt,
+          updatedAt: timestamp,
+        };
+        const updated = setModel(nextModels, modelConfig);
+        if (updated !== nextModels) {
+          nextModels = updated;
+        }
+        fetchedIds.add(modelConfig.id);
       }
-    }
 
-    this.byProvider.set(providerId, state);
+      for (const [rawId, existing] of Object.entries(nextModels) as Array<[ModelId, ModelConfig]>) {
+        if (existing.origin === 'api' && !fetchedIds.has(rawId)) {
+          const updated: ModelConfig = {
+            ...existing,
+            visible: false,
+            updatedAt: timestamp,
+          };
+          const replaced = setModel(nextModels, updated);
+          if (replaced !== nextModels) {
+            nextModels = replaced;
+          }
+        }
+      }
+
+      return {
+        ...state,
+        models: nextModels,
+        lastUpdatedAt: timestamp,
+      };
+    });
     await this.persistNonBuiltin(providerId);
-    this.notify();
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
-    if (this.inFlight.has(providerId)) {
+    if (this.pendingRefreshes.has(providerId)) {
       return;
     }
+
     if (!this.providerRegistry.hasProvider(providerId)) {
       return;
     }
-    const provider = this.providerRegistry.getProvider(providerId);
+
     this.ensureProviderState(providerId);
-    this.inFlight.add(providerId);
-    try {
+    const provider = this.providerRegistry.getProvider(providerId);
+
+    const run = (async () => {
       const config = await getProviderConfiguration(this.storage, providerId);
       const valid = config ? provider.configuration.validateConfig(config).ok : false;
       if (!valid && !opts?.force) {
@@ -369,36 +486,44 @@ export class ModelCatalog {
       }
 
       this.setStatus(providerId, 'loading');
+      this.setPending(providerId, 'refresh', true);
       this.telemetry?.onFetchStart?.(providerId);
-      const models = await provider.getModels();
-      await this.mergeApi(providerId, models);
-      this.setStatus(providerId, 'ready');
-      this.telemetry?.onFetchSuccess?.(providerId, models.length);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      this.setStatus(providerId, 'error', err.message);
-      this.telemetry?.onFetchError?.(providerId, err);
-    } finally {
-      this.inFlight.delete(providerId);
-    }
+      try {
+        const models = await provider.getModels();
+        await this.mergeApi(providerId, models);
+        this.setStatus(providerId, 'ready');
+        this.telemetry?.onFetchSuccess?.(providerId, models.length);
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        this.setStatus(providerId, 'error', err.message);
+        this.telemetry?.onFetchError?.(providerId, err);
+      } finally {
+        this.setPending(providerId, 'refresh', false);
+      }
+    })();
+
+    const wrapped = run.finally(() => {
+      this.pendingRefreshes.delete(providerId);
+    });
+    this.pendingRefreshes.set(providerId, wrapped);
+    await wrapped;
   }
 
   async refreshAll(): Promise<void> {
     const providerIds = (await getProvidersWithCredentials(this.storage)).filter((pid) =>
       this.providerRegistry.hasProvider(pid)
     );
-    await this.runInNotificationBatch(async () => {
-      await Promise.all(providerIds.map((pid) => this.refresh(pid)));
-    });
+    await Promise.all(providerIds.map((pid) => this.refresh(pid)));
   }
 
   async addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
-    const state = this.ensureProviderState(providerId);
+    this.ensureProviderState(providerId);
 
-    if (state.models.has(modelId)) {
-      // exact duplicate not allowed
+    const current = this.store.getState().providers[providerId];
+    if (current?.models[modelId] !== undefined) {
       return;
     }
+
     const timestamp = now();
     const model: ModelConfig = {
       id: modelId,
@@ -408,24 +533,33 @@ export class ModelCatalog {
       discoveredAt: timestamp,
       updatedAt: timestamp,
     };
-    state.models.set(modelId, model);
-    this.byProvider.set(providerId, state);
+
+    this.updateProvider(providerId, (state) => ({
+      ...state,
+      models: setModel(state.models, model),
+      lastUpdatedAt: timestamp,
+    }));
+
     await this.persistNonBuiltin(providerId);
     this.telemetry?.onUserModelAdded?.(providerId, modelId);
-    this.notify();
   }
 
   async removeUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
-    const state = this.byProvider.get(providerId);
+    const state = this.store.getState().providers[providerId];
     if (!state) {
       return;
     }
-    const existing = state.models.get(modelId);
+    const existing = state.models[modelId];
     if (existing?.origin !== 'user') {
       return;
-    } // only allow explicit removal of user entries
-    state.models.delete(modelId);
+    }
+
+    this.updateProvider(providerId, (prev) => ({
+      ...prev,
+      models: removeModel(prev.models, modelId),
+      lastUpdatedAt: now(),
+    }));
+
     await this.persistNonBuiltin(providerId);
-    this.notify();
   }
 }

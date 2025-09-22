@@ -296,9 +296,7 @@ describe('ModelCatalog merge and persistence', () => {
     registry.register(lateProvider);
 
     catalog.getSnapshot();
-    await Promise.resolve();
-    await Promise.resolve();
-
+    await flushMicrotasks();
     const snapshot = catalog.getSnapshot();
     expect(snapshot[newPid]).toBeDefined();
     expect(snapshot[newPid].models.some((m) => m.model.id === createModelId('late-default'))).toBe(
@@ -306,7 +304,37 @@ describe('ModelCatalog merge and persistence', () => {
     );
   });
 
-  it('processes rapid provider registrations without starving pending microtasks', async () => {
+  it('updates provider signature after recomputing snapshot without duplicate notifications', async () => {
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+
+    const newPid = createProviderId('signature-check');
+    const lateProvider = new FakeProvider(newPid, 'Signature Check', [
+      builtin('sig-builtin', 'Signature Builtin'),
+    ]);
+    registry.register(lateProvider);
+
+    const notifications: number[] = [];
+    const unsubscribe = catalog.subscribe(() => {
+      notifications.push(Date.now());
+    });
+
+    catalog.getSnapshot();
+    await flushMicrotasks();
+    expect(notifications.length).toBe(1);
+
+    notifications.length = 0;
+    catalog.getSnapshot();
+    await flushMicrotasks();
+    expect(notifications.length).toBe(0);
+
+    unsubscribe();
+
+    const snapshot = catalog.getSnapshot();
+    expect(snapshot[newPid]).toBeDefined();
+  });
+
+  it('processes rapid provider registrations without starving pending updates', async () => {
     const catalog = new ModelCatalog(registry, storage, modelStorage);
     await catalog.initialize(false);
 
@@ -328,12 +356,12 @@ describe('ModelCatalog merge and persistence', () => {
       catalog.getSnapshot();
     }
 
-    await flushMicrotasks(6);
+    await flushMicrotasks(additions.length + 1);
 
     const finalSnapshot = catalog.getSnapshot();
     const expectedKeys = [...initialKeys, ...additions.map((pid) => pid)].sort();
     expect(Object.keys(finalSnapshot).sort()).toEqual(expectedKeys);
-    expect(emissions.length).toBeGreaterThanOrEqual(additions.length);
+    expect(emissions.length).toBeGreaterThanOrEqual(1);
     expect(emissions.at(-1)).toBe(expectedKeys.join('|'));
 
     unsubscribe();

@@ -10,6 +10,7 @@ export interface CatalogProviderState {
   error?: string;
   models: Record<ModelId, ModelConfig>;
   pending?: CatalogProviderPendingState;
+  hydrated?: boolean;
   lastUpdatedAt?: number;
 }
 
@@ -89,4 +90,3 @@ export class CatalogStore {
     }
   }
 }
-
