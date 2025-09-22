@@ -122,6 +122,18 @@ export class ModelCatalog {
     return this.store.getSnapshot();
   }
 
+  getProviderState(providerId: ProviderId): CatalogProviderState | undefined {
+    const state = this.store.getState().providers[providerId];
+    if (state === undefined) {
+      return undefined;
+    }
+    return {
+      ...state,
+      models: { ...state.models },
+      pending: state.pending ? { ...state.pending } : undefined,
+    };
+  }
+
   setTelemetry(telemetry?: ModelPickerTelemetry) {
     this.telemetry = telemetry;
   }

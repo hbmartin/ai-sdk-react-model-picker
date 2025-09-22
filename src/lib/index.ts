@@ -24,6 +24,7 @@ export { useVSCodeContext, getEnvironmentClasses, useUniversalTheme } from './ho
 export type { VSCodeContext, UniversalTheme } from './hooks';
 export { useProviderModels } from './hooks/useProviderModels';
 export { useModelsByProvider } from './hooks/useModelsByProvider';
+export { useCatalogController } from './hooks/useCatalogController';
 export { flattenAndSortAvailableModels } from './hooks/catalogUtils';
 
 // Providers
@@ -68,6 +69,7 @@ export type {
   ValidationResult,
   ProviderAndModelKey,
 } from './types';
+export type { CatalogProviderState } from './catalog/CatalogStore';
 
 // Utils
 export { getSdkLanguageModel } from './utils';

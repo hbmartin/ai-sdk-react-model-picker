@@ -285,6 +285,31 @@ describe('ModelCatalog merge and persistence', () => {
     );
   });
 
+  it('exposes refresh pending state while fetch is in flight', async () => {
+    await addProviderWithCredentials(storage, pid);
+    await setProviderConfiguration(storage, pid, { token: 'x' });
+
+    const catalog = new ModelCatalog(registry, storage, modelStorage);
+    await catalog.initialize(false);
+
+    const deferred = createDeferred<ModelConfig[]>();
+    const getModelsSpy = vi.fn(() => deferred.promise);
+    (provider as any).getModels = getModelsSpy;
+
+    const refreshPromise = catalog.refresh(pid);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const pendingState = catalog.getProviderState(pid);
+    expect(pendingState?.pending?.refresh).toBe(true);
+
+    deferred.resolve([apiModel('new-model')]);
+    await refreshPromise;
+
+    const finalState = catalog.getProviderState(pid);
+    expect(finalState?.pending?.refresh).toBeUndefined();
+  });
+
   it('adds newly registered providers to the snapshot with builtin models', async () => {
     const catalog = new ModelCatalog(registry, storage, modelStorage);
     await catalog.initialize(false);
