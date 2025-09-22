@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { deriveAvailableModels, flattenAndSortAvailableModels } from '../src/lib/hooks/catalogUtils';
+import {
+  deriveAvailableModels,
+  flattenAndSortAvailableModels,
+} from '../src/lib/hooks/catalogUtils';
 import {
   createProviderId,
   createModelId,

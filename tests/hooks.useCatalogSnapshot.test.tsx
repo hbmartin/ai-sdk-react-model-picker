@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { useCatalogSnapshot } from '../src/lib/hooks/useCatalogSnapshot';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
+import { useCatalogSnapshot } from '../src/lib/hooks/useCatalogSnapshot';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
 import {

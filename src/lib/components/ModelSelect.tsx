@@ -1,11 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  type ModelPickerTelemetry,
-  type ModelSelectProps,
-  type ProviderAndModelKey,
-  type StorageAdapter,
-  idsFromKey,
-} from '../types';
+import { type ModelSelectProps, type ProviderAndModelKey, idsFromKey } from '../types';
 import { useOptionalModelPicker } from '../context';
 import {
   useModelsWithConfiguredProvider,
@@ -16,7 +10,6 @@ import { AddModelForm } from './AddModelForm';
 import { ModelOption } from './ModelOption';
 import { Toggle } from './Toggle';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/Listbox';
-import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 const ADD_MODEL_ID = '__add_model__' as const;
 const ADD_MODEL_LABEL = 'Add Model Provider' as const;

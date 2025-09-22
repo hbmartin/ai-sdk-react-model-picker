@@ -87,7 +87,6 @@ function createDeferred<T>() {
 
 async function flushMicrotasks(iterations = 3) {
   for (let i = 0; i < iterations; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
     await Promise.resolve();
   }
 }
@@ -291,7 +290,9 @@ describe('ModelCatalog merge and persistence', () => {
     await catalog.initialize(false);
 
     const newPid = createProviderId('late');
-    const lateProvider = new FakeProvider(newPid, 'Late', [builtin('late-default', 'Late Default')]);
+    const lateProvider = new FakeProvider(newPid, 'Late', [
+      builtin('late-default', 'Late Default'),
+    ]);
     registry.register(lateProvider);
 
     catalog.getSnapshot();
