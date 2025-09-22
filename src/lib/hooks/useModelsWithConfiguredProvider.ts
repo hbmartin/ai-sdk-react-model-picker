@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { idsFromKey, providerAndModelKey } from '../types';
 import type {
-  ModelPickerTelemetry,
   StorageAdapter,
   ModelId,
   IProviderRegistry,
@@ -20,70 +19,8 @@ import {
 } from '../storage/repository';
 import { deriveAvailableModels } from './catalogUtils';
 import { useCatalogSnapshot } from './useCatalogSnapshot';
-
-interface CatalogState {
-  catalog: ModelCatalog;
-  storage: StorageAdapter;
-  modelStorage: StorageAdapter;
-  providerRegistry: IProviderRegistry;
-}
-
-interface CatalogLifecycleOptions {
-  telemetry?: ModelPickerTelemetry;
-  modelStorage?: StorageAdapter;
-  catalog?: ModelCatalog;
-}
-
-function useCatalogLifecycle(
-  storage: StorageAdapter,
-  providerRegistry: IProviderRegistry,
-  options: CatalogLifecycleOptions
-) {
-  const catalogStateRef = useRef<CatalogState>();
-  const pendingInitializationRef = useRef<'internal' | undefined>(undefined);
-
-  const manageCatalog = options.catalog === undefined;
-  const modelStorageAdapter = options.modelStorage ?? storage;
-
-  if (manageCatalog) {
-    const current = catalogStateRef.current;
-    const needsNew =
-      current === undefined ||
-      current.storage !== storage ||
-      current.modelStorage !== modelStorageAdapter ||
-      current.providerRegistry !== providerRegistry;
-    if (needsNew) {
-      const newCatalog = new ModelCatalog(
-        providerRegistry,
-        storage,
-        modelStorageAdapter,
-        options.telemetry
-      );
-      catalogStateRef.current = {
-        catalog: newCatalog,
-        storage,
-        modelStorage: modelStorageAdapter,
-        providerRegistry,
-      };
-      pendingInitializationRef.current = 'internal';
-    }
-  } else {
-    catalogStateRef.current = undefined;
-    pendingInitializationRef.current = undefined;
-  }
-
-  const catalog = manageCatalog ? catalogStateRef.current.catalog : options.catalog!;
-
-  catalog.setTelemetry(options.telemetry);
-
-  const consumePendingInitialization = useCallback(() => {
-    const token = pendingInitializationRef.current;
-    pendingInitializationRef.current = undefined;
-    return token === 'internal';
-  }, []);
-
-  return { catalog, consumePendingInitialization };
-}
+import type { ModelPickerTelemetry } from '../telemetry';
+import { useCatalogController } from './useCatalogController';
 
 export interface UseModelsWithConfiguredProviderOptions {
   telemetry?: ModelPickerTelemetry;
@@ -106,11 +43,15 @@ export function useModelsWithConfiguredProvider(
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
-  const { catalog, consumePendingInitialization } = useCatalogLifecycle(storage, providerRegistry, {
-    telemetry: options?.telemetry,
-    modelStorage: options?.modelStorage,
-    catalog: options?.catalog,
-  });
+  const { catalog, consumePendingInitialization } = useCatalogController(
+    storage,
+    providerRegistry,
+    {
+      telemetry: options?.telemetry,
+      modelStorage: options?.modelStorage,
+      catalog: options?.catalog,
+    }
+  );
 
   const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
@@ -192,7 +133,7 @@ export function useModelsWithConfiguredProvider(
 
         // Initialize catalog (only if we own the instance)
         if (shouldReset) {
-          await catalog.initialize(options?.prefetch !== false);
+          await catalog?.initialize(options?.prefetch !== false);
         }
 
         // Track providers with credentials
@@ -202,7 +143,7 @@ export function useModelsWithConfiguredProvider(
         setProvidersWithCreds(providers);
 
         // Recently used list, but only for models that currently exist in snapshot
-        const snap = catalog.getSnapshot();
+        const snap = catalog?.getSnapshot();
         const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
@@ -244,6 +185,8 @@ export function useModelsWithConfiguredProvider(
     setSelectedProviderAndModel,
     deleteProvider,
     isLoadingOrError,
-    refreshProviderModels: (providerId: ProviderId) => void catalog.refresh(providerId),
+    refreshProviderModels: (providerId: ProviderId) => {
+      void catalog?.refresh(providerId);
+    },
   };
 }
