@@ -4,9 +4,9 @@ import {
   useReducer,
   useMemo,
   useCallback,
+  useEffect,
   type ReactNode,
   createElement,
-  useEffect,
 } from 'react';
 import type {
   ModelConfigWithProvider,
@@ -20,6 +20,7 @@ import type {
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import { useCatalogSnapshot } from '../hooks/useCatalogSnapshot';
 import { setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
+import { useCatalogController } from '../hooks/useCatalogController';
 
 // State interface
 interface ModelPickerState {
@@ -125,21 +126,27 @@ export function ModelPickerProvider({
     error: undefined,
   });
 
-  // Catalog instance
-  const catalog = useMemo(
-    () => new ModelCatalog(providerRegistry, storage, modelStorage ?? storage, telemetry),
-    [providerRegistry, storage, modelStorage]
+  useEffect(() => {
+    setGlobalTelemetry(telemetry);
+  }, [telemetry]);
+
+  const { catalog, consumePendingInitialization } = useCatalogController(
+    storage,
+    providerRegistry,
+    {
+      telemetry,
+      modelStorage: modelStorage ?? storage,
+    }
   );
 
   useEffect(() => {
-    setGlobalTelemetry(telemetry);
-    catalog.setTelemetry(telemetry);
-  }, [catalog, telemetry]);
-
-  // Initialize catalog with optional prefetch
-  useEffect(() => {
-    void catalog.initialize(prefetch);
-  }, [catalog, prefetch]);
+    if (!catalog) {
+      return;
+    }
+    if (consumePendingInitialization()) {
+      void catalog.initialize(prefetch);
+    }
+  }, [catalog, prefetch, consumePendingInitialization]);
 
   // Subscribe to catalog updates and flatten visible models
   const snapshot = useCatalogSnapshot(catalog);

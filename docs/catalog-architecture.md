@@ -65,7 +65,7 @@ sequenceDiagram
   participant ModelStorage as ModelStorage
 
   Hook->>Lifecycle: request catalog (storage, registry, telemetry)
-  Lifecycle-->>Hook: { catalog, ownsCatalog, consumePendingInitialization }
+  Lifecycle-->>Hook: { catalog, consumePendingInitialization }
   Hook->>Storage: read recent models & provider creds
   alt first run or deps change
     Hook->>Catalog: initialize(prefetch?)
@@ -274,4 +274,3 @@ The hooks follow a consistent pattern:
 3. **Pure derivation helpers** (`deriveAvailableModels`) keep memoized selectors deterministic and easy to test (see `tests/hooks.catalogUtils.test.ts`).
 
 Together these patterns make the model picker resilient to provider churn, network variability, and UI-driven storage operations.
-

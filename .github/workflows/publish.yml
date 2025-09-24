@@ -33,33 +33,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
-
-      - name: Upgrade npm to latest
-        run: npm install -g npm@latest
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run TypeScript check
-        run: npm run typecheck || npx tsc --noEmit
+        run: pnpm run typecheck || pnpm exec tsc --noEmit
 
       - name: Run linter
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run tests
-        run: npm test
+        run: pnpm test
       - name: Build library
-        run: npm run build
+        run: pnpm run build
 
       - name: Check package contents
         run: |
           echo "Package contents:"
-          npm pack --dry-run
+          pnpm pack --dry-run
 
   publish-npm:
     name: Publish to NPM Registry
@@ -70,26 +74,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
       - name: Setup Node.js with NPM registry
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
-
-      - name: Upgrade npm to latest
-        run: npm install -g npm@latest
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build library
-        run: npm run build
+        run: pnpm run build
 
       - name: Update package version (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
           echo "Updated version to ${{ github.event.inputs.version }}"
 
       - name: Publish to NPM (release trigger)
@@ -102,13 +110,13 @@ jobs:
           fi
 
           echo "Publishing with tag: $TAG"
-          npm publish --access public --tag $TAG
+          pnpm publish --access public --tag $TAG
 
       - name: Publish to NPM (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "Publishing version ${{ github.event.inputs.version }} with tag: ${{ github.event.inputs.tag }}"
-          npm publish --access public --tag ${{ github.event.inputs.tag }}
+          pnpm publish --access public --tag ${{ github.event.inputs.tag }}
 
   create-release-pr:
     name: Create Release Pull Request
@@ -125,6 +133,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -132,7 +146,7 @@ jobs:
 
       - name: Update version in package.json
         run: |
-          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
 
           # Update changelog
           cat > RELEASE_NOTES.md << EOF
@@ -145,7 +159,7 @@ jobs:
 
           ### Installation
           \`\`\`bash
-          npm install ai-sdk-react-model-picker@${{ github.event.inputs.tag }}
+          pnpm add ai-sdk-react-model-picker@${{ github.event.inputs.tag }}
           \`\`\`
           EOF
 
@@ -162,7 +176,7 @@ jobs:
 
             ### NPM Package
             - Published with tag: `${{ github.event.inputs.tag }}`
-            - Install: `npm install ai-sdk-react-model-picker@${{ github.event.inputs.tag }}`
+            - Install: `pnpm add ai-sdk-react-model-picker@${{ github.event.inputs.tag }}`
 
             ### Checklist
             - [x] Version updated in package.json
