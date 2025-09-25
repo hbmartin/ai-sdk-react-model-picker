@@ -1,9 +1,9 @@
-import type { KeyedModelConfigWithProvider } from '../types';
+import type { CatalogEntry } from '../types';
 import { CheckIcon } from '../icons';
 import { ListboxOption } from './ui/Listbox';
 
 export interface ModelOptionProps {
-  readonly model: KeyedModelConfigWithProvider;
+  readonly model: CatalogEntry;
 }
 
 export function ModelOption({ model }: ModelOptionProps) {

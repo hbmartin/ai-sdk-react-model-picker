@@ -6,7 +6,7 @@ import type {
   IProviderRegistry,
   ModelConfigWithProvider,
   ProviderId,
-  KeyedModelConfigWithProvider,
+  CatalogEntry,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import {
@@ -18,9 +18,8 @@ import {
   removeRecentlyUsedModels,
 } from '../storage/repository';
 import { deriveAvailableModels } from './catalogUtils';
-import { useCatalogSnapshot } from './useCatalogSnapshot';
 import type { ModelPickerTelemetry } from '../telemetry';
-import { useCatalogController } from './useCatalogController';
+import { useModelCatalog } from './useModelCatalog';
 
 export interface UseModelsWithConfiguredProviderOptions {
   telemetry?: ModelPickerTelemetry;
@@ -34,26 +33,28 @@ export function useModelsWithConfiguredProvider(
   providerRegistry: IProviderRegistry,
   options?: UseModelsWithConfiguredProviderOptions
 ) {
-  const [recentlyUsedModels, setRecentlyUsedModels] = useState<KeyedModelConfigWithProvider[]>([]);
+  const [recentlyUsedModels, setRecentlyUsedModels] = useState<CatalogEntry[]>([]);
   const [providersWithCreds, setProvidersWithCreds] = useState<ProviderId[]>([]);
-  const [selectedModel, setSelectedModel] = useState<KeyedModelConfigWithProvider | undefined>(
+  const [selectedModel, setSelectedModel] = useState<CatalogEntry | undefined>(
     undefined
   );
   const [isLoadingOrError, setIsLoadingOrError] = useState<{
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
-  const { catalog, consumePendingInitialization } = useCatalogController(
+  const {
+    catalog,
+    snapshot,
+    consumePendingInitialization,
+  } = useModelCatalog({
     storage,
     providerRegistry,
-    {
-      telemetry: options?.telemetry,
-      modelStorage: options?.modelStorage,
-      catalog: options?.catalog,
-    }
-  );
+    telemetry: options?.telemetry,
+    modelStorage: options?.modelStorage,
+    catalog: options?.catalog,
+  });
 
-  const deleteProvider = (providerId: ProviderId): ModelConfigWithProvider | undefined => {
+  const deleteProvider = (providerId: ProviderId): CatalogEntry | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
     const recentKeysToRemove = recentlyUsedModels
       .filter((model) => model.provider.id === providerId)
@@ -73,15 +74,13 @@ export function useModelsWithConfiguredProvider(
     const modelToSelect = nextRecentlyUsed[0] ?? nextAvailable[0];
     setSelectedModel(modelToSelect);
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
-    return modelToSelect === undefined
-      ? undefined
-      : { model: modelToSelect.model, provider: modelToSelect.provider };
+    return modelToSelect;
   };
 
   const setSelectedProviderAndModel = (
     providerId: ProviderId,
     modelId?: ModelId
-  ): ModelConfigWithProvider | undefined => {
+  ): CatalogEntry | undefined => {
     const provider = providerRegistry.getProvider(providerId);
     const model =
       modelId === undefined
@@ -92,7 +91,7 @@ export function useModelsWithConfiguredProvider(
     }
 
     // Save selection to storage
-    const modelWithProvider = { model, provider: provider.metadata };
+    const modelWithProvider: ModelConfigWithProvider = { model, provider: provider.metadata };
     void addProviderWithCredentials(storage, providerId);
     void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
 
@@ -101,17 +100,17 @@ export function useModelsWithConfiguredProvider(
 
     // Update selection
     const modelKey = providerAndModelKey(modelWithProvider);
-    const keyedModelWithProvider = { ...modelWithProvider, key: modelKey };
-    setSelectedModel(keyedModelWithProvider);
+    const catalogEntry: CatalogEntry = { ...modelWithProvider, key: modelKey };
+    setSelectedModel(catalogEntry);
     setRecentlyUsedModels((prev) => {
       const index = prev.findIndex((model) => model.key === modelKey);
       if (index === -1) {
-        return [keyedModelWithProvider, ...prev];
+        return [catalogEntry, ...prev];
       }
-      return [keyedModelWithProvider, ...prev.slice(0, index), ...prev.slice(index + 1)];
+      return [catalogEntry, ...prev.slice(0, index), ...prev.slice(index + 1)];
     });
 
-    return keyedModelWithProvider;
+    return catalogEntry;
   };
 
   useEffect(() => {
@@ -143,7 +142,7 @@ export function useModelsWithConfiguredProvider(
         setProvidersWithCreds(providers);
 
         // Recently used list, but only for models that currently exist in snapshot
-        const snap = catalog?.getSnapshot();
+        const snap = catalog.getSnapshot();
         const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
@@ -153,9 +152,9 @@ export function useModelsWithConfiguredProvider(
             if (entry === undefined) {
               return undefined;
             }
-            return { ...entry, key } as KeyedModelConfigWithProvider;
+            return { ...entry, key } as CatalogEntry;
           })
-          .filter((x): x is KeyedModelConfigWithProvider => x !== undefined);
+          .filter((x): x is CatalogEntry => x !== undefined);
         setSelectedModel((prev) => prev ?? recent[0]);
         setRecentlyUsedModels(recent);
         setIsLoadingOrError({ state: 'ready' });
@@ -169,13 +168,10 @@ export function useModelsWithConfiguredProvider(
     void loadRecentlyUsed();
   }, [storage, providerRegistry, catalog, options?.prefetch, consumePendingInitialization]);
 
-  // Subscribe to catalog to react to refresh updates
-  const snap = useCatalogSnapshot(catalog);
-
   // Available models derived from current snapshot and providers with credentials
-  const modelsWithCredentials: KeyedModelConfigWithProvider[] = useMemo(
-    () => deriveAvailableModels(snap, providersWithCreds, recentlyUsedModels),
-    [providersWithCreds, snap, recentlyUsedModels]
+  const modelsWithCredentials: CatalogEntry[] = useMemo(
+    () => deriveAvailableModels(snapshot, providersWithCreds, recentlyUsedModels),
+    [providersWithCreds, snapshot, recentlyUsedModels]
   );
 
   return {

@@ -22,6 +22,8 @@ export type { ModelPickerProviderProps } from './context';
 // VSCode/IDE integration hooks
 export { useVSCodeContext, getEnvironmentClasses, useUniversalTheme } from './hooks';
 export type { VSCodeContext, UniversalTheme } from './hooks';
+export { useModelCatalog } from './hooks/useModelCatalog';
+export type { UseModelCatalogOptions, UseModelCatalogResult } from './hooks/useModelCatalog';
 export { useProviderModels } from './hooks/useProviderModels';
 export { useModelsByProvider } from './hooks/useModelsByProvider';
 export { useCatalogController } from './hooks/useCatalogController';
@@ -68,6 +70,8 @@ export type {
   ProviderInstanceParams,
   ValidationResult,
   ProviderAndModelKey,
+  CatalogEntry,
+  ProviderStatus,
 } from './types';
 export type { CatalogProviderState } from './catalog/CatalogStore';
 

@@ -1,15 +1,9 @@
-import { providerAndModelKey } from '../types';
-import type {
-  KeyedModelConfigWithProvider,
-  ModelConfigWithProvider,
-  ProviderId,
-  ProviderModelsStatus,
-} from '../types';
+import type { CatalogEntry, ProviderId, ProviderModelsStatus } from '../types';
 
 export function flattenAndSortAvailableModels(
   byProvider: Record<ProviderId, ProviderModelsStatus>
-): ModelConfigWithProvider[] {
-  const all: ModelConfigWithProvider[] = Object.values(byProvider).flatMap((entry) => entry.models);
+): CatalogEntry[] {
+  const all: CatalogEntry[] = Object.values(byProvider).flatMap((entry) => entry.models);
 
   // filter to visible
   const visible = all.filter((model) => model.model.visible !== false);
@@ -34,8 +28,8 @@ export function flattenAndSortAvailableModels(
 export function deriveAvailableModels(
   snapshot: Record<ProviderId, ProviderModelsStatus>,
   providerIds: ProviderId[],
-  existingModels: KeyedModelConfigWithProvider[]
-): KeyedModelConfigWithProvider[] {
+  existingModels: CatalogEntry[]
+): CatalogEntry[] {
   const byProvider = Object.fromEntries(
     providerIds.map((pid) => [pid, snapshot[pid] ?? { models: [], status: 'idle' }])
   ) as Record<ProviderId, ProviderModelsStatus>;
@@ -43,7 +37,5 @@ export function deriveAvailableModels(
   const flattened = flattenAndSortAvailableModels(byProvider);
   const known = new Set(existingModels.map((model) => model.key));
 
-  return flattened
-    .filter((model) => !known.has(providerAndModelKey(model)))
-    .map((model) => ({ ...model, key: providerAndModelKey(model) }));
+  return flattened.filter((model) => !known.has(model.key));
 }
