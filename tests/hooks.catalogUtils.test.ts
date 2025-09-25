@@ -7,9 +7,9 @@ import {
   createProviderId,
   createModelId,
   providerAndModelKey,
-  type KeyedModelConfigWithProvider,
-  type ModelConfigWithProvider,
+  type CatalogEntry,
   type ProviderId,
+  type ProviderModelsStatus,
 } from '../src/lib/types';
 
 const DummyIcon = (() => null) as any;
@@ -19,29 +19,32 @@ function mp(
   modelName: string,
   discoveredAt?: number,
   visible = true
-): ModelConfigWithProvider {
+): CatalogEntry {
   const providerId = createProviderId(providerName);
+  const model = {
+    id: createModelId(modelName),
+    displayName: modelName,
+    origin: 'api',
+    visible,
+    discoveredAt,
+  };
+  const provider = { id: providerId, name: providerName, icon: DummyIcon };
   return {
     provider: { id: providerId, name: providerName, icon: DummyIcon },
-    model: {
-      id: createModelId(modelName),
-      displayName: modelName,
-      origin: 'api',
-      visible,
-      discoveredAt,
-    },
-  } as ModelConfigWithProvider;
+    model,
+    key: providerAndModelKey({ provider, model }),
+  } satisfies CatalogEntry;
 }
 
 describe('flattenAndSortAvailableModels', () => {
   it('filters invisible and sorts by discoveredAt desc then provider/name', () => {
-    const map = {
+    const map: Record<ProviderId, ProviderModelsStatus> = {
       [createProviderId('B')]: { models: [mp('B', 'x'), mp('B', 'a')], status: 'ready' },
       [createProviderId('A')]: {
         models: [mp('A', 'z'), mp('A', 'm', 1000), mp('A', 'n', undefined, false)],
         status: 'ready',
       },
-    } as any;
+    };
     const out = flattenAndSortAvailableModels(map).map(
       (x) => `${x.provider.name}/${x.model.displayName}`
     );
@@ -58,26 +61,24 @@ describe('deriveAvailableModels', () => {
   it('excludes recently used keys and returns keyed models', () => {
     const providerA = createProviderId('A');
     const providerB = createProviderId('B');
-    const snapshot: Record<ProviderId, { models: ModelConfigWithProvider[]; status: 'ready' }> = {
+    const snapshot: Record<ProviderId, ProviderModelsStatus> = {
       [providerA]: { models: [mp('A', 'alpha'), mp('A', 'beta')], status: 'ready' },
       [providerB]: { models: [mp('B', 'gamma')], status: 'ready' },
     };
 
-    const used: KeyedModelConfigWithProvider[] = [
-      { ...snapshot[providerA].models[0], key: providerAndModelKey(snapshot[providerA].models[0]) },
-    ];
+    const used: CatalogEntry[] = [snapshot[providerA].models[0]];
 
     const result = deriveAvailableModels(snapshot, [providerA, providerB], used);
 
     expect(result.map((item) => item.key)).toEqual([
-      providerAndModelKey(snapshot[providerA].models[1]),
-      providerAndModelKey(snapshot[providerB].models[0]),
+      snapshot[providerA].models[1].key,
+      snapshot[providerB].models[0].key,
     ]);
   });
 
   it('handles providers missing from snapshot gracefully', () => {
     const providerA = createProviderId('A');
-    const snapshot: Record<ProviderId, { models: ModelConfigWithProvider[]; status: 'idle' }> = {
+    const snapshot: Record<ProviderId, ProviderModelsStatus> = {
       [providerA]: { models: [], status: 'idle' },
     };
 

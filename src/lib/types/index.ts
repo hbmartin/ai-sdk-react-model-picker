@@ -37,9 +37,14 @@ export interface ModelConfigWithProvider {
   provider: ProviderMetadata;
 }
 
-export interface KeyedModelConfigWithProvider extends ModelConfigWithProvider {
+export interface CatalogEntry extends ModelConfigWithProvider {
   key: ProviderAndModelKey;
 }
+
+/**
+ * Temporary back-compat alias; callers should migrate to CatalogEntry.
+ */
+export type KeyedModelConfigWithProvider = CatalogEntry;
 
 export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
@@ -211,9 +216,17 @@ export interface IProviderRegistry {
 }
 
 // Provider models status (for hooks backed by the catalog)
+export type ProviderStatus =
+  | 'idle'
+  | 'loading'
+  | 'refreshing'
+  | 'ready'
+  | 'missing-config'
+  | 'error';
+
 export interface ProviderModelsStatus {
-  models: ModelConfigWithProvider[];
-  status: 'idle' | 'loading' | 'ready' | 'missing-config' | 'error';
+  models: CatalogEntry[];
+  status: ProviderStatus;
   error?: string;
 }
 

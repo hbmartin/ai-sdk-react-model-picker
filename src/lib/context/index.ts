@@ -18,9 +18,8 @@ import type {
   ProviderId,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
-import { useCatalogSnapshot } from '../hooks/useCatalogSnapshot';
 import { setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
-import { useCatalogController } from '../hooks/useCatalogController';
+import { useModelCatalog } from '../hooks/useModelCatalog';
 
 // State interface
 interface ModelPickerState {
@@ -130,26 +129,18 @@ export function ModelPickerProvider({
     setGlobalTelemetry(telemetry);
   }, [telemetry]);
 
-  const { catalog, consumePendingInitialization } = useCatalogController(
+  const { catalog, snapshot, consumePendingInitialization } = useModelCatalog({
     storage,
     providerRegistry,
-    {
-      telemetry,
-      modelStorage: modelStorage ?? storage,
-    }
-  );
+    telemetry,
+    modelStorage: modelStorage ?? storage,
+  });
 
   useEffect(() => {
-    if (!catalog) {
-      return;
-    }
     if (consumePendingInitialization()) {
       void catalog.initialize(prefetch);
     }
   }, [catalog, prefetch, consumePendingInitialization]);
-
-  // Subscribe to catalog updates and flatten visible models
-  const snapshot = useCatalogSnapshot(catalog);
 
   const allModels = useMemo(() => {
     const arr: ModelConfigWithProvider[] = [];

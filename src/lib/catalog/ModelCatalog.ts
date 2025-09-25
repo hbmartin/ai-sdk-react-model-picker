@@ -4,19 +4,15 @@ import type {
   ProviderId,
   ModelId,
   ModelConfig,
-  ModelConfigWithProvider,
+  CatalogEntry,
   ProviderModelsStatus,
   StorageAdapter,
 } from '../types';
+import { providerAndModelKey } from '../types';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
+import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
 import type { ModelPickerTelemetry } from '../telemetry';
-import {
-  CatalogStore,
-  type CatalogProviderState,
-  type CatalogState,
-  type CatalogSnapshot,
-} from './CatalogStore';
-import { CatalogPersistence } from './CatalogPersistence';
+import { type CatalogProviderState, type CatalogState, type CatalogSnapshot } from './CatalogStore';
 
 function now() {
   return Date.now();
@@ -83,9 +79,13 @@ function removeModel(
 }
 
 export class ModelCatalog {
-  private readonly store: CatalogStore;
+  private state: CatalogState;
 
-  private readonly persistence: CatalogPersistence;
+  private snapshot: CatalogSnapshot;
+
+  private projectSnapshot: (state: CatalogState) => CatalogSnapshot;
+
+  private readonly listeners = new Set<() => void>();
 
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
 
@@ -100,18 +100,22 @@ export class ModelCatalog {
   constructor(
     private readonly providerRegistry: IProviderRegistry,
     private readonly storage: StorageAdapter,
-    modelStorage: StorageAdapter,
+    private readonly modelStorage: StorageAdapter,
     telemetry?: ModelPickerTelemetry
   ) {
-    this.persistence = new CatalogPersistence(modelStorage);
     this.telemetry = telemetry;
     const initialState = this.buildInitialState();
-    this.store = new CatalogStore(initialState, this.createSnapshotProjector());
+    this.projectSnapshot = this.createSnapshotProjector();
+    this.state = initialState;
+    this.snapshot = this.projectSnapshot(this.state);
     this.knownProvidersSignature = this.computeProviderSignature();
   }
 
   subscribe(listener: () => void): () => void {
-    return this.store.subscribe(listener);
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   getSnapshot(): Record<ProviderId, ProviderModelsStatus> {
@@ -119,11 +123,11 @@ export class ModelCatalog {
     if (signature !== this.knownProvidersSignature) {
       this.scheduleProviderSync(signature);
     }
-    return this.store.getSnapshot();
+    return this.snapshot;
   }
 
   getProviderState(providerId: ProviderId): CatalogProviderState | undefined {
-    const state = this.store.getState().providers[providerId];
+    const state = this.state.providers[providerId];
     if (state === undefined) {
       return undefined;
     }
@@ -138,16 +142,52 @@ export class ModelCatalog {
     this.telemetry = telemetry;
   }
 
+  private emit(): void {
+    for (const listener of this.listeners) {
+      listener();
+    }
+  }
+
+  private setState(nextState: CatalogState, options?: { notify?: boolean }): void {
+    if (Object.is(nextState, this.state)) {
+      return;
+    }
+    this.state = nextState;
+    this.snapshot = this.projectSnapshot(this.state);
+    if (options?.notify !== false) {
+      this.emit();
+    }
+  }
+
+  private updateState(
+    updater: (state: CatalogState) => CatalogState,
+    options?: { notify?: boolean }
+  ): void {
+    const nextState = updater(this.state);
+    this.setState(nextState, options);
+  }
+
+  private recomputeSnapshot(options?: { notify?: boolean }): void {
+    this.snapshot = this.projectSnapshot(this.state);
+    if (options?.notify !== false) {
+      this.emit();
+    }
+  }
+
   private createSnapshotProjector() {
     return (state: CatalogState): CatalogSnapshot => {
       const snapshot: Record<ProviderId, ProviderModelsStatus> = {};
       for (const provider of this.providerRegistry.getAllProviders()) {
         const providerId = provider.metadata.id;
         const providerState = state.providers[providerId] ?? this.createStateFromProvider(provider);
-        const models: ModelConfigWithProvider[] = Object.values(providerState.models).map((model) => ({
-          model,
-          provider: provider.metadata,
-        }));
+        const models: CatalogEntry[] = Object.values(providerState.models).map((model) => {
+          const providerMeta = provider.metadata;
+          const base = { model, provider: providerMeta };
+          return {
+            ...base,
+            key: providerAndModelKey(base),
+          } satisfies CatalogEntry;
+        });
         const base: ProviderModelsStatus = {
           models,
           status: providerState.status,
@@ -202,7 +242,7 @@ export class ModelCatalog {
     this.signatureSyncScheduled = false;
     const providers = this.providerRegistry.getAllProviders();
     let added = false;
-    this.store.updateState((state) => {
+    this.updateState((state) => {
       const nextProviders = { ...state.providers } as Record<ProviderId, CatalogProviderState>;
       for (const provider of providers) {
         const providerId = provider.metadata.id;
@@ -221,12 +261,12 @@ export class ModelCatalog {
     });
     this.knownProvidersSignature = signature;
     if (!added) {
-      this.store.recomputeSnapshot();
+      this.recomputeSnapshot();
     }
   }
 
   private ensureProviderState(providerId: ProviderId): CatalogProviderState {
-    const current = this.store.getState().providers[providerId];
+    const current = this.state.providers[providerId];
     if (current !== undefined) {
       return current;
     }
@@ -237,7 +277,7 @@ export class ModelCatalog {
       state = this.createStateFromProvider(provider);
     }
 
-    this.store.updateState((catalogState) => {
+    this.updateState((catalogState) => {
       if (catalogState.providers[providerId] !== undefined) {
         return catalogState;
       }
@@ -257,7 +297,7 @@ export class ModelCatalog {
     providerId: ProviderId,
     updater: (state: CatalogProviderState) => CatalogProviderState
   ): void {
-    this.store.updateState((state) => {
+    this.updateState((state) => {
       const current = state.providers[providerId];
       if (current === undefined) {
         return state;
@@ -316,7 +356,7 @@ export class ModelCatalog {
     const run = (async () => {
       this.setPending(providerId, 'hydrate', true);
       try {
-        const persisted = await this.persistence.load(providerId);
+        const persisted = await getPersistedModels(this.modelStorage, providerId);
         if (persisted.length > 0) {
           this.mergePersisted(providerId, persisted);
         }
@@ -386,7 +426,7 @@ export class ModelCatalog {
   }
 
   private async persistNonBuiltin(providerId: ProviderId) {
-    const state = this.store.getState().providers[providerId];
+    const state = this.state.providers[providerId];
     if (!state) {
       return;
     }
@@ -396,7 +436,7 @@ export class ModelCatalog {
         keep.push(model);
       }
     }
-    await this.persistence.save(providerId, keep);
+    await setPersistedModels(this.modelStorage, providerId, keep);
   }
 
   private mergePersisted(providerId: ProviderId, models: ModelConfig[]) {
@@ -531,7 +571,7 @@ export class ModelCatalog {
   async addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
     this.ensureProviderState(providerId);
 
-    const current = this.store.getState().providers[providerId];
+    const current = this.state.providers[providerId];
     if (current?.models[modelId] !== undefined) {
       return;
     }
@@ -557,7 +597,7 @@ export class ModelCatalog {
   }
 
   async removeUserModel(providerId: ProviderId, modelId: ModelId): Promise<void> {
-    const state = this.store.getState().providers[providerId];
+    const state = this.state.providers[providerId];
     if (!state) {
       return;
     }
