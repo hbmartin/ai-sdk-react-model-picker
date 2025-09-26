@@ -35,12 +35,11 @@ export function ModelSelect({
   const effectiveSelectedRole = context?.state.selectedRole ?? selectedRole;
   const effectiveOnRoleChange = context?.selectRole ?? onRoleChange;
   const [showAddModelForm, setShowAddModelForm] = useState(false);
-  const hookOptions: UseModelsWithConfiguredProviderOptions = {};
-  if (effectiveTelemetry !== undefined) {
-    hookOptions.telemetry = effectiveTelemetry;
-  }
-  hookOptions.modelStorage = effectiveModelStorage;
-  hookOptions.prefetch = true;
+  const hookOptions: UseModelsWithConfiguredProviderOptions = {
+    modelStorage: effectiveModelStorage,
+    prefetch: true,
+    ...(effectiveTelemetry ? { telemetry: effectiveTelemetry } : {}),
+  };
 
   const {
     recentlyUsedModels,
