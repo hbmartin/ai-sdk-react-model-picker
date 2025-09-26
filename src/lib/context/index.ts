@@ -18,8 +18,8 @@ import type {
   ProviderId,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
-import { setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
 import { useModelCatalog } from '../hooks/useModelCatalog';
+import { setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
 
 // State interface
 interface ModelPickerState {
@@ -46,7 +46,6 @@ interface ModelPickerContextValue {
   modelStorage: StorageAdapter;
   roles: Role[] | undefined;
   theme: ThemeConfig | undefined;
-  catalog: ModelCatalog;
   telemetry?: ModelPickerTelemetry;
 
   // Actions
@@ -129,22 +128,14 @@ export function ModelPickerProvider({
     setGlobalTelemetry(telemetry);
   }, [telemetry]);
 
-  const { catalog, snapshot, consumePendingInitialization } = useModelCatalog({
-    storage,
-    providerRegistry,
-    telemetry,
-    modelStorage: modelStorage ?? storage,
+  const { snapshot, refresh, refreshAll } = useModelCatalog({
+    catalog: new ModelCatalog(providerRegistry, modelStorage ?? storage, telemetry),
+    shouldInitialize: prefetch,
   });
-
-  useEffect(() => {
-    if (consumePendingInitialization()) {
-      void catalog.initialize(prefetch);
-    }
-  }, [catalog, prefetch, consumePendingInitialization]);
 
   const allModels = useMemo(() => {
     const arr: ModelConfigWithProvider[] = [];
-    for (const entry of Object.values(snapshot)) {
+    for (const entry of Object.values(snapshot).filter((entry) => entry !== undefined)) {
       for (const modelWithProvider of entry.models) {
         if (modelWithProvider.model.visible === false) {
           continue;
@@ -191,7 +182,6 @@ export function ModelPickerProvider({
       modelStorage: modelStorage ?? storage,
       roles,
       theme,
-      catalog,
       selectModel,
       selectRole,
       setLoading,
@@ -200,9 +190,9 @@ export function ModelPickerProvider({
       onMissingConfiguration,
       refreshModels: (providerId?: ProviderId) => {
         if (providerId) {
-          void catalog.refresh(providerId);
+          refresh(providerId);
         } else {
-          void catalog.refreshAll();
+          refreshAll();
         }
       },
     } satisfies Omit<ModelPickerContextValue, 'telemetry'>;
@@ -219,7 +209,6 @@ export function ModelPickerProvider({
     modelStorage,
     roles,
     theme,
-    catalog,
     telemetry,
     selectModel,
     selectRole,
@@ -227,6 +216,8 @@ export function ModelPickerProvider({
     setError,
     onConfigureProvider,
     onMissingConfiguration,
+    refresh,
+    refreshAll,
   ]);
 
   return createElement(ModelPickerContext.Provider, { value: contextValue }, children);

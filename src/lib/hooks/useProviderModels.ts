@@ -1,27 +1,32 @@
 import { useEffect, useMemo } from 'react';
 import type { ProviderId, ProviderModelsStatus } from '../types';
-import { useCatalogSnapshot } from './useCatalogSnapshot';
-import type { ModelCatalog } from '../catalog/ModelCatalog';
+import { useModelCatalog } from './useModelCatalog';
+import type { UseModelCatalogOptions } from './useModelCatalog';
+
+export interface UseProviderModelsOptions extends UseModelCatalogOptions {
+  prefetch?: boolean;
+}
 
 export function useProviderModels(
-  catalog: ModelCatalog,
   providerId: ProviderId,
-  options?: { prefetch?: boolean }
+  options: UseProviderModelsOptions
 ): ProviderModelsStatus & { refresh: () => void } {
-  const map = useCatalogSnapshot(catalog);
+  const { prefetch, ...catalogOptions } = options;
+  const { snapshot, refresh } = useModelCatalog(catalogOptions);
 
   useEffect(() => {
-    if (options?.prefetch === true) {
-      void catalog.refresh(providerId).catch(() => undefined);
+    if (prefetch === true) {
+      refresh(providerId);
     }
-  }, [catalog, providerId, options?.prefetch]);
+  }, [prefetch, providerId, refresh]);
 
   const value = useMemo<ProviderModelsStatus>(
-    () => map[providerId] ?? ({ models: [], status: 'idle' } as ProviderModelsStatus),
-    [map, providerId]
+    () => snapshot[providerId] ?? { models: [], status: 'idle' },
+    [snapshot, providerId]
   );
+
   return {
     ...value,
-    refresh: () => void catalog.refresh(providerId),
+    refresh: () => refresh(providerId),
   };
 }

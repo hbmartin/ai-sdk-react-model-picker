@@ -6,7 +6,8 @@ export interface ModelPickerTelemetry {
   onFetchError?: (providerId: ProviderId, error: Error) => void;
   onStorageError?: (operation: 'read' | 'write', error: Error) => void;
   onUserModelAdded?: (providerId: ProviderId, modelId: ModelId) => void;
-  onProviderInitError?: (provider: ProviderId, error: Error) => void;
+  onProviderInitError?: (provider: string, error: Error) => void;
+  onProviderNotFound?: (providerId: ProviderId) => void;
 }
 
 let globalTelemetry: ModelPickerTelemetry | undefined;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { idsFromKey, providerAndModelKey } from '../types';
 import type {
   StorageAdapter,
@@ -17,9 +17,9 @@ import {
   getRecentlyUsedModels,
   removeRecentlyUsedModels,
 } from '../storage/repository';
-import { deriveAvailableModels } from './catalogUtils';
-import type { ModelPickerTelemetry } from '../telemetry';
+import { filterModelsByCredentialsAndRecentlyUsed } from './catalogUtils';
 import { useModelCatalog } from './useModelCatalog';
+import type { ModelPickerTelemetry } from '../telemetry';
 
 export interface UseModelsWithConfiguredProviderOptions {
   telemetry?: ModelPickerTelemetry;
@@ -35,27 +35,22 @@ export function useModelsWithConfiguredProvider(
 ) {
   const [recentlyUsedModels, setRecentlyUsedModels] = useState<CatalogEntry[]>([]);
   const [providersWithCreds, setProvidersWithCreds] = useState<ProviderId[]>([]);
-  const [selectedModel, setSelectedModel] = useState<CatalogEntry | undefined>(
-    undefined
-  );
+  const [selectedModel, setSelectedModel] = useState<CatalogEntry | undefined>(undefined);
   const [isLoadingOrError, setIsLoadingOrError] = useState<{
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
-  const {
-    catalog,
-    snapshot,
-    consumePendingInitialization,
-  } = useModelCatalog({
-    storage,
-    providerRegistry,
-    telemetry: options?.telemetry,
-    modelStorage: options?.modelStorage,
-    catalog: options?.catalog,
+  const { snapshot, refresh, removeProvider } = useModelCatalog({
+    catalog:
+      options?.catalog ??
+      new ModelCatalog(providerRegistry, options?.modelStorage ?? storage, options?.telemetry),
+    shouldInitialize: options?.prefetch !== false,
   });
 
   const deleteProvider = (providerId: ProviderId): CatalogEntry | undefined => {
     void deleteProviderWithCredentials(storage, providerId);
+    // TODO: consolidate storage removal, currently this is how cred models are updated (reacting to snapshot changes)
+    removeProvider(providerId);
     const recentKeysToRemove = recentlyUsedModels
       .filter((model) => model.provider.id === providerId)
       .map((model) => model.key);
@@ -67,13 +62,11 @@ export function useModelsWithConfiguredProvider(
     setProvidersWithCreds(nextProviders);
     setRecentlyUsedModels(nextRecentlyUsed);
 
-    // Derive available after updates
-    const nextSnapshot = catalog.getSnapshot();
-    const nextAvailable = deriveAvailableModels(nextSnapshot, nextProviders, nextRecentlyUsed);
-
-    const modelToSelect = nextRecentlyUsed[0] ?? nextAvailable[0];
+    const modelToSelect: CatalogEntry | undefined =
+      nextRecentlyUsed[0] ??
+      modelsWithCredentials.find((model) => model.provider.id !== providerId);
     setSelectedModel(modelToSelect);
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+
     return modelToSelect;
   };
 
@@ -114,26 +107,14 @@ export function useModelsWithConfiguredProvider(
   };
 
   useEffect(() => {
-    const shouldReset = consumePendingInitialization();
-
     async function loadRecentlyUsed() {
       try {
-        if (shouldReset) {
-          setSelectedModel(undefined);
-          setProvidersWithCreds([]);
-          setRecentlyUsedModels([]);
-        }
         setIsLoadingOrError({ state: 'loading' });
 
         const [recentModelKeys, providersWithCredentials] = await Promise.all([
           getRecentlyUsedModels(storage),
           getProvidersWithCredentials(storage),
         ]);
-
-        // Initialize catalog (only if we own the instance)
-        if (shouldReset) {
-          await catalog?.initialize(options?.prefetch !== false);
-        }
 
         // Track providers with credentials
         const providers = providersWithCredentials.filter((pid) =>
@@ -142,12 +123,11 @@ export function useModelsWithConfiguredProvider(
         setProvidersWithCreds(providers);
 
         // Recently used list, but only for models that currently exist in snapshot
-        const snap = catalog.getSnapshot();
         const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
-            const providerEntry = snap[providerId];
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/no-nested-functions
+            const providerEntry = snapshot[providerId];
+            // eslint-disable-next-line sonarjs/no-nested-functions
             const entry = providerEntry?.models.find((model) => model.model.id === modelId);
             if (entry === undefined) {
               return undefined;
@@ -155,8 +135,8 @@ export function useModelsWithConfiguredProvider(
             return { ...entry, key } as CatalogEntry;
           })
           .filter((x): x is CatalogEntry => x !== undefined);
-        setSelectedModel((prev) => prev ?? recent[0]);
         setRecentlyUsedModels(recent);
+        setSelectedModel((prev) => prev ?? recent[0]);
         setIsLoadingOrError({ state: 'ready' });
       } catch (error) {
         setIsLoadingOrError({
@@ -166,13 +146,16 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-  }, [storage, providerRegistry, catalog, options?.prefetch, consumePendingInitialization]);
+  }, [storage, providerRegistry, snapshot]);
 
   // Available models derived from current snapshot and providers with credentials
-  const modelsWithCredentials: CatalogEntry[] = useMemo(
-    () => deriveAvailableModels(snapshot, providersWithCreds, recentlyUsedModels),
-    [providersWithCreds, snapshot, recentlyUsedModels]
-  );
+  const modelsWithCredentials: CatalogEntry[] = useMemo(() => {
+    return filterModelsByCredentialsAndRecentlyUsed(
+      providersWithCreds,
+      snapshot,
+      recentlyUsedModels
+    );
+  }, [snapshot, recentlyUsedModels, providersWithCreds]);
 
   return {
     recentlyUsedModels,
@@ -182,7 +165,7 @@ export function useModelsWithConfiguredProvider(
     deleteProvider,
     isLoadingOrError,
     refreshProviderModels: (providerId: ProviderId) => {
-      void catalog?.refresh(providerId);
+      refresh(providerId);
     },
   };
 }

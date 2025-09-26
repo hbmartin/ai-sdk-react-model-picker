@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import type { ConfigAPI } from '../providers/configuration';
+import type { ModelPickerTelemetry } from '../telemetry';
 
 // Branded types for type safety
 export type Brand<T, B> = T & { readonly __brand: B };
@@ -28,7 +29,6 @@ export interface ModelConfig {
   origin?: ModelOrigin;
   visible?: boolean;
   discoveredAt?: number;
-  updatedAt?: number;
 }
 
 // Model with provider metadata attached
@@ -40,11 +40,6 @@ export interface ModelConfigWithProvider {
 export interface CatalogEntry extends ModelConfigWithProvider {
   key: ProviderAndModelKey;
 }
-
-/**
- * Temporary back-compat alias; callers should migrate to CatalogEntry.
- */
-export type KeyedModelConfigWithProvider = CatalogEntry;
 
 export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
@@ -102,7 +97,7 @@ export interface StorageAdapter {
   remove(key: string): PromiseLike<void>;
 }
 
-function isObject(value: unknown): value is object {
+export function isObject(value: unknown): value is object {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -190,10 +185,14 @@ export abstract class AIProvider {
     return { isValid: true };
   }
 
-  // Optional dynamic model loading
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async getModels(): Promise<ModelConfig[]> {
-    return this.models;
+  async fetchModels(): Promise<ModelConfig[]> {
+    if (this.metadata.fetchModelListUrl === undefined) {
+      return [];
+    }
+    const response = await fetch(this.metadata.fetchModelListUrl);
+    // TODO: parse openai response  by default
+    const data = (await response.json()) as ModelConfig[];
+    return data;
   }
 
   getDefaultModel(): ModelConfig {
@@ -215,19 +214,16 @@ export interface IProviderRegistry {
   hasProvider(providerId: ProviderId): boolean;
 }
 
+export type CatalogSnapshot = Record<ProviderId, ProviderModelsStatus | undefined>;
+
 // Provider models status (for hooks backed by the catalog)
-export type ProviderStatus =
-  | 'idle'
-  | 'loading'
-  | 'refreshing'
-  | 'ready'
-  | 'missing-config'
-  | 'error';
+export type ProviderStatus = 'idle' | 'hydrating' | 'refreshing' | 'ready' | 'missing-config';
 
 export interface ProviderModelsStatus {
   models: CatalogEntry[];
   status: ProviderStatus;
-  error?: string;
+  error?: string | undefined;
+  lastUpdatedAt?: number;
 }
 
 // Component prop interfaces
