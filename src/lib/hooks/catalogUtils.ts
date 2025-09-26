@@ -1,12 +1,8 @@
-import type { CatalogEntry, ProviderId, ProviderModelsStatus } from '../types';
+import type { CatalogEntry, CatalogSnapshot, ProviderId } from '../types';
 
-export function flattenAndSortAvailableModels(
-  byProvider: Record<ProviderId, ProviderModelsStatus>
-): CatalogEntry[] {
-  const all: CatalogEntry[] = Object.values(byProvider).flatMap((entry) => entry.models);
-
+export function sortAvailableModels(models: CatalogEntry[]): CatalogEntry[] {
   // filter to visible
-  const visible = all.filter((model) => model.model.visible !== false);
+  const visible = models.filter((model) => model.model.visible !== false);
 
   // sort: discoveredAt desc; if missing, provider name asc then model name asc
   visible.sort((modelA, modelB) => {
@@ -25,17 +21,18 @@ export function flattenAndSortAvailableModels(
   return visible;
 }
 
-export function deriveAvailableModels(
-  snapshot: Record<ProviderId, ProviderModelsStatus>,
-  providerIds: ProviderId[],
-  existingModels: CatalogEntry[]
+export function filterModelsByCredentialsAndRecentlyUsed(
+  providersWithCreds: ProviderId[],
+  snapshot: CatalogSnapshot,
+  recentlyUsedModels: CatalogEntry[]
 ): CatalogEntry[] {
-  const byProvider = Object.fromEntries(
-    providerIds.map((pid) => [pid, snapshot[pid] ?? { models: [], status: 'idle' }])
-  ) as Record<ProviderId, ProviderModelsStatus>;
-
-  const flattened = flattenAndSortAvailableModels(byProvider);
-  const known = new Set(existingModels.map((model) => model.key));
-
-  return flattened.filter((model) => !known.has(model.key));
+  const recentlyUsedKeys = new Set(recentlyUsedModels.map((model) => model.key));
+  return sortAvailableModels(
+    Object.values(snapshot)
+      .flatMap((entry) => entry?.models ?? [])
+      .filter(
+        (model) =>
+          !recentlyUsedKeys.has(model.key) && providersWithCreds.includes(model.provider.id)
+      )
+  );
 }

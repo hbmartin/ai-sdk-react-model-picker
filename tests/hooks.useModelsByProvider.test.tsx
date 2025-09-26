@@ -83,7 +83,7 @@ describe('useModelsByProvider', () => {
     const catalog = new ModelCatalog(registry, storage, modelStorage);
     await catalog.initialize(false);
 
-    const { result } = renderHook(() => useModelsByProvider(catalog, { prefetch: true }));
+    const { result } = renderHook(() => useModelsByProvider({ catalog, prefetch: true }));
 
     await waitFor(() => {
       expect(result.current[p1.metadata.id].status).toBe('ready');

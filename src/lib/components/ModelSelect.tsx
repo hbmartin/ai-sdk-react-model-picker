@@ -41,9 +41,7 @@ export function ModelSelect({
   }
   hookOptions.modelStorage = effectiveModelStorage;
   hookOptions.prefetch = true;
-  if (context?.catalog !== undefined) {
-    hookOptions.catalog = context.catalog;
-  }
+
   const {
     recentlyUsedModels,
     modelsWithCredentials,

@@ -80,7 +80,7 @@ describe('useProviderModels', () => {
     const catalog = new ModelCatalog(registry, storage, modelStorage);
     await catalog.initialize(false);
 
-    const { result } = renderHook(() => useProviderModels(catalog, pid, { prefetch: true }));
+    const { result } = renderHook(() => useProviderModels(pid, { catalog, prefetch: true }));
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
       expect(result.current.models.some((x) => x.model.id === createModelId('m'))).toBe(true);

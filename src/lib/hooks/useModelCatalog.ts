@@ -1,126 +1,47 @@
-import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
-import { ModelCatalog } from '../catalog/ModelCatalog';
-import type {
-  IProviderRegistry,
-  ModelId,
-  ProviderId,
-  ProviderModelsStatus,
-  StorageAdapter,
-} from '../types';
-import type { ModelPickerTelemetry } from '../telemetry';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import type { CatalogSnapshot, ModelId, ProviderId } from '../types';
+import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 export interface UseModelCatalogOptions {
-  storage: StorageAdapter;
-  providerRegistry: IProviderRegistry;
-  modelStorage?: StorageAdapter;
-  telemetry?: ModelPickerTelemetry;
-  catalog?: ModelCatalog;
+  catalog: ModelCatalog;
+  shouldInitialize: boolean;
 }
 
 export interface UseModelCatalogResult {
   catalog: ModelCatalog;
-  snapshot: Record<ProviderId, ProviderModelsStatus>;
-  ownsCatalog: boolean;
-  revision: number;
-  consumePendingInitialization(): boolean;
+  snapshot: CatalogSnapshot;
   refresh(providerId: ProviderId, opts?: { force?: boolean }): void;
   refreshAll(): void;
   addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void>;
-  removeUserModel(providerId: ProviderId, modelId: ModelId): Promise<void>;
-}
-
-interface InternalCatalogState {
-  catalog: ModelCatalog;
-  storage: StorageAdapter;
-  modelStorage: StorageAdapter;
-  providerRegistry: IProviderRegistry;
+  removeModel(providerId: ProviderId, modelId: ModelId): Promise<void>;
+  removeProvider(providerId: ProviderId): void;
 }
 
 export function useModelCatalog({
-  storage,
-  providerRegistry,
-  modelStorage,
-  telemetry,
-  catalog: externalCatalog,
+  catalog,
+  shouldInitialize,
 }: UseModelCatalogOptions): UseModelCatalogResult {
-  const catalogStateRef = useRef<InternalCatalogState>();
-  const shouldInitializeRef = useRef(false);
-  const revisionRef = useRef(0);
-
-  const resolvedModelStorage = modelStorage ?? storage;
-  const managesCatalog = externalCatalog === undefined;
-
-  if (managesCatalog) {
-    const current = catalogStateRef.current;
-    const needsNew =
-      current === undefined ||
-      current.storage !== storage ||
-      current.modelStorage !== resolvedModelStorage ||
-      current.providerRegistry !== providerRegistry;
-    if (needsNew) {
-      const catalog = new ModelCatalog(
-        providerRegistry,
-        storage,
-        resolvedModelStorage,
-        telemetry
-      );
-      catalogStateRef.current = {
-        catalog,
-        storage,
-        modelStorage: resolvedModelStorage,
-        providerRegistry,
-      };
-      shouldInitializeRef.current = true;
-      revisionRef.current += 1;
-    }
-  } else {
-    catalogStateRef.current = undefined;
-    shouldInitializeRef.current = false;
-  }
-
-  const catalog = managesCatalog ? catalogStateRef.current?.catalog : externalCatalog;
-
-  if (!catalog) {
-    throw new Error('useModelCatalog could not resolve a ModelCatalog instance');
-  }
-
-  useEffect(() => {
-    catalog.setTelemetry(telemetry);
-  }, [catalog, telemetry]);
-
   const snapshot = useSyncExternalStore(
     (listener) => catalog.subscribe(listener),
-    () => catalog.getSnapshot(),
     () => catalog.getSnapshot()
   );
 
-  const consumePendingInitialization = useMemo(() => {
-    if (!managesCatalog) {
-      return () => false;
+  useEffect(() => {
+    if (shouldInitialize) {
+      void catalog.initialize();
     }
-    return () => {
-      if (!shouldInitializeRef.current) {
-        return false;
-      }
-      shouldInitializeRef.current = false;
-      return true;
-    };
-  }, [managesCatalog]);
+  }, [shouldInitialize, catalog]);
 
   const actions = useMemo(
     () => ({
-      refresh(providerId: ProviderId, opts?: { force?: boolean }) {
-        void catalog.refresh(providerId, opts);
-      },
-      refreshAll() {
-        void catalog.refreshAll();
-      },
-      addUserModel(providerId: ProviderId, modelId: ModelId) {
-        return catalog.addUserModel(providerId, modelId);
-      },
-      removeUserModel(providerId: ProviderId, modelId: ModelId) {
-        return catalog.removeUserModel(providerId, modelId);
-      },
+      refresh: (providerId: ProviderId, opts?: { force?: boolean }) =>
+        void catalog.refresh(providerId, opts),
+      refreshAll: () => void catalog.refreshAll(),
+      addUserModel: (providerId: ProviderId, modelId: ModelId) =>
+        catalog.addUserModel(providerId, modelId),
+      removeProvider: (providerId: ProviderId) => catalog.removeProvider(providerId),
+      removeModel: (providerId: ProviderId, modelId: ModelId) =>
+        catalog.removeModel(providerId, modelId),
     }),
     [catalog]
   );
@@ -128,9 +49,6 @@ export function useModelCatalog({
   return {
     catalog,
     snapshot,
-    ownsCatalog: managesCatalog,
-    revision: revisionRef.current,
-    consumePendingInitialization,
     ...actions,
   };
 }

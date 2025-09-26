@@ -3,6 +3,7 @@ import {
   type ModelConfig,
   type ProviderId,
   assertRecordStringString,
+  isObject,
 } from '../types';
 import { getTelemetry } from '../telemetry';
 
@@ -13,17 +14,21 @@ function providerModelsKey(providerId: ProviderId): string {
 
 interface PersistedModelsEnvelope {
   // reserved for future format/versioning changes
-  v: 1;
+  version: 1;
   // compact array of models; only ModelConfig fields are persisted
   models: ModelConfig[];
 }
 
 function isPersistedEnvelope(value: unknown): value is PersistedModelsEnvelope {
-  if (typeof value !== 'object' || value === null) {
+  if (!isObject(value)) {
     return false;
   }
-  const anyVal = value as any;
-  return anyVal && anyVal['v'] === 1 && Array.isArray(anyVal['models']);
+  return (
+    'version' in value &&
+    typeof value['version'] === 'number' &&
+    'models' in value &&
+    Array.isArray(value['models'])
+  );
 }
 
 // Load all persisted models for a provider; returns an empty array on any error
@@ -75,7 +80,7 @@ export async function setPersistedModels(
   models: ModelConfig[]
 ): Promise<void> {
   try {
-    const env: PersistedModelsEnvelope = { v: 1, models };
+    const env: PersistedModelsEnvelope = { version: 1, models };
     const key = providerModelsKey(providerId);
     // Use a single string field to store the JSON to keep adapter compat
     await modelStorage.set(key, { __json: JSON.stringify(env) });

@@ -7,8 +7,8 @@ This document explains how the model picker keeps provider catalogs, storage, an
 At runtime the picker orchestrates three primary concerns:
 
 - **Provider definitions** live in the `ProviderRegistry`, which exposes metadata and provider APIs.
-- **Model availability** is normalized by the `ModelCatalog`, which hydrates from storage, fetches remote models, and emits snapshots.
-- **UI state** is derived in React hooks (notably `useModelsWithConfiguredProvider`) that bind storage, catalog snapshots, and user selections together.
+- **Model availability** is normalized by the `ModelCatalog`, which hydrates from storage, fetches remote models, and emits snapshots composed of branded keys.
+- **UI state** flows through the unified `useModelCatalog` hook (and downstream helpers such as `useModelsWithConfiguredProvider`) that bind storage, catalog snapshots, and user selections together.
 
 ```mermaid
 flowchart LR
@@ -23,101 +23,77 @@ flowchart LR
     MC[ModelCatalog]
   end
   subgraph Hooks
+    UMC[useModelCatalog]
     UMWCP[useModelsWithConfiguredProvider]
-    UMBP[useModelsByProvider]
-    UPM[useProviderModels]
   end
 
   PR --> MC
   OS --> MC
   MS --> MC
-  MC --> UMWCP
-  MC --> UMBP
-  MC --> UPM
+  MC --> UMC
+  UMC --> UMWCP
   OS --> UMWCP
   UMWCP --> OS
-  UMWCP --> UMBP
-  UMWCP --> UPM
+  UMC --> MC
 ```
 
-The diagram highlights the circular relationship: hooks consume catalog snapshots, feed user actions back into storage, and trigger catalog refreshes when needed.
+The diagram highlights the circular relationship: `useModelCatalog` subscribes to catalog snapshots, exposes mutations, and downstream hooks/components consume those snapshots while persisting user intent back to storage.
 
 ## Hook Architecture
+
+### `useModelCatalog`
+
+`src/lib/hooks/useModelCatalog.ts`
+
+Responsibilities:
+
+- Create or reuse a `ModelCatalog` with consistent branded storage and telemetry wiring.
+- Hydrate persisted data when the hook owns the catalog lifecycle via `consumePendingInitialization()`.
+- Expose the live snapshot (including branded `ProviderAndModelKey` values) through `useSyncExternalStore` subscription.
+- Provide catalog mutations (`refresh`, `refreshAll`, `addUserModel`, `removeUserModel`) that downstream hooks/components can call.
+
+```mermaid
+sequenceDiagram
+  participant Hook as useModelCatalog
+  participant Catalog as ModelCatalog
+  participant Storage as StorageAdapter
+  participant ModelStorage as ModelStorage
+
+  Hook->>Catalog: instantiate if deps changed
+  Hook->>Catalog: setTelemetry
+  alt owns catalog
+    Hook->>Catalog: initialize() when consumePendingInitialization()
+  end
+  Catalog-->>Hook: subscribe(snapshot)
+  Hook->>Catalog: refresh(providerId)/refreshAll/addUserModel/removeUserModel
+```
 
 ### `useModelsWithConfiguredProvider`
 
 `src/lib/hooks/useModelsWithConfiguredProvider.ts`
 
-Responsibilities:
+This hook now composes the unified catalog hook to drive UI state:
 
-- Instantiate or reuse a `ModelCatalog` (through the internal `useCatalogLifecycle` helper) when the hook owns the lifecycle.
-- Hydrate recently used models and providers with credentials from storage.
-- Derive available models using `deriveAvailableModels`, ensuring consistent filtering/sorting across the hook.
-- Persist selection updates (`addRecentlyUsedModel`, `addProviderWithCredentials`) and handle deletions.
-- Subscribe to catalog snapshots via `useCatalogSnapshot` and memoize lists for rendering.
+- Calls `useModelCatalog` to obtain the catalog instance, live snapshot, and lifecycle token.
+- Hydrates recently used models and providers with credentials from storage whenever `consumePendingInitialization()` reports a fresh catalog.
+- Persists selection updates (`addRecentlyUsedModel`, `addProviderWithCredentials`) and handles deletions.
+- Derives available models using `deriveAvailableModels`, ensuring consistent filtering/sorting across the hook while reusing branded keys from the snapshot.
 
 ```mermaid
 sequenceDiagram
   participant Hook as useModelsWithConfiguredProvider
-  participant Lifecycle as useCatalogLifecycle
+  participant CatalogHook as useModelCatalog
   participant Catalog as ModelCatalog
   participant Storage as StorageAdapter
-  participant ModelStorage as ModelStorage
 
-  Hook->>Lifecycle: request catalog (storage, registry, telemetry)
-  Lifecycle-->>Hook: { catalog, consumePendingInitialization }
-  Hook->>Storage: read recent models & provider creds
-  alt first run or deps change
-    Hook->>Catalog: initialize(prefetch?)
+  Hook->>CatalogHook: { catalog, snapshot, consumePendingInitialization }
+  Hook->>Storage: read persisted recent models/providers
+  alt needs initialization
+    Hook->>Catalog: initialize()
   end
-  Hook->>Catalog: subscribe via useSyncExternalStore
-  Catalog-->>Hook: snapshot per provider
-  Hook->>Storage: persist selection & deletions
+  CatalogHook-->>Hook: snapshot updates via useSyncExternalStore
+  Hook->>Storage: persist selections & deletions
   Hook->>Catalog: refresh(providerId) when requested
-```
-
-Key internal helpers:
-
-- `useCatalogLifecycle` keeps `createdInternal`-style state in refs, simplified to avoid extra renders. It tracks whether a fresh catalog instance needs initialization.
-- `useCatalogSnapshot` unwraps the `useSyncExternalStore` subscription for consistent usage across hooks.
-- `deriveAvailableModels` (in `catalogUtils`) performs flattening, filtering, and key generation so deletion, initialization, and memoized outputs always agree.
-
-### `useModelsByProvider`
-
-`src/lib/hooks/useModelsByProvider.ts`
-
-This hook provides a map-like view of every provider, principally for dashboards that need to render multiple provider sections at once.
-
-- Subscribes to the catalog with `useSyncExternalStore` and projects each entry into an object that also exposes a `refresh()` helper.
-- Accepts a `prefetch` flag that triggers `catalog.refreshAll()` on mount, useful for “load everything now” UIs.
-
-```mermaid
-flowchart TD
-  Catalog -->|subscribe| Hook
-  Hook -->|map entries| View[Provider list UI]
-  Hook -->|refreshAll on mount| Catalog
-  View -->|refresh(pid)| Catalog
-```
-
-### `useProviderModels`
-
-`src/lib/hooks/useProviderModels.ts`
-
-Focused on a single provider:
-
-- Shares the same subscription pattern as `useModelsByProvider` but memoizes a specific provider entry.
-- Issues a `catalog.refresh(providerId)` when `prefetch` is true.
-- Returns both the `ProviderModelsStatus` and a `refresh()` callback, making it easy for call sites to add “retry” buttons.
-
-```mermaid
-stateDiagram-v2
-  [*] --> Idle
-  Idle --> Prefetching: prefetch flag true
-  Prefetching --> WaitingSnapshot
-  WaitingSnapshot --> Ready
-  Ready --> Idle: dependency change (providerId/catalog)
-  Ready --> Refreshing: refresh() called
-  Refreshing --> Ready
 ```
 
 ## Model Catalog
@@ -166,15 +142,15 @@ flowchart LR
 
 Each snapshot entry is a `ProviderModelsStatus` containing:
 
-- `models`: Array of `ModelConfigWithProvider` values (built-in, API, or user-added).
-- `status`: `'idle' | 'loading' | 'ready' | 'missing-config' | 'error'`.
+- `models`: Array of `CatalogEntry` values (each includes the branded `ProviderAndModelKey`).
+- `status`: one of the typed `ProviderStatus` variants (`'idle' | 'loading' | 'refreshing' | 'ready' | 'missing-config' | 'error'`).
 - Optional `error` message when in error state.
 
 The catalog keeps additional internal sets:
 
 - `hydratedProviders` to avoid rehydrating persisted data repeatedly.
-- `inFlight` to guard against overlapping refreshes.
 - `pendingHydrations` to dedupe concurrent initialization work per provider.
+- `pendingRefreshes` to guard against overlapping refresh sequences.
 
 ## Provider Registry
 
