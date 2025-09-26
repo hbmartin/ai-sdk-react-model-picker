@@ -27,12 +27,12 @@ export function filterModelsByCredentialsAndRecentlyUsed(
   recentlyUsedModels: CatalogEntry[]
 ): CatalogEntry[] {
   const recentlyUsedKeys = new Set(recentlyUsedModels.map((model) => model.key));
+  const providersWithCredsSet = new Set(providersWithCreds);
   return sortAvailableModels(
     Object.values(snapshot)
       .flatMap((entry) => entry?.models ?? [])
       .filter(
-        (model) =>
-          !recentlyUsedKeys.has(model.key) && providersWithCreds.includes(model.provider.id)
+        (model) => !recentlyUsedKeys.has(model.key) && providersWithCredsSet.has(model.provider.id)
       )
   );
 }

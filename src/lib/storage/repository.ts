@@ -16,7 +16,7 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
   try {
     assertRecordStringString(obj);
   } catch (error) {
-    getTelemetry()?.onStorageError?.('read', error as Error);
+    getTelemetry()?.onStorageError?.('read', RECENTLY_USED_MODELS_KEY, error as Error);
     return [];
   }
   try {
@@ -27,7 +27,7 @@ function sortKeysByRecency<T>(obj: Record<string, string> | undefined): T[] {
         .map(([key]) => key as T)
     );
   } catch (error) {
-    getTelemetry()?.onStorageError?.('read', error as Error);
+    getTelemetry()?.onStorageError?.('read', RECENTLY_USED_MODELS_KEY, error as Error);
     return [];
   }
 }

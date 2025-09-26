@@ -40,10 +40,14 @@ export function useModelsWithConfiguredProvider(
     state: 'loading' | 'ready' | 'error';
     message?: string;
   }>({ state: 'loading' });
-  const { snapshot, refresh, removeProvider } = useModelCatalog({
-    catalog:
+  const catalog = useMemo(
+    () =>
       options?.catalog ??
       new ModelCatalog(providerRegistry, options?.modelStorage ?? storage, options?.telemetry),
+    [providerRegistry, storage, options?.catalog, options?.modelStorage, options?.telemetry]
+  );
+  const { snapshot, refresh, removeProvider } = useModelCatalog({
+    catalog,
     shouldInitialize: options?.prefetch !== false,
   });
 
@@ -126,13 +130,14 @@ export function useModelsWithConfiguredProvider(
         const recent = recentModelKeys
           .map((key) => {
             const { providerId, modelId } = idsFromKey(key);
-            const providerEntry = snapshot[providerId];
+            const provider = providerRegistry.getProvider(providerId);
             // eslint-disable-next-line sonarjs/no-nested-functions
-            const entry = providerEntry?.models.find((model) => model.model.id === modelId);
-            if (entry === undefined) {
+            const model = provider.models.find((model) => model.id === modelId);
+            if (model === undefined) {
               return undefined;
             }
-            return { ...entry, key } as CatalogEntry;
+            const entry = { model, provider: provider.metadata, key };
+            return { ...entry, key } satisfies CatalogEntry;
           })
           .filter((x): x is CatalogEntry => x !== undefined);
         setRecentlyUsedModels(recent);
@@ -146,7 +151,7 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-  }, [storage, providerRegistry, snapshot]);
+  }, [storage, providerRegistry]);
 
   // Available models derived from current snapshot and providers with credentials
   const modelsWithCredentials: CatalogEntry[] = useMemo(() => {

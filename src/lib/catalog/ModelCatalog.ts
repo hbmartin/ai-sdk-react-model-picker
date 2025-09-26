@@ -98,7 +98,7 @@ export class ModelCatalog {
     }
     const provider = this.providerRegistry.getProvider(providerId);
     const state = this.createStateFromProvider(provider);
-    this.snapshot[providerId] = state;
+    this.snapshot = { ...this.snapshot, [providerId]: state };
     this.emit();
 
     return state;
@@ -117,7 +117,7 @@ export class ModelCatalog {
       return;
     }
     updated.lastUpdatedAt = Date.now();
-    this.snapshot[providerId] = updated;
+    this.snapshot = { ...this.snapshot, [providerId]: updated };
     this.emit();
   }
 
@@ -141,10 +141,12 @@ export class ModelCatalog {
           this.mergeAddedModelsIntoSnapshot(provider, persisted, 'user');
         }
       } catch (error) {
-        this.telemetry?.onFetchError?.(
+        this.telemetry?.onStorageError?.(
+          'read',
           providerId,
           error instanceof Error ? error : new Error(String(error))
         );
+        this.setStatus(providerId, 'ready');
       }
     })().finally(() => {
       this.pendingHydrations.delete(providerId);
@@ -168,7 +170,14 @@ export class ModelCatalog {
     if (prefetch) {
       const providerIdsWithCreds = await getProvidersWithCredentials(this.modelStorage);
       for (const providerId of providerIdsWithCreds) {
-        await this.refresh(providerId);
+        try {
+          await this.refresh(providerId);
+        } catch (error) {
+          this.telemetry?.onFetchError?.(
+            providerId,
+            error instanceof Error ? error : new Error(String(error))
+          );
+        }
       }
     }
   }
@@ -218,7 +227,6 @@ export class ModelCatalog {
       return {
         error: undefined,
         status: 'ready',
-        lastUpdatedAt: Date.now(),
         models: [...nextModels, ...state.models],
       };
     });
@@ -241,7 +249,7 @@ export class ModelCatalog {
       const config = await getProviderConfiguration(this.modelStorage, providerId);
       const valid = config ? provider.configuration.validateConfig(config).ok : false;
       if (!valid && opts?.force !== true) {
-        this.telemetry?.onProviderNotFound?.(providerId);
+        this.telemetry?.onProviderInvalidConfig?.(providerId);
         this.setStatus(providerId, 'missing-config');
         return;
       }
@@ -250,6 +258,7 @@ export class ModelCatalog {
       try {
         const models = await provider.fetchModels();
         this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
+        // TODO: remove / update builtin models based on API response
         await this.persistNonBuiltin(providerId);
         this.telemetry?.onFetchSuccess?.(providerId, models.length);
       } catch (error) {
@@ -278,13 +287,12 @@ export class ModelCatalog {
       return;
     }
 
-    const timestamp = Date.now();
     const model: ModelConfig = {
       id: createModelId(modelId),
       displayName: modelId,
       origin: 'user',
       visible: true,
-      discoveredAt: timestamp,
+      discoveredAt: Date.now(),
     };
     const providerMetadata = this.providerRegistry.getProvider(providerId).metadata;
     const modelEntry: CatalogEntry = {
@@ -299,7 +307,6 @@ export class ModelCatalog {
     this.updateProvider(providerId, (state) => ({
       ...state,
       models: [modelEntry, ...state.models],
-      lastUpdatedAt: timestamp,
     }));
 
     await this.persistNonBuiltin(providerId);
@@ -319,7 +326,6 @@ export class ModelCatalog {
     this.updateProvider(providerId, (prev) => ({
       ...prev,
       models: remaining,
-      lastUpdatedAt: Date.now(),
     }));
 
     await this.persistNonBuiltin(providerId);
@@ -327,8 +333,9 @@ export class ModelCatalog {
 
   removeProvider(providerId: ProviderId): void {
     // TODO: consolidate storage removal, currently this is done in useModelsWithConfiguredProvider
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete this.snapshot[providerId];
+    // eslint-disable-next-line sonarjs/no-unused-vars
+    const { [providerId]: _, ...rest } = this.snapshot;
+    this.snapshot = rest;
     this.emit();
   }
 }

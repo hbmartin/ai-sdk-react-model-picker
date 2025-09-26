@@ -126,10 +126,15 @@ export function ModelPickerProvider({
 
   useEffect(() => {
     setGlobalTelemetry(telemetry);
+    return () => setGlobalTelemetry();
   }, [telemetry]);
 
+  const catalog = useMemo(
+    () => new ModelCatalog(providerRegistry, modelStorage ?? storage, telemetry),
+    [providerRegistry, modelStorage, storage, telemetry]
+  );
   const { snapshot, refresh, refreshAll } = useModelCatalog({
-    catalog: new ModelCatalog(providerRegistry, modelStorage ?? storage, telemetry),
+    catalog,
     shouldInitialize: prefetch,
   });
 

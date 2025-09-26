@@ -68,7 +68,7 @@ export async function getPersistedModels(
       // ignore
     }
   } catch (error) {
-    getTelemetry()?.onStorageError?.('read', error as Error);
+    getTelemetry()?.onStorageError?.('read', providerId, error as Error);
   }
   return [];
 }
@@ -85,7 +85,7 @@ export async function setPersistedModels(
     // Use a single string field to store the JSON to keep adapter compat
     await modelStorage.set(key, { __json: JSON.stringify(env) });
   } catch (error) {
-    getTelemetry()?.onStorageError?.('write', error as Error);
+    getTelemetry()?.onStorageError?.('write', providerId, error as Error);
     // Swallow to avoid crashing UI paths; telemetry reports the problem
   }
 }

@@ -10,11 +10,11 @@ export interface UseModelCatalogOptions {
 export interface UseModelCatalogResult {
   catalog: ModelCatalog;
   snapshot: CatalogSnapshot;
-  refresh(providerId: ProviderId, opts?: { force?: boolean }): void;
-  refreshAll(): void;
-  addUserModel(providerId: ProviderId, modelId: ModelId): Promise<void>;
-  removeModel(providerId: ProviderId, modelId: ModelId): Promise<void>;
-  removeProvider(providerId: ProviderId): void;
+  refresh: (providerId: ProviderId, opts?: { force?: boolean }) => void;
+  refreshAll: () => void;
+  addUserModel: (providerId: ProviderId, modelId: ModelId) => Promise<void>;
+  removeModel: (providerId: ProviderId, modelId: ModelId) => Promise<void>;
+  removeProvider: (providerId: ProviderId) => void;
 }
 
 export function useModelCatalog({

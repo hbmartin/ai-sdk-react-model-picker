@@ -191,6 +191,8 @@ export abstract class AIProvider {
     }
     const response = await fetch(this.metadata.fetchModelListUrl);
     // TODO: parse openai response  by default
+    // Add validation, timeouts, size limits, and schema checking for parsed JSON.
+    // Additionally, consider error handling for non-2xx responses and content-type verification.
     const data = (await response.json()) as ModelConfig[];
     return data;
   }
