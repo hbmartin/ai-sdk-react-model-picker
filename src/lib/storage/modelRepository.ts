@@ -2,6 +2,7 @@ import {
   type StorageAdapter,
   type ModelConfig,
   type ProviderId,
+  type ModelId,
   assertRecordStringString,
   isObject,
 } from '../types';
@@ -12,11 +13,20 @@ function providerModelsKey(providerId: ProviderId): string {
   return `models:${providerId}`;
 }
 
+function providerModelVisibilityKey(providerId: ProviderId): string {
+  return `model-visibility:${providerId}`;
+}
+
 interface PersistedModelsEnvelope {
   // reserved for future format/versioning changes
   version: 1;
   // compact array of models; only ModelConfig fields are persisted
   models: ModelConfig[];
+}
+
+interface PersistedVisibilityEnvelope {
+  version: 1;
+  hidden: ModelId[];
 }
 
 function isPersistedEnvelope(value: unknown): value is PersistedModelsEnvelope {
@@ -29,6 +39,19 @@ function isPersistedEnvelope(value: unknown): value is PersistedModelsEnvelope {
     'models' in value &&
     Array.isArray(value['models'])
   );
+}
+
+function isVisibilityEnvelope(value: unknown): value is PersistedVisibilityEnvelope {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (!('version' in value) || typeof value['version'] !== 'number') {
+    return false;
+  }
+  if (!('hidden' in value) || !Array.isArray(value['hidden'])) {
+    return false;
+  }
+  return value['hidden'].every((entry) => typeof entry === 'string');
 }
 
 // Load all persisted models for a provider; returns an empty array on any error
@@ -87,5 +110,69 @@ export async function setPersistedModels(
   } catch (error) {
     getTelemetry()?.onStorageError?.('write', providerId, error as Error);
     // Swallow to avoid crashing UI paths; telemetry reports the problem
+  }
+}
+
+export async function getHiddenModelIds(
+  modelStorage: StorageAdapter,
+  providerId: ProviderId
+): Promise<ModelId[]> {
+  try {
+    const raw = await modelStorage.get(providerModelVisibilityKey(providerId));
+    if (!raw) {
+      return [];
+    }
+
+    if (raw['__json'] !== undefined) {
+      try {
+        const env = JSON.parse(raw['__json']) as PersistedVisibilityEnvelope;
+        if (isVisibilityEnvelope(env)) {
+          return env.hidden;
+        }
+      } catch {
+        // fall through to legacy decoding
+      }
+    }
+
+    assertRecordStringString(raw);
+    const values = Object.values(raw);
+    if (values.length === 0) {
+      return [];
+    }
+
+    try {
+      const env = JSON.parse(values[0]) as PersistedVisibilityEnvelope;
+      if (isVisibilityEnvelope(env)) {
+        return env.hidden;
+      }
+    } catch {
+      // ignore malformed legacy values
+    }
+  } catch (error) {
+    getTelemetry()?.onStorageError?.(
+      'read',
+      providerModelVisibilityKey(providerId),
+      error as Error
+    );
+  }
+  return [];
+}
+
+export async function setHiddenModelIds(
+  modelStorage: StorageAdapter,
+  providerId: ProviderId,
+  hidden: ModelId[]
+): Promise<void> {
+  try {
+    const env: PersistedVisibilityEnvelope = { version: 1, hidden };
+    await modelStorage.set(providerModelVisibilityKey(providerId), {
+      __json: JSON.stringify(env),
+    });
+  } catch (error) {
+    getTelemetry()?.onStorageError?.(
+      'write',
+      providerModelVisibilityKey(providerId),
+      error as Error
+    );
   }
 }

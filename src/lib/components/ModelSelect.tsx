@@ -1,5 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import { type ModelSelectProps, type ProviderAndModelKey, idsFromKey } from '../types';
+import {
+  type ModelSelectProps,
+  type ProviderAndModelKey,
+  type ProviderId,
+  type ModelId,
+  idsFromKey,
+} from '../types';
 import { useOptionalModelPicker } from '../context';
 import {
   useModelsWithConfiguredProvider,
@@ -49,7 +55,23 @@ export function ModelSelect({
     deleteProvider,
     isLoadingOrError,
     refreshProviderModels,
+    getProviderModels,
+    getProviderModelsStatus,
+    toggleModelVisibility,
+    addUserModelAndSelect,
   } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry, hookOptions);
+
+  const selectModelAndNotify = useCallback(
+    (providerId: ProviderId, modelId?: ModelId) => {
+      const entry = setSelectedProviderAndModel(providerId, modelId);
+      if (entry) {
+        context?.selectModel(entry);
+        onModelChange?.(entry);
+      }
+      return entry;
+    },
+    [setSelectedProviderAndModel, context, onModelChange]
+  );
 
   // Handle model selection
   const handleModelSelect = (key: ProviderAndModelKey | typeof ADD_MODEL_ID) => {
@@ -61,12 +83,7 @@ export function ModelSelect({
     if (modelId === selectedModel?.model.id && providerId === selectedModel.provider.id) {
       return;
     }
-    const modelWithProvider = setSelectedProviderAndModel(providerId, modelId);
-    if (modelWithProvider) {
-      // Notify both context (if present) and prop callback
-      context?.selectModel(modelWithProvider);
-      onModelChange?.(modelWithProvider);
-    }
+    void selectModelAndNotify(providerId, modelId);
   };
 
   const shouldOpenList = useCallback(() => {
@@ -171,20 +188,28 @@ export function ModelSelect({
           storage={effectiveStorage}
           onClose={() => setShowAddModelForm(false)}
           onProviderConfigured={(provider) => {
-            const modelWithProvider = setSelectedProviderAndModel(provider.id);
+            void selectModelAndNotify(provider.id);
             // Trigger background refresh for this provider after configuration
             refreshProviderModels(provider.id);
             setShowAddModelForm(false);
-            if (modelWithProvider) {
-              context?.selectModel(modelWithProvider);
-            }
-            onModelChange?.(modelWithProvider);
           }}
           onProviderDeleted={(providerId) => {
             const model = deleteProvider(providerId);
             context?.selectModel(model);
             onModelChange?.(model);
           }}
+          getProviderModels={getProviderModels}
+          getProviderModelsStatus={getProviderModelsStatus}
+          onToggleModelVisibility={toggleModelVisibility}
+          onAddModel={async (providerId, modelId) => {
+            const entry = await addUserModelAndSelect(providerId, modelId);
+            if (entry) {
+              context?.selectModel(entry);
+              onModelChange?.(entry);
+            }
+            return entry;
+          }}
+          selectedCatalogModel={selectedModel}
         />
       )}
     </div>
