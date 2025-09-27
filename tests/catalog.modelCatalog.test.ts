@@ -1,12 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
-import {
-  addProviderWithCredentials,
-  setProviderConfiguration,
-} from '../src/lib/storage/repository';
+import { addProviderWithCredentials } from '../src/lib/storage/repository';
 import {
   createProviderId,
   createModelId,
@@ -70,27 +67,6 @@ function builtin(id: string, name?: string): ModelConfig {
   return { id: createModelId(id), displayName: name ?? id } as ModelConfig;
 }
 
-function apiModel(id: string, name?: string): ModelConfig {
-  // API payload may omit origin/visible; catalog normalizes
-  return { id: createModelId(id), displayName: name ?? id } as ModelConfig;
-}
-
-function createDeferred<T>() {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject } as const;
-}
-
-async function flushMicrotasks(iterations = 3) {
-  for (let i = 0; i < iterations; i += 1) {
-    await Promise.resolve();
-  }
-}
-
 describe('ModelCatalog merge and persistence', () => {
   let storage: MemoryStorageAdapter;
   let modelStorage: MemoryStorageAdapter;
@@ -107,18 +83,6 @@ describe('ModelCatalog merge and persistence', () => {
       builtin('b2', 'Builtin Two'),
     ]);
     registry.register(provider);
-  });
-
-  it.skip('upserts API models and persists only api/user entries', async () => {
-    // Test disabled - API behavior has changed
-  });
-
-  it.skip('marks stale API models as invisible but keeps them persisted', async () => {
-    // Test disabled - API behavior has changed
-  });
-
-  it.skip('preserves discoveredAt across updates and updates updatedAt', async () => {
-    // Test disabled - API behavior has changed
   });
 
   it('addUserModel adds visible user entry and prevents duplicates; removeUserModel removes only user entries', async () => {
@@ -153,10 +117,6 @@ describe('ModelCatalog merge and persistence', () => {
     expect(after[0]?.model.origin).toBe('builtin');
   });
 
-  it.skip('addUserModel prevents duplicate when id matches existing API model exactly', async () => {
-    // Test disabled - API behavior has changed
-  });
-
   it('addUserModel treats different case as distinct id (exact match only)', async () => {
     const catalog = new ModelCatalog(registry, modelStorage);
     await catalog.initialize(false);
@@ -178,29 +138,5 @@ describe('ModelCatalog merge and persistence', () => {
     await catalog.refresh(pid);
     const status = catalog.getSnapshot()[pid].status;
     expect(status === 'missing-config' || status === 'idle').toBe(true);
-  });
-
-  it.skip('initialize with prefetch refreshes providers with credentials if config valid', async () => {
-    // Test disabled - API behavior has changed
-  });
-
-  it.skip('prevents overlapping refresh sequences for the same provider', async () => {
-    // Test disabled - API behavior has changed
-  });
-
-  it.skip('exposes refresh pending state while fetch is in flight', async () => {
-    // Test disabled - API behavior has changed
-  });
-
-  it.skip('adds newly registered providers to the snapshot with builtin models', async () => {
-    // Test disabled - catalog no longer auto-watches registry
-  });
-
-  it.skip('updates provider signature after recomputing snapshot without duplicate notifications', async () => {
-    // Test disabled - catalog no longer auto-watches registry
-  });
-
-  it.skip('processes rapid provider registrations without starving pending updates', async () => {
-    // Test disabled - catalog no longer auto-watches registry
   });
 });

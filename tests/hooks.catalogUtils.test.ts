@@ -45,9 +45,7 @@ describe('sortAvailableModels', () => {
       mp('A', 'm', 1000),
       mp('A', 'n', undefined, false),
     ];
-    const out = sortAvailableModels(models).map(
-      (x) => `${x.provider.name}/${x.model.displayName}`
-    );
+    const out = sortAvailableModels(models).map((x) => `${x.provider.name}/${x.model.displayName}`);
     // m has discoveredAt and should come first
     expect(out[0]).toBe('A/m');
     // remaining without discoveredAt sort by provider asc then model asc
