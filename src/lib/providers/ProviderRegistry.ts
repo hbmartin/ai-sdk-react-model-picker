@@ -2,7 +2,6 @@ import {
   type AIProvider,
   type IProviderRegistry,
   type ProviderId,
-  type ModelConfigWithProvider,
   type ProviderMetadata,
   createProviderId,
 } from '../types';
@@ -91,16 +90,5 @@ export class ProviderRegistry implements IProviderRegistry {
    */
   unregister(providerId: ProviderId): boolean {
     return this.providers.delete(providerId);
-  }
-
-  /**
-   * Find providers that support a specific capability
-   * @param capability The capability to search for (e.g., vision, tools)
-   * @returns Array of providers supporting the capability
-   */
-  getProvidersByCapability(capability: keyof ModelConfigWithProvider['model']): AIProvider[] {
-    return this.getAllProviders().filter((provider) =>
-      provider.models.some((model) => model[capability] === true)
-    );
   }
 }

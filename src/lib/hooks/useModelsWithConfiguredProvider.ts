@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { idsFromKey, providerAndModelKey } from '../types';
+import { providerAndModelKey } from '../types';
 import type {
   StorageAdapter,
   ModelId,
@@ -66,6 +66,9 @@ export function useModelsWithConfiguredProvider(
     setProvidersWithCreds(nextProviders);
     setRecentlyUsedModels(nextRecentlyUsed);
 
+    // modelsWithCredentials is updated reactively from the catalog snapshot
+    // TODO: unify so that updates flow in a common way
+    // for now this works since we're filtering by provider id anyway
     const modelToSelect: CatalogEntry | undefined =
       nextRecentlyUsed[0] ??
       modelsWithCredentials.find((model) => model.provider.id !== providerId);
@@ -82,7 +85,7 @@ export function useModelsWithConfiguredProvider(
     const model =
       modelId === undefined
         ? provider.getDefaultModel()
-        : provider.models.find((model) => model.id === modelId);
+        : catalog.getModel(providerAndModelKey(modelId, providerId))?.model;
     if (model === undefined) {
       return;
     }
@@ -128,17 +131,7 @@ export function useModelsWithConfiguredProvider(
 
         // Recently used list, but only for models that currently exist in snapshot
         const recent = recentModelKeys
-          .map((key) => {
-            const { providerId, modelId } = idsFromKey(key);
-            const provider = providerRegistry.getProvider(providerId);
-            // eslint-disable-next-line sonarjs/no-nested-functions
-            const model = provider.models.find((model) => model.id === modelId);
-            if (model === undefined) {
-              return undefined;
-            }
-            const entry = { model, provider: provider.metadata, key };
-            return { ...entry, key } satisfies CatalogEntry;
-          })
+          .map((key) => catalog.getModel(key))
           .filter((x): x is CatalogEntry => x !== undefined);
         setRecentlyUsedModels(recent);
         setSelectedModel((prev) => prev ?? recent[0]);
@@ -151,7 +144,7 @@ export function useModelsWithConfiguredProvider(
       }
     }
     void loadRecentlyUsed();
-  }, [storage, providerRegistry]);
+  }, [storage, providerRegistry, catalog]);
 
   // Available models derived from current snapshot and providers with credentials
   const modelsWithCredentials: CatalogEntry[] = useMemo(() => {

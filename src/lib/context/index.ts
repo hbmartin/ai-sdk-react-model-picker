@@ -19,7 +19,7 @@ import type {
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
 import { useModelCatalog } from '../hooks/useModelCatalog';
-import { setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
+import { getTelemetry, setGlobalTelemetry, type ModelPickerTelemetry } from '../telemetry';
 
 // State interface
 interface ModelPickerState {
@@ -126,7 +126,11 @@ export function ModelPickerProvider({
 
   useEffect(() => {
     setGlobalTelemetry(telemetry);
-    return () => setGlobalTelemetry();
+    return () => {
+      if (getTelemetry() === telemetry) {
+        setGlobalTelemetry();
+      }
+    };
   }, [telemetry]);
 
   const catalog = useMemo(

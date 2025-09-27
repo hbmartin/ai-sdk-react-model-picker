@@ -95,6 +95,9 @@
     "react-hook-form": "^7.62.0"
   },
   "peerDependenciesMeta": {
+    "@ai-sdk/provider": {
+      "optional": true
+    },
     "@ai-sdk/openai": {
       "optional": true
     },
@@ -132,6 +135,7 @@
     "@ai-sdk/google": "^2.0.17",
     "@ai-sdk/mistral": "^2.0.17",
     "@ai-sdk/openai": "^2.0.38",
+    "@ai-sdk/provider": "^2.0.0",
     "@eslint/js": "^9.36.0",
     "@openrouter/ai-sdk-provider": "^1.2.0",
     "@storybook/addon-docs": "^9.1.8",
@@ -145,7 +149,7 @@
     "@types/node": "20.19.1",
     "@types/react": "^19.1.14",
     "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^5.0.3",
+    "@vitejs/plugin-react": "^5.0.4",
     "@vitest/ui": "^3.2.4",
     "ai": "^5.0.56",
     "autoprefixer": "^10.4.21",

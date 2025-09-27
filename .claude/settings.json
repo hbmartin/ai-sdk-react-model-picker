@@ -1,15 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run lint:fix)",
-      "Bash(npm run typecheck)",
-      "Bash(npm run format)",
-      "Bash(npm run format:check)",
-      "Bash(npm run test)",
+      "Bash(pnpm run build:*)",
+      "Bash(pnpm run lint)",
+      "Bash(pnpm run lint:fix)",
+      "Bash(pnpm run typecheck)",
+      "Bash(pnpm run format)",
+      "Bash(pnpm run format:check)",
+      "Bash(pnpm run test)",
       "Bash(git log:*)",
-      "Bash(npm ls:*)",
+      "Bash(pnpm ls:*)",
       "Bash(grep:*)",
       "WebFetch(domain:typescript-eslint.io)",
       "WebFetch(domain:vercel.com)",
@@ -26,11 +26,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npm run format"
+            "command": "pnpm run format"
           },
           {
             "type": "command",
-            "command": "npm run typecheck"
+            "command": "pnpm run typecheck"
           }
         ]
       }
