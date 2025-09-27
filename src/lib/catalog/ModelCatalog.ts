@@ -289,13 +289,9 @@ export class ModelCatalog {
   async refreshAll(): Promise<void> {
     const providers = await getProvidersWithCredentials(this.modelStorage);
     const providersWithCreds = providers.filter((pid) => this.providerRegistry.hasProvider(pid));
-    await Promise.all(
-      providersWithCreds.map((pid) => {
-        return this.refresh(pid).catch((error: unknown) => {
-          this.telemetry?.onFetchError?.(pid, error as Error);
-        });
-      })
-    );
+    for (const pid of providersWithCreds) {
+      await this.refresh(pid);
+    }
   }
 
   async addUserModel(providerId: ProviderId, modelId: string): Promise<void> {

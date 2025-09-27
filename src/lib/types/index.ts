@@ -49,7 +49,7 @@ export function providerAndModelKey(
     if (providerId === undefined) {
       throw new Error('Provider ID is required when model is a string');
     }
-    return `${model}${KEY_DELIMITER}${providerId}` as ProviderAndModelKey;
+    return `${providerId}${KEY_DELIMITER}${model}` as ProviderAndModelKey;
   }
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
 }
