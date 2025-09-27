@@ -11,8 +11,9 @@ import type {
   ProviderMetadata,
   ModelOrigin,
   ProviderStatus,
+  ProviderAndModelKey,
 } from '../types';
-import { createModelId, providerAndModelKey } from '../types';
+import { createModelId, idsFromKey, providerAndModelKey } from '../types';
 import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import type { ModelPickerTelemetry } from '../telemetry';
@@ -37,6 +38,18 @@ function modelToCatalogEntry(
 }
 
 export class ModelCatalog {
+  getModel(key: ProviderAndModelKey): CatalogEntry | undefined {
+    const { providerId, modelId } = idsFromKey(key);
+    const provider = this.snapshot[providerId];
+    if (provider === undefined) {
+      return undefined;
+    }
+    const model = provider.models.find((model) => model.model.id === modelId);
+    if (model === undefined) {
+      return undefined;
+    }
+    return { ...model, key };
+  }
   private snapshot: CatalogSnapshot;
   private readonly listeners = new Set<() => void>();
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
@@ -246,16 +259,16 @@ export class ModelCatalog {
     const provider = this.providerRegistry.getProvider(providerId);
 
     const run = (async () => {
-      const config = await getProviderConfiguration(this.modelStorage, providerId);
-      const valid = config ? provider.configuration.validateConfig(config).ok : false;
-      if (!valid && opts?.force !== true) {
-        this.telemetry?.onProviderInvalidConfig?.(providerId);
-        this.setStatus(providerId, 'missing-config');
-        return;
-      }
-      this.setStatus(providerId, 'refreshing');
-      this.telemetry?.onFetchStart?.(providerId);
       try {
+        const config = await getProviderConfiguration(this.modelStorage, providerId);
+        const valid = config ? provider.configuration.validateConfig(config).ok : false;
+        if (!valid && opts?.force !== true) {
+          this.telemetry?.onProviderInvalidConfig?.(providerId);
+          this.setStatus(providerId, 'missing-config');
+          return;
+        }
+        this.setStatus(providerId, 'refreshing');
+        this.telemetry?.onFetchStart?.(providerId);
         const models = await provider.fetchModels();
         this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
         // TODO: remove / update builtin models based on API response
@@ -276,7 +289,13 @@ export class ModelCatalog {
   async refreshAll(): Promise<void> {
     const providers = await getProvidersWithCredentials(this.modelStorage);
     const providersWithCreds = providers.filter((pid) => this.providerRegistry.hasProvider(pid));
-    await Promise.all(providersWithCreds.map((pid) => this.refresh(pid)));
+    await Promise.all(
+      providersWithCreds.map((pid) => {
+        return this.refresh(pid).catch((error: unknown) => {
+          this.telemetry?.onFetchError?.(pid, error as Error);
+        });
+      })
+    );
   }
 
   async addUserModel(providerId: ProviderId, modelId: string): Promise<void> {

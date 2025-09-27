@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { CatalogSnapshot, ModelId, ProviderId } from '../types';
+import { getTelemetry } from '../telemetry';
 import type { ModelCatalog } from '../catalog/ModelCatalog';
 
 export interface UseModelCatalogOptions {
@@ -35,8 +36,13 @@ export function useModelCatalog({
   const actions = useMemo(
     () => ({
       refresh: (providerId: ProviderId, opts?: { force?: boolean }) =>
-        void catalog.refresh(providerId, opts),
-      refreshAll: () => void catalog.refreshAll(),
+        void catalog.refresh(providerId, opts).catch((error: unknown) => {
+          getTelemetry()?.onFetchError?.(providerId, error as Error);
+        }),
+      refreshAll: () =>
+        void catalog.refreshAll().catch((error: unknown) => {
+          getTelemetry()?.onFetchError?.(undefined, error as Error);
+        }),
       addUserModel: (providerId: ProviderId, modelId: ModelId) =>
         catalog.addUserModel(providerId, modelId),
       removeProvider: (providerId: ProviderId) => catalog.removeProvider(providerId),

@@ -41,7 +41,16 @@ export interface CatalogEntry extends ModelConfigWithProvider {
   key: ProviderAndModelKey;
 }
 
-export function providerAndModelKey(model: ModelConfigWithProvider): ProviderAndModelKey {
+export function providerAndModelKey(
+  model: ModelConfigWithProvider | string,
+  providerId?: ProviderId
+): ProviderAndModelKey {
+  if (typeof model === 'string') {
+    if (providerId === undefined) {
+      throw new Error('Provider ID is required when model is a string');
+    }
+    return `${model}${KEY_DELIMITER}${providerId}` as ProviderAndModelKey;
+  }
   return `${model.provider.id}${KEY_DELIMITER}${model.model.id}` as ProviderAndModelKey;
 }
 
