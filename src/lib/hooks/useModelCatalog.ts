@@ -15,6 +15,7 @@ export interface UseModelCatalogResult {
   addUserModel: (providerId: ProviderId, modelId: ModelId) => Promise<void>;
   removeModel: (providerId: ProviderId, modelId: ModelId) => Promise<void>;
   removeProvider: (providerId: ProviderId) => void;
+  setModelVisibility: (providerId: ProviderId, modelId: ModelId, visible: boolean) => Promise<void>;
 }
 
 export function useModelCatalog({
@@ -42,6 +43,8 @@ export function useModelCatalog({
       removeProvider: (providerId: ProviderId) => catalog.removeProvider(providerId),
       removeModel: (providerId: ProviderId, modelId: ModelId) =>
         catalog.removeModel(providerId, modelId),
+      setModelVisibility: (providerId: ProviderId, modelId: ModelId, visible: boolean) =>
+        catalog.setModelVisibility(providerId, modelId, visible),
     }),
     [catalog]
   );

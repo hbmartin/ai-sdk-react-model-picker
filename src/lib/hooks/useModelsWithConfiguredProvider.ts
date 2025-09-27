@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { providerAndModelKey } from '../types';
+import { createModelId, providerAndModelKey } from '../types';
 import type {
   StorageAdapter,
   ModelId,
   IProviderRegistry,
-  ModelConfigWithProvider,
   ProviderId,
   CatalogEntry,
 } from '../types';
@@ -46,7 +45,7 @@ export function useModelsWithConfiguredProvider(
       new ModelCatalog(providerRegistry, options?.modelStorage ?? storage, options?.telemetry),
     [providerRegistry, storage, options?.catalog, options?.modelStorage, options?.telemetry]
   );
-  const { snapshot, refresh, removeProvider } = useModelCatalog({
+  const { snapshot, refresh, removeProvider, addUserModel, setModelVisibility } = useModelCatalog({
     catalog,
     shouldInitialize: options?.prefetch !== false,
   });
@@ -82,35 +81,62 @@ export function useModelsWithConfiguredProvider(
     modelId?: ModelId
   ): CatalogEntry | undefined => {
     const provider = providerRegistry.getProvider(providerId);
-    const model =
-      modelId === undefined
-        ? provider.getDefaultModel()
-        : catalog.getModel(providerAndModelKey(modelId, providerId))?.model;
-    if (model === undefined) {
+    const providerSnapshot = snapshot[providerId];
+
+    let catalogEntry: CatalogEntry | undefined;
+
+    if (modelId === undefined) {
+      catalogEntry =
+        providerSnapshot?.models.find((entry) => entry.model.isDefault === true) ??
+        providerSnapshot?.models[0];
+      if (catalogEntry === undefined) {
+        const fallbackModel = provider.getDefaultModel();
+        catalogEntry = {
+          model: fallbackModel,
+          provider: provider.metadata,
+          key: providerAndModelKey({ model: fallbackModel, provider: provider.metadata }),
+        };
+      }
+    } else {
+      catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
+      if (catalogEntry === undefined) {
+        const fallbackModel = provider.models.find((model) => model.id === modelId);
+        if (fallbackModel === undefined) {
+          return;
+        }
+        catalogEntry = {
+          model: fallbackModel,
+          provider: provider.metadata,
+          key: providerAndModelKey({ model: fallbackModel, provider: provider.metadata }),
+        };
+      }
+    }
+
+    if (catalogEntry === undefined) {
       return;
     }
 
-    // Save selection to storage
-    const modelWithProvider: ModelConfigWithProvider = { model, provider: provider.metadata };
     void addProviderWithCredentials(storage, providerId);
-    void addRecentlyUsedModel(storage, providerAndModelKey(modelWithProvider));
+    void addRecentlyUsedModel(storage, catalogEntry.key);
 
-    // Ensure provider is tracked for availability
     setProvidersWithCreds((prev) => (prev.includes(providerId) ? prev : [providerId, ...prev]));
 
-    // Update selection
-    const modelKey = providerAndModelKey(modelWithProvider);
-    const catalogEntry: CatalogEntry = { ...modelWithProvider, key: modelKey };
-    setSelectedModel(catalogEntry);
+    const entry: CatalogEntry = {
+      model: catalogEntry.model,
+      provider: catalogEntry.provider,
+      key: catalogEntry.key,
+    };
+
+    setSelectedModel(entry);
     setRecentlyUsedModels((prev) => {
-      const index = prev.findIndex((model) => model.key === modelKey);
+      const index = prev.findIndex((model) => model.key === entry.key);
       if (index === -1) {
-        return [catalogEntry, ...prev];
+        return [entry, ...prev];
       }
-      return [catalogEntry, ...prev.slice(0, index), ...prev.slice(index + 1)];
+      return [entry, ...prev.slice(0, index), ...prev.slice(index + 1)];
     });
 
-    return catalogEntry;
+    return entry;
   };
 
   useEffect(() => {
@@ -155,6 +181,29 @@ export function useModelsWithConfiguredProvider(
     );
   }, [snapshot, recentlyUsedModels, providersWithCreds]);
 
+  const getProviderModels = (providerId: ProviderId): CatalogEntry[] => {
+    return snapshot[providerId]?.models ?? [];
+  };
+
+  const getProviderModelsStatus = (providerId: ProviderId) => snapshot[providerId];
+
+  const toggleModelVisibility = (providerId: ProviderId, modelId: ModelId, visible: boolean) => {
+    return setModelVisibility(providerId, modelId, visible);
+  };
+
+  const addUserModelAndSelect = async (
+    providerId: ProviderId,
+    rawModelId: string
+  ): Promise<CatalogEntry | undefined> => {
+    const trimmed = rawModelId.trim();
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+    const branded = createModelId(trimmed);
+    await addUserModel(providerId, branded);
+    return setSelectedProviderAndModel(providerId, branded);
+  };
+
   return {
     recentlyUsedModels,
     modelsWithCredentials,
@@ -165,5 +214,9 @@ export function useModelsWithConfiguredProvider(
     refreshProviderModels: (providerId: ProviderId) => {
       refresh(providerId);
     },
+    getProviderModels,
+    getProviderModelsStatus,
+    toggleModelVisibility,
+    addUserModelAndSelect,
   };
 }

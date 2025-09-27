@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type {
   IProviderRegistry,
@@ -6,6 +6,9 @@ import type {
   AIProvider,
   ProviderMetadata,
   ProviderId,
+  CatalogEntry,
+  ProviderModelsStatus,
+  ModelId,
 } from '../types';
 import { TrashIcon } from '../icons';
 import {
@@ -13,7 +16,9 @@ import {
   getProviderConfiguration,
   setProviderConfiguration,
 } from '../storage/repository';
-import { ProviderSelectionListbox } from './ProviderSelectionListbox';
+import { ConfigureModelsPanel } from './add-model-form/ConfigureModelsPanel';
+import { ProviderCredentialsSection } from './add-model-form/ProviderCredentialsSection';
+import type { AddModelFormData } from './add-model-form/types';
 
 export interface AddModelFormProps {
   readonly providerRegistry: IProviderRegistry;
@@ -22,11 +27,18 @@ export interface AddModelFormProps {
   readonly onProviderConfigured: (provider: ProviderMetadata) => void;
   readonly className?: string;
   readonly onProviderDeleted: (providerId: ProviderId) => void;
-}
-
-interface FormData extends Record<string, string> {
-  apiKey?: string;
-  baseURL?: string;
+  readonly getProviderModels: (providerId: ProviderId) => CatalogEntry[];
+  readonly getProviderModelsStatus: (providerId: ProviderId) => ProviderModelsStatus | undefined;
+  readonly onToggleModelVisibility: (
+    providerId: ProviderId,
+    modelId: ModelId,
+    visible: boolean
+  ) => Promise<void>;
+  readonly onAddModel: (
+    providerId: ProviderId,
+    modelId: string
+  ) => Promise<CatalogEntry | undefined>;
+  readonly selectedCatalogModel?: CatalogEntry;
 }
 
 /**
@@ -40,11 +52,22 @@ export function AddModelForm({
   onProviderConfigured,
   className = '',
   onProviderDeleted,
+  getProviderModels,
+  getProviderModelsStatus,
+  onToggleModelVisibility,
+  onAddModel,
+  selectedCatalogModel,
 }: AddModelFormProps) {
   const [selectedProvider, setSelectedProvider] = useState<AIProvider | undefined>();
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | undefined>();
   const [providerHadCredentials, setProviderHadCredentials] = useState<boolean>(false);
+  const [showModelConfigurator, setShowModelConfigurator] = useState(false);
+  const [modelPanelError, setModelPanelError] = useState<string | undefined>();
+  const [newModelId, setNewModelId] = useState('');
+  const [highlightedModelId, setHighlightedModelId] = useState<ModelId | undefined>();
+  const [isAddingModel, setIsAddingModel] = useState(false);
+  const [pendingVisibilityUpdate, setPendingVisibilityUpdate] = useState<ModelId | undefined>();
 
   const {
     register,
@@ -52,7 +75,7 @@ export function AddModelForm({
     formState: { errors, isValid, isSubmitting },
     reset,
     getFieldState,
-  } = useForm<FormData>({
+  } = useForm<AddModelFormData>({
     mode: 'onTouched',
   });
 
@@ -60,6 +83,12 @@ export function AddModelForm({
     const currentProviderId = selectedProvider?.metadata.id;
     setWarnings({});
     setSubmitError(undefined);
+    setShowModelConfigurator(false);
+    setModelPanelError(undefined);
+    setNewModelId('');
+    setHighlightedModelId(undefined);
+    setIsAddingModel(false);
+    setPendingVisibilityUpdate(undefined);
 
     if (selectedProvider === undefined) {
       reset();
@@ -90,6 +119,13 @@ export function AddModelForm({
     }
     return { topProviders, otherProviders };
   }, [providerRegistry]);
+
+  const activeProviderId = selectedProvider?.metadata.id;
+  const providerModels = activeProviderId ? getProviderModels(activeProviderId) : [];
+  const providerModelsStatus = activeProviderId
+    ? getProviderModelsStatus(activeProviderId)
+    : undefined;
+  const canConfigureModels = selectedProvider !== undefined && providerHadCredentials;
 
   const validate = (key: string, value: string | undefined): string | undefined => {
     if (selectedProvider === undefined) {
@@ -126,7 +162,7 @@ export function AddModelForm({
     setSelectedProvider(providerRegistry.getProvider(provider.id));
   };
 
-  const onSubmit = async (formDataWithAny: FormData) => {
+  const onSubmit = async (formDataWithAny: AddModelFormData) => {
     const formData = Object.fromEntries(
       Object.entries(formDataWithAny).filter(([_, value]) => typeof value === 'string')
     ) as Record<string, string>;
@@ -155,6 +191,61 @@ export function AddModelForm({
       setSubmitError(
         `Error saving model configuration: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+  };
+
+  const handleToggleModelVisibility = async (entry: CatalogEntry) => {
+    if (!selectedProvider) {
+      return;
+    }
+    const providerId = selectedProvider.metadata.id;
+    setModelPanelError(undefined);
+    setPendingVisibilityUpdate(entry.model.id);
+    try {
+      await onToggleModelVisibility(providerId, entry.model.id, !(entry.model.visible ?? true));
+    } catch (error) {
+      setModelPanelError(
+        `Failed to update visibility: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setPendingVisibilityUpdate(undefined);
+    }
+  };
+
+  const handleAddModelToCatalog = async () => {
+    if (!selectedProvider) {
+      return;
+    }
+    const trimmed = newModelId.trim();
+    if (trimmed.length === 0) {
+      setModelPanelError('Model id is required');
+      return;
+    }
+
+    const providerId = selectedProvider.metadata.id;
+    const existing = providerModels.find(
+      (entry) => entry.model.id.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing !== undefined) {
+      setModelPanelError('Model already exists');
+      setHighlightedModelId(existing.model.id);
+      return;
+    }
+
+    setModelPanelError(undefined);
+    setIsAddingModel(true);
+    try {
+      const entry = await onAddModel(providerId, trimmed);
+      if (entry !== undefined) {
+        setNewModelId('');
+        setHighlightedModelId(entry.model.id);
+      }
+    } catch (error) {
+      setModelPanelError(
+        `Failed to add model: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setIsAddingModel(false);
     }
   };
 
@@ -205,121 +296,107 @@ export function AddModelForm({
             </button>
           </div>
 
-          <div className="space-y-6">
-            {/* Provider Selection */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Provider</label>
-              <ProviderSelectionListbox
-                selectedItem={selectedProvider?.metadata}
-                onSelectionChange={(provider) => void onProviderSelected(provider)}
-                topOptions={topProviders}
-                otherOptions={otherProviders}
-              />
-              <p className="mt-1 text-xs text-muted">
-                Don't see your provider?{' '}
-                <a
-                  href="https://github.com/hbmartin/ai-sdk-react-model-picker/issues"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Request one here
-                </a>
-              </p>
-            </div>
-
-            {selectedProvider?.configuration.fields.map(
-              ({ key, label: fieldName, placeholder, required }) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    {fieldName}
-                    {required === true ? ' *' : ''}
-                  </label>
-                  <input
-                    placeholder={placeholder}
-                    autoComplete="off"
-                    spellCheck="false"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    type="text"
-                    className="w-full px-3 py-2 border border-border border-solid rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                    {...register(key, {
-                      validate: (value) => validate(key, value),
-                    })}
-                  />
-                  {errors[key] && (
-                    <p className="mt-1 px-1 text-xs text-destructive">{errors[key].message}</p>
-                  )}
-                  {key in warnings && !(key in errors) && (
-                    <p className="mt-1 px-1 text-xs text-warning">{warnings[key]}</p>
-                  )}
-                  {key === 'apiKey' &&
-                    selectedProvider.metadata.apiKeyUrl !== undefined &&
-                    !(key in warnings) &&
-                    !(key in errors) && (
-                      <p className="mt-1 text-xs text-muted">
-                        <a
-                          href={selectedProvider.metadata.apiKeyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          Get your API key here
-                        </a>
-                      </p>
-                    )}
-                </div>
-              )
-            )}
-          </div>
-
-          {submitError !== undefined && (
-            <p className="my-2 px-1 text-sm text-destructive">{submitError}</p>
-          )}
-
-          <div className="flex justify-between gap-2">
-            {selectedProvider !== undefined && providerHadCredentials && (
-              <button
-                type="button"
-                disabled={isSubmitting}
-                aria-busy={isSubmitting}
-                onClick={() => {
-                  void deleteProviderConfiguration(storage, selectedProvider.metadata.id);
-                  setProviderHadCredentials(false);
-                  clearReset();
-                  onProviderDeleted(selectedProvider.metadata.id);
-                }}
-                className="w-1/4
-              mt-8 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded
-              disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
-               border border-border border-solid transition-colors
-               active:scale-95 transition-all duration-100 ease-in-out
-            "
-              >
-                <TrashIcon className="w-4 h-4 flex-shrink-0 text-current" />
-              </button>
-            )}
-            <button
-              type="submit"
-              disabled={isSubmitting || !isValid || selectedProvider === undefined}
-              aria-busy={isSubmitting}
-              className="
-                mt-8 px-4 py-2 text-sm bg-primary text-primary-foreground rounded w-full font-medium
-                disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
-                 border border-border border-solid transition-colors
-                 active:scale-95 transition-all duration-100 ease-in-out
-              "
+          <div className="relative overflow-hidden">
+            <div
+              className="flex w-[200%] transition-transform duration-300 ease-in-out"
+              style={{ transform: showModelConfigurator ? 'translateX(-50%)' : 'translateX(0%)' }}
             >
-              {providerHadCredentials
-                ? // eslint-disable-next-line sonarjs/no-nested-conditional
-                  isSubmitting
-                  ? 'Updating...'
-                  : 'Update'
-                : // eslint-disable-next-line sonarjs/no-nested-conditional
-                  isSubmitting
-                  ? 'Connecting...'
-                  : 'Connect'}
-            </button>
+              <div className="w-1/2 pr-3 sm:pr-4">
+                <ProviderCredentialsSection
+                  topProviders={topProviders}
+                  otherProviders={otherProviders}
+                  selectedProvider={selectedProvider}
+                  onProviderSelected={(provider) => void onProviderSelected(provider)}
+                  register={register}
+                  errors={errors}
+                  warnings={warnings}
+                  validateField={validate}
+                />
+
+                {submitError !== undefined && (
+                  <p className="my-2 px-1 text-sm text-destructive">{submitError}</p>
+                )}
+
+                {!showModelConfigurator && (
+                  <button
+                    type="button"
+                    disabled={!canConfigureModels}
+                    onClick={() => {
+                      if (!canConfigureModels) {
+                        return;
+                      }
+                      setModelPanelError(undefined);
+                      setShowModelConfigurator(true);
+                    }}
+                    className="mt-6 w-full rounded border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Configure models
+                  </button>
+                )}
+
+                <div className="flex justify-between gap-2">
+                  {selectedProvider !== undefined && providerHadCredentials && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      aria-busy={isSubmitting}
+                      onClick={() => {
+                        void deleteProviderConfiguration(storage, selectedProvider.metadata.id);
+                        setProviderHadCredentials(false);
+                        clearReset();
+                        onProviderDeleted(selectedProvider.metadata.id);
+                      }}
+                      className="w-1/4
+                    mt-8 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded
+                    disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed
+                     border border-border border-solid transition-colors
+                     active:scale-95 transition-all duration-100 ease-in-out
+                  "
+                    >
+                      <TrashIcon className="h-4 w-4 flex-shrink-0 text-current" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !isValid || selectedProvider === undefined}
+                    aria-busy={isSubmitting}
+                    className="
+                      mt-8 w-full rounded border border-border border-solid bg-primary px-4 py-2 text-sm font-medium text-primary-foreground
+                      disabled:cursor-not-allowed disabled:opacity-50
+                      transition-colors active:scale-95 duration-100 ease-in-out
+                    "
+                  >
+                    {providerHadCredentials
+                      ? isSubmitting
+                        ? 'Updating...'
+                        : 'Update'
+                      : isSubmitting
+                        ? 'Connecting...'
+                        : 'Connect'}
+                  </button>
+                </div>
+              </div>
+
+              <ConfigureModelsPanel
+                selectedProvider={selectedProvider}
+                providerModels={providerModels}
+                providerModelsStatus={providerModelsStatus}
+                newModelId={newModelId}
+                onNewModelIdChange={setNewModelId}
+                onAddModel={handleAddModelToCatalog}
+                isAddingModel={isAddingModel}
+                onBack={() => {
+                  setShowModelConfigurator(false);
+                  setModelPanelError(undefined);
+                }}
+                modelPanelError={modelPanelError}
+                pendingVisibilityUpdate={pendingVisibilityUpdate}
+                onToggleModelVisibility={handleToggleModelVisibility}
+                highlightedModelId={highlightedModelId}
+                onHighlightTimeout={() => setHighlightedModelId(undefined)}
+                selectedCatalogModel={selectedCatalogModel}
+              />
+            </div>
           </div>
         </form>
       </div>
