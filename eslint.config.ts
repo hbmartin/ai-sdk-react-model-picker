@@ -286,6 +286,7 @@ export default defineConfig([
       'react-hooks/rules-of-hooks': 'off',
       'import/no-default-export': 'off',
       '@typescript-eslint/no-unused-vars': 'off', // Use unused-imports plugin
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
 ]);
