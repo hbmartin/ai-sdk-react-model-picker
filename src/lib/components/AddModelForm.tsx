@@ -38,7 +38,7 @@ export interface AddModelFormProps {
     providerId: ProviderId,
     modelId: string
   ) => Promise<CatalogEntry | undefined>;
-  readonly selectedCatalogModel?: CatalogEntry;
+  readonly selectedCatalogModel: CatalogEntry | undefined;
 }
 
 /**

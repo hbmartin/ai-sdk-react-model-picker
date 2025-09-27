@@ -208,10 +208,6 @@ export abstract class AIProvider {
     return data;
   }
 
-  getDefaultModel(): ModelConfig {
-    return this.models.find((model) => model.isDefault === true) ?? this.models[0];
-  }
-
   // AI SDK v5 integration - return configured model instance
   abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;
 }

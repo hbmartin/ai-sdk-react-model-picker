@@ -134,7 +134,7 @@ export function ModelPickerProvider({
   }, [telemetry]);
 
   const catalog = useMemo(
-    () => new ModelCatalog(providerRegistry, modelStorage ?? storage, telemetry),
+    () => new ModelCatalog(providerRegistry, storage, modelStorage ?? storage, telemetry),
     [providerRegistry, modelStorage, storage, telemetry]
   );
   const { snapshot, refresh, refreshAll } = useModelCatalog({

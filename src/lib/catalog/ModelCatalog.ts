@@ -19,6 +19,7 @@ import {
   getPersistedModels,
   getHiddenModelIds,
   setPersistedModels,
+  setHiddenModelIds,
 } from '../storage/modelRepository';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import type { ModelPickerTelemetry } from '../telemetry';
@@ -43,18 +44,6 @@ function modelToCatalogEntry(
 }
 
 export class ModelCatalog {
-  getModel(key: ProviderAndModelKey): CatalogEntry | undefined {
-    const { providerId, modelId } = idsFromKey(key);
-    const provider = this.snapshot[providerId];
-    if (provider === undefined) {
-      return undefined;
-    }
-    const model = provider.models.find((model) => model.model.id === modelId);
-    if (model === undefined) {
-      return undefined;
-    }
-    return { ...model, key };
-  }
   private snapshot: CatalogSnapshot;
   private readonly listeners = new Set<() => void>();
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
@@ -63,6 +52,7 @@ export class ModelCatalog {
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
+    private readonly providerStorage: StorageAdapter,
     private readonly modelStorage: StorageAdapter,
     private readonly telemetry?: ModelPickerTelemetry
   ) {
@@ -78,6 +68,19 @@ export class ModelCatalog {
 
   getSnapshot(): CatalogSnapshot {
     return this.snapshot;
+  }
+
+  getModel(key: ProviderAndModelKey): CatalogEntry | undefined {
+    const { providerId, modelId } = idsFromKey(key);
+    const provider = this.snapshot[providerId];
+    if (provider === undefined) {
+      return undefined;
+    }
+    const model = provider.models.find((model) => model.model.id === modelId);
+    if (model === undefined) {
+      return undefined;
+    }
+    return { ...model, key };
   }
 
   private emit(): void {
@@ -191,7 +194,7 @@ export class ModelCatalog {
     );
 
     if (prefetch) {
-      const providerIdsWithCreds = await getProvidersWithCredentials(this.modelStorage);
+      const providerIdsWithCreds = await getProvidersWithCredentials(this.providerStorage);
       for (const providerId of providerIdsWithCreds) {
         try {
           await this.refresh(providerId);
@@ -325,7 +328,7 @@ export class ModelCatalog {
 
     const run = (async () => {
       try {
-        const config = await getProviderConfiguration(this.modelStorage, providerId);
+        const config = await getProviderConfiguration(this.providerStorage, providerId);
         const valid = config ? provider.configuration.validateConfig(config).ok : false;
         if (!valid && opts?.force !== true) {
           this.telemetry?.onProviderInvalidConfig?.(providerId);
@@ -352,7 +355,7 @@ export class ModelCatalog {
   }
 
   async refreshAll(): Promise<void> {
-    const providers = await getProvidersWithCredentials(this.modelStorage);
+    const providers = await getProvidersWithCredentials(this.providerStorage);
     const providersWithCreds = providers.filter((pid) => this.providerRegistry.hasProvider(pid));
     for (const pid of providersWithCreds) {
       await this.refresh(pid);

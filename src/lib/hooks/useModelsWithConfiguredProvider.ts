@@ -42,7 +42,12 @@ export function useModelsWithConfiguredProvider(
   const catalog = useMemo(
     () =>
       options?.catalog ??
-      new ModelCatalog(providerRegistry, options?.modelStorage ?? storage, options?.telemetry),
+      new ModelCatalog(
+        providerRegistry,
+        storage,
+        options?.modelStorage ?? storage,
+        options?.telemetry
+      ),
     [providerRegistry, storage, options?.catalog, options?.modelStorage, options?.telemetry]
   );
   const { snapshot, refresh, removeProvider, addUserModel, setModelVisibility } = useModelCatalog({
@@ -89,14 +94,6 @@ export function useModelsWithConfiguredProvider(
       catalogEntry =
         providerSnapshot?.models.find((entry) => entry.model.isDefault === true) ??
         providerSnapshot?.models[0];
-      if (catalogEntry === undefined) {
-        const fallbackModel = provider.getDefaultModel();
-        catalogEntry = {
-          model: fallbackModel,
-          provider: provider.metadata,
-          key: providerAndModelKey({ model: fallbackModel, provider: provider.metadata }),
-        };
-      }
     } else {
       catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
       if (catalogEntry === undefined) {

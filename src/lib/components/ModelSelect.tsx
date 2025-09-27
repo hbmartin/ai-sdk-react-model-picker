@@ -192,6 +192,7 @@ export function ModelSelect({
             // Trigger background refresh for this provider after configuration
             refreshProviderModels(provider.id);
             setShowAddModelForm(false);
+            // TODO: refresh catalog
           }}
           onProviderDeleted={(providerId) => {
             const model = deleteProvider(providerId);
