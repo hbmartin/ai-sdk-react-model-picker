@@ -11,10 +11,15 @@ import type {
   ProviderMetadata,
   ModelOrigin,
   ProviderStatus,
+  ModelId,
   ProviderAndModelKey,
 } from '../types';
 import { createModelId, idsFromKey, providerAndModelKey } from '../types';
-import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
+import {
+  getPersistedModels,
+  getHiddenModelIds,
+  setPersistedModels,
+} from '../storage/modelRepository';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import type { ModelPickerTelemetry } from '../telemetry';
 
@@ -54,6 +59,7 @@ export class ModelCatalog {
   private readonly listeners = new Set<() => void>();
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
   private readonly pendingRefreshes = new Map<ProviderId, Promise<void>>();
+  private readonly hiddenModelIds = new Map<ProviderId, Set<ModelId>>();
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
@@ -149,10 +155,14 @@ export class ModelCatalog {
 
     const run = (async () => {
       try {
-        const persisted = await getPersistedModels(this.modelStorage, providerId);
+        const [persisted, hiddenIds] = await Promise.all([
+          getPersistedModels(this.modelStorage, providerId),
+          getHiddenModelIds(this.modelStorage, providerId),
+        ]);
         if (persisted.length > 0) {
           this.mergeAddedModelsIntoSnapshot(provider, persisted, 'user');
         }
+        this.applyHiddenModels(providerId, hiddenIds);
       } catch (error) {
         this.telemetry?.onStorageError?.(
           'read',
@@ -220,15 +230,70 @@ export class ModelCatalog {
     await setPersistedModels(this.modelStorage, providerId, keep);
   }
 
+  private async persistHiddenModels(providerId: ProviderId) {
+    const hiddenSet = this.hiddenModelIds.get(providerId);
+    const hiddenIds = hiddenSet === undefined ? [] : [...hiddenSet];
+    await setHiddenModelIds(this.modelStorage, providerId, hiddenIds);
+  }
+
+  private applyHiddenModels(providerId: ProviderId, hiddenIds: ModelId[]): void {
+    const state = this.snapshot[providerId];
+    if (state === undefined) {
+      if (hiddenIds.length > 0) {
+        this.hiddenModelIds.set(providerId, new Set(hiddenIds));
+      }
+      return;
+    }
+
+    const hiddenSet = new Set(hiddenIds);
+    this.hiddenModelIds.set(providerId, hiddenSet);
+
+    if (hiddenSet.size === 0) {
+      return;
+    }
+
+    this.updateProvider(providerId, (prev) => {
+      let changed = false;
+      const models = prev.models.map((entry) => {
+        const shouldHide = hiddenSet.has(entry.model.id);
+        const currentVisible = entry.model.visible ?? true;
+        const nextVisible = shouldHide ? false : currentVisible;
+        if (currentVisible === nextVisible) {
+          return entry;
+        }
+        changed = true;
+        return {
+          ...entry,
+          model: {
+            ...entry.model,
+            visible: nextVisible,
+          },
+        } satisfies CatalogEntry;
+      });
+      return changed ? { ...prev, models } : prev;
+    });
+  }
+
   private mergeAddedModelsIntoSnapshot(
     provider: AIProvider,
     models: ModelConfig[],
     fallbackOrigin: ModelOrigin
   ) {
     const providerId = provider.metadata.id;
-    const normalized = models.map((model) =>
-      modelToCatalogEntry(model, provider.metadata, fallbackOrigin)
-    );
+    const hiddenSet = this.hiddenModelIds.get(providerId);
+    const normalized = models.map((model) => {
+      const entry = modelToCatalogEntry(model, provider.metadata, fallbackOrigin);
+      if (hiddenSet?.has(entry.model.id) === true) {
+        return {
+          ...entry,
+          model: {
+            ...entry.model,
+            visible: false,
+          },
+        } satisfies CatalogEntry;
+      }
+      return entry;
+    });
     this.updateProvider(providerId, (state) => {
       const nextModels = normalized.filter(
         (nextModel) =>
@@ -328,6 +393,57 @@ export class ModelCatalog {
     this.telemetry?.onUserModelAdded?.(providerId, model.id);
   }
 
+  async setModelVisibility(
+    providerId: ProviderId,
+    modelId: ModelId,
+    visible: boolean
+  ): Promise<void> {
+    if (this.ensureProviderState(providerId) === undefined) {
+      return;
+    }
+
+    let didChange = false;
+    this.updateProvider(providerId, (prev) => {
+      const index = prev.models.findIndex((entry) => entry.model.id === modelId);
+      if (index === -1) {
+        return prev;
+      }
+      const entry = prev.models[index];
+      const currentVisible = entry.model.visible ?? true;
+      if (currentVisible === visible) {
+        return prev;
+      }
+      const models = [...prev.models];
+      models[index] = {
+        ...entry,
+        model: {
+          ...entry.model,
+          visible,
+        },
+      } satisfies CatalogEntry;
+      didChange = true;
+      return {
+        ...prev,
+        models,
+      } satisfies ProviderModelsStatus;
+    });
+
+    if (!didChange) {
+      return;
+    }
+
+    const hiddenSet = this.hiddenModelIds.get(providerId) ?? new Set<ModelId>();
+    if (visible) {
+      hiddenSet.delete(modelId);
+    } else {
+      hiddenSet.add(modelId);
+    }
+    this.hiddenModelIds.set(providerId, hiddenSet);
+
+    await this.persistNonBuiltin(providerId);
+    await this.persistHiddenModels(providerId);
+  }
+
   async removeModel(providerId: ProviderId, modelId: string): Promise<void> {
     const state = this.snapshot[providerId];
     if (state === undefined) {
@@ -351,6 +467,7 @@ export class ModelCatalog {
     // eslint-disable-next-line sonarjs/no-unused-vars
     const { [providerId]: _, ...rest } = this.snapshot;
     this.snapshot = rest;
+    this.hiddenModelIds.delete(providerId);
     this.emit();
   }
 }
