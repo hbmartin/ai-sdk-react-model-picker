@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type {
   IProviderRegistry,
@@ -68,6 +68,11 @@ export function AddModelForm({
   const [highlightedModelId, setHighlightedModelId] = useState<ModelId | undefined>();
   const [isAddingModel, setIsAddingModel] = useState(false);
   const [pendingVisibilityUpdate, setPendingVisibilityUpdate] = useState<ModelId | undefined>();
+  const [containerHeight, setContainerHeight] = useState<number | undefined>();
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const credentialsPanelRef = useRef<HTMLDivElement | null>(null);
+  const configurePanelRef = useRef<HTMLDivElement | null>(null);
 
   const {
     register,
@@ -126,6 +131,46 @@ export function AddModelForm({
     ? getProviderModelsStatus(activeProviderId)
     : undefined;
   const canConfigureModels = selectedProvider !== undefined && providerHadCredentials;
+
+  const updateContainerHeight = useCallback(() => {
+    const activePanel = showModelConfigurator
+      ? configurePanelRef.current
+      : credentialsPanelRef.current;
+    if (activePanel === null) {
+      return;
+    }
+    const height = activePanel.scrollHeight;
+    setContainerHeight((previous) => (previous === height ? previous : height));
+  }, [showModelConfigurator]);
+
+  useLayoutEffect(() => {
+    updateContainerHeight();
+  }, [updateContainerHeight]);
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+    if (globalThis.window === undefined || !('ResizeObserver' in globalThis)) {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateContainerHeight();
+    });
+
+    const credentialsEl = credentialsPanelRef.current;
+    const configureEl = configurePanelRef.current;
+
+    if (credentialsEl) {
+      observer.observe(credentialsEl);
+    }
+    if (configureEl) {
+      observer.observe(configureEl);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [updateContainerHeight]);
 
   const validate = (key: string, value: string | undefined): string | undefined => {
     if (selectedProvider === undefined) {
@@ -268,9 +313,43 @@ export function AddModelForm({
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 id="add-model-title" className="text-md font-semibold text-foreground leading-none">
-              Add Provider
-            </h2>
+            <div className="flex items-center gap-2">
+              {showModelConfigurator ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModelConfigurator(false);
+                      setModelPanelError(undefined);
+                    }}
+                    className="text-muted p-1 bg-transparent border-none rounded text-foreground hover:bg-accent transition-colors duration-150"
+                    aria-label="Back to provider form"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path
+                        d="M15 18l-6-6 6-6"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  <h2
+                    id="add-model-title"
+                    className="text-md font-semibold text-foreground leading-none"
+                  >
+                    Configure Models
+                  </h2>
+                </>
+              ) : (
+                <h2
+                  id="add-model-title"
+                  className="text-md font-semibold text-foreground leading-none"
+                >
+                  Add Provider
+                </h2>
+              )}
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -296,12 +375,16 @@ export function AddModelForm({
             </button>
           </div>
 
-          <div className="relative overflow-hidden">
+          <div
+            ref={containerRef}
+            className="relative overflow-hidden transition-[height] duration-300 ease-in-out"
+            style={{ height: containerHeight }}
+          >
             <div
               className="flex w-[200%] transition-transform duration-300 ease-in-out"
               style={{ transform: showModelConfigurator ? 'translateX(-50%)' : 'translateX(0%)' }}
             >
-              <div className="w-1/2 pr-3 sm:pr-4">
+              <div ref={credentialsPanelRef} className="w-1/2 pr-3 sm:pr-4">
                 <ProviderCredentialsSection
                   topProviders={topProviders}
                   otherProviders={otherProviders}
@@ -328,7 +411,7 @@ export function AddModelForm({
                       setModelPanelError(undefined);
                       setShowModelConfigurator(true);
                     }}
-                    className="mt-6 w-full rounded border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-6 w-full rounded border border-border border-solid bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 transition-colors active:scale-95 duration-100 ease-in-out"
                   >
                     Configure models
                   </button>
@@ -377,25 +460,23 @@ export function AddModelForm({
                 </div>
               </div>
 
-              <ConfigureModelsPanel
-                selectedProvider={selectedProvider}
-                providerModels={providerModels}
-                providerModelsStatus={providerModelsStatus}
-                newModelId={newModelId}
-                onNewModelIdChange={setNewModelId}
-                onAddModel={handleAddModelToCatalog}
-                isAddingModel={isAddingModel}
-                onBack={() => {
-                  setShowModelConfigurator(false);
-                  setModelPanelError(undefined);
-                }}
-                modelPanelError={modelPanelError}
-                pendingVisibilityUpdate={pendingVisibilityUpdate}
-                onToggleModelVisibility={handleToggleModelVisibility}
-                highlightedModelId={highlightedModelId}
-                onHighlightTimeout={() => setHighlightedModelId(undefined)}
-                selectedCatalogModel={selectedCatalogModel}
-              />
+              <div ref={configurePanelRef} className="w-1/2 pl-3 sm:pl-4">
+                <ConfigureModelsPanel
+                  selectedProvider={selectedProvider}
+                  providerModels={providerModels}
+                  providerModelsStatus={providerModelsStatus}
+                  newModelId={newModelId}
+                  onNewModelIdChange={setNewModelId}
+                  onAddModel={handleAddModelToCatalog}
+                  isAddingModel={isAddingModel}
+                  modelPanelError={modelPanelError}
+                  pendingVisibilityUpdate={pendingVisibilityUpdate}
+                  onToggleModelVisibility={handleToggleModelVisibility}
+                  highlightedModelId={highlightedModelId}
+                  onHighlightTimeout={() => setHighlightedModelId(undefined)}
+                  selectedCatalogModel={selectedCatalogModel}
+                />
+              </div>
             </div>
           </div>
         </form>

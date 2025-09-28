@@ -129,7 +129,6 @@ export function makeConfiguration<ConfigObj extends object>(
           : formatMessage(
               missingRequired,
               fieldValidationErrors,
-              // eslint-disable-next-line sonarjs/no-nested-conditional
               hasMinimumRequiredKeys ? undefined : requiresAtLeastOneOf?.map(String)
             ),
       };

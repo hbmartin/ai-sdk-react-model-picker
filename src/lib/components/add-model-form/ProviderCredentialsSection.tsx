@@ -69,7 +69,7 @@ export function ProviderCredentialsSection({
             })}
           />
           {errors[key] && (
-            <p className="mt-1 px-1 text-xs text-destructive">{errors[key]?.message}</p>
+            <p className="mt-1 px-1 text-xs text-destructive">{errors[key].message}</p>
           )}
           {key in warnings && !(key in errors) && (
             <p className="mt-1 px-1 text-xs text-warning">{warnings[key]}</p>

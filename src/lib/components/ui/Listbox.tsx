@@ -11,6 +11,7 @@ import {
   type HTMLAttributes,
   useCallback,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 // Types for the Listbox components
 interface ListboxContextType {
@@ -223,12 +224,12 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
     }
   }, [isOpen, optionsRef]);
 
-  if (!isOpen) {
+  if (!isOpen || typeof document === 'undefined') {
     // eslint-disable-next-line unicorn/no-null
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -290,7 +291,8 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

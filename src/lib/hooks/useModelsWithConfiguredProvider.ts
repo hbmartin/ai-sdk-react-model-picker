@@ -184,7 +184,12 @@ export function useModelsWithConfiguredProvider(
 
   const getProviderModelsStatus = (providerId: ProviderId) => snapshot[providerId];
 
-  const toggleModelVisibility = (providerId: ProviderId, modelId: ModelId, visible: boolean) => {
+  const toggleModelVisibility = (
+    providerId: ProviderId,
+    modelId: ModelId,
+    // eslint-disable-next-line code-complete/no-boolean-params
+    visible: boolean
+  ): Promise<void> => {
     return setModelVisibility(providerId, modelId, visible);
   };
 

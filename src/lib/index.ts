@@ -72,3 +72,5 @@ export type {
 
 // Utils
 export { getSdkLanguageModel } from './utils';
+
+export type { ModelPickerTelemetry } from './telemetry';
