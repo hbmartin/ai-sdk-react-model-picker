@@ -118,22 +118,16 @@ export function useModelsWithConfiguredProvider(
 
     setProvidersWithCreds((prev) => (prev.includes(providerId) ? prev : [providerId, ...prev]));
 
-    const entry: CatalogEntry = {
-      model: catalogEntry.model,
-      provider: catalogEntry.provider,
-      key: catalogEntry.key,
-    };
-
-    setSelectedModel(entry);
+    setSelectedModel(catalogEntry);
     setRecentlyUsedModels((prev) => {
-      const index = prev.findIndex((model) => model.key === entry.key);
+      const index = prev.findIndex((model) => model.key === catalogEntry.key);
       if (index === -1) {
-        return [entry, ...prev];
+        return [catalogEntry, ...prev];
       }
-      return [entry, ...prev.slice(0, index), ...prev.slice(index + 1)];
+      return [catalogEntry, ...prev.slice(0, index), ...prev.slice(index + 1)];
     });
 
-    return entry;
+    return catalogEntry;
   };
 
   useEffect(() => {

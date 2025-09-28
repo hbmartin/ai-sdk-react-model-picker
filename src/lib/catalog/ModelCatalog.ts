@@ -256,7 +256,6 @@ export class ModelCatalog {
     }
 
     this.updateProvider(providerId, (prev) => {
-      let changed = false;
       const models = prev.models.map((entry) => {
         const shouldHide = hiddenSet.has(entry.model.id);
         const currentVisible = entry.model.visible ?? true;
@@ -264,7 +263,6 @@ export class ModelCatalog {
         if (currentVisible === nextVisible) {
           return entry;
         }
-        changed = true;
         return {
           ...entry,
           model: {
@@ -273,7 +271,7 @@ export class ModelCatalog {
           },
         } satisfies CatalogEntry;
       });
-      return changed ? { ...prev, models } : prev;
+      return { ...prev, status: 'ready', models };
     });
   }
 
@@ -338,9 +336,13 @@ export class ModelCatalog {
         this.setStatus(providerId, 'refreshing');
         this.telemetry?.onFetchStart?.(providerId);
         const models = await provider.fetchModels();
-        this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
-        // TODO: remove / update builtin models based on API response
-        await this.persistNonBuiltin(providerId);
+        if (models.length > 0) {
+          this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
+          // TODO: remove / update builtin models based on API response
+          await this.persistNonBuiltin(providerId);
+        } else {
+          this.setStatus(providerId, 'ready');
+        }
         this.telemetry?.onFetchSuccess?.(providerId, models.length);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -399,13 +401,13 @@ export class ModelCatalog {
   async setModelVisibility(
     providerId: ProviderId,
     modelId: ModelId,
+    // eslint-disable-next-line code-complete/no-boolean-params
     visible: boolean
   ): Promise<void> {
     if (this.ensureProviderState(providerId) === undefined) {
       return;
     }
 
-    let didChange = false;
     this.updateProvider(providerId, (prev) => {
       const index = prev.models.findIndex((entry) => entry.model.id === modelId);
       if (index === -1) {
@@ -424,16 +426,11 @@ export class ModelCatalog {
           visible,
         },
       } satisfies CatalogEntry;
-      didChange = true;
       return {
         ...prev,
         models,
       } satisfies ProviderModelsStatus;
     });
-
-    if (!didChange) {
-      return;
-    }
 
     const hiddenSet = this.hiddenModelIds.get(providerId) ?? new Set<ModelId>();
     if (visible) {

@@ -411,7 +411,7 @@ export function AddModelForm({
                       setModelPanelError(undefined);
                       setShowModelConfigurator(true);
                     }}
-                    className="mt-6 w-full rounded border border-border border-solid bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 transition-colors active:scale-95 duration-100 ease-in-out"
+                    className="mt-6 w-full rounded border border-border border-solid bg-transparent hover:bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 transition-colors active:scale-95 duration-100 ease-in-out"
                   >
                     Configure models
                   </button>
