@@ -81,10 +81,14 @@ export function useModelsWithConfiguredProvider(
     return modelToSelect;
   };
 
-  const setSelectedProviderAndModel = (
+  const setSelectedProviderAndModel = async (
     providerId: ProviderId,
     modelId?: ModelId
-  ): CatalogEntry | undefined => {
+  ): Promise<CatalogEntry | undefined> => {
+    const pendingRefreshes = catalog.getPendingRefreshes(providerId);
+    if (pendingRefreshes !== undefined) {
+      await pendingRefreshes;
+    }
     const provider = providerRegistry.getProvider(providerId);
     const providerSnapshot = snapshot[providerId];
 
@@ -93,7 +97,7 @@ export function useModelsWithConfiguredProvider(
     if (modelId === undefined) {
       catalogEntry =
         providerSnapshot?.models.find((entry) => entry.model.isDefault === true) ??
-        providerSnapshot?.models[0];
+        providerSnapshot?.models.find((entry) => entry.model.visible === true);
     } else {
       catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
       if (catalogEntry === undefined) {

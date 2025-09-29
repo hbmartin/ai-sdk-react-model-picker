@@ -15,12 +15,7 @@ import type {
   ProviderAndModelKey,
 } from '../types';
 import { createModelId, idsFromKey, providerAndModelKey } from '../types';
-import {
-  getPersistedModels,
-  getHiddenModelIds,
-  setPersistedModels,
-  setHiddenModelIds,
-} from '../storage/modelRepository';
+import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import type { ModelPickerTelemetry } from '../telemetry';
 
@@ -48,7 +43,6 @@ export class ModelCatalog {
   private readonly listeners = new Set<() => void>();
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
   private readonly pendingRefreshes = new Map<ProviderId, Promise<void>>();
-  private readonly hiddenModelIds = new Map<ProviderId, Set<ModelId>>();
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
@@ -57,6 +51,10 @@ export class ModelCatalog {
     private readonly telemetry?: ModelPickerTelemetry
   ) {
     this.snapshot = this.buildInitialState();
+  }
+
+  getPendingRefreshes(providerId: ProviderId): Promise<void> | undefined {
+    return this.pendingRefreshes.get(providerId) ?? this.pendingHydrations.get(providerId);
   }
 
   subscribe(listener: () => void): () => void {
@@ -158,14 +156,13 @@ export class ModelCatalog {
 
     const run = (async () => {
       try {
-        const [persisted, hiddenIds] = await Promise.all([
-          getPersistedModels(this.modelStorage, providerId),
-          getHiddenModelIds(this.modelStorage, providerId),
-        ]);
-        if (persisted.length > 0) {
-          this.mergeAddedModelsIntoSnapshot(provider, persisted, 'user');
+        const persisted = await getPersistedModels(this.modelStorage, providerId);
+        const changed = persisted.length > 0
+          ? this.mergeModelsIntoSnapshot(provider, persisted, 'user')
+          : false;
+        if (!changed) {
+          this.setStatus(providerId, 'ready');
         }
-        this.applyHiddenModels(providerId, hiddenIds);
       } catch (error) {
         this.telemetry?.onStorageError?.(
           'read',
@@ -222,93 +219,89 @@ export class ModelCatalog {
     });
   }
 
-  private async persistNonBuiltin(providerId: ProviderId) {
+  private async persistProviderModels(providerId: ProviderId): Promise<void> {
     const state = this.snapshot[providerId];
     if (!state) {
       return;
     }
-    const keep: ModelConfig[] = state.models
-      .filter((model) => model.model.origin !== 'builtin')
-      .map((model) => model.model);
-    await setPersistedModels(this.modelStorage, providerId, keep);
+    const models: ModelConfig[] = state.models.map((entry) => entry.model);
+    await setPersistedModels(this.modelStorage, providerId, models);
   }
 
-  private async persistHiddenModels(providerId: ProviderId) {
-    const hiddenSet = this.hiddenModelIds.get(providerId);
-    const hiddenIds = hiddenSet === undefined ? [] : [...hiddenSet];
-    await setHiddenModelIds(this.modelStorage, providerId, hiddenIds);
-  }
-
-  private applyHiddenModels(providerId: ProviderId, hiddenIds: ModelId[]): void {
-    const state = this.snapshot[providerId];
-    if (state === undefined) {
-      if (hiddenIds.length > 0) {
-        this.hiddenModelIds.set(providerId, new Set(hiddenIds));
-      }
-      return;
-    }
-
-    const hiddenSet = new Set(hiddenIds);
-    this.hiddenModelIds.set(providerId, hiddenSet);
-
-    if (hiddenSet.size === 0) {
-      return;
-    }
-
-    this.updateProvider(providerId, (prev) => {
-      const models = prev.models.map((entry) => {
-        const shouldHide = hiddenSet.has(entry.model.id);
-        const currentVisible = entry.model.visible ?? true;
-        const nextVisible = shouldHide ? false : currentVisible;
-        if (currentVisible === nextVisible) {
-          return entry;
-        }
-        return {
-          ...entry,
-          model: {
-            ...entry.model,
-            visible: nextVisible,
-          },
-        } satisfies CatalogEntry;
-      });
-      return { ...prev, status: 'ready', models };
-    });
-  }
-
-  private mergeAddedModelsIntoSnapshot(
+  private mergeModelsIntoSnapshot(
     provider: AIProvider,
     models: ModelConfig[],
     fallbackOrigin: ModelOrigin
-  ) {
+  ): boolean {
     const providerId = provider.metadata.id;
-    const hiddenSet = this.hiddenModelIds.get(providerId);
-    const normalized = models.map((model) => {
-      const entry = modelToCatalogEntry(model, provider.metadata, fallbackOrigin);
-      if (hiddenSet?.has(entry.model.id) === true) {
+    if (models.length === 0) {
+      return false;
+    }
+
+    const overrides = new Map<ModelId, ModelConfig>();
+    for (const model of models) {
+      overrides.set(model.id, model);
+    }
+
+    let didChange = false;
+    this.updateProvider(providerId, (state) => {
+      let changed = false;
+      const updatedModels = state.models.map((entry) => {
+        const override = overrides.get(entry.model.id);
+        if (override === undefined) {
+          return entry;
+        }
+        overrides.delete(entry.model.id);
+        const mergedModel: ModelConfig = {
+          ...entry.model,
+          ...override,
+          origin: override.origin ?? entry.model.origin ?? fallbackOrigin,
+        } satisfies ModelConfig;
+        if (this.modelsEqual(entry.model, mergedModel)) {
+          return entry;
+        }
+        changed = true;
         return {
           ...entry,
-          model: {
-            ...entry.model,
-            visible: false,
-          },
+          model: mergedModel,
         } satisfies CatalogEntry;
+      });
+
+      const newEntries: CatalogEntry[] = [];
+      for (const model of overrides.values()) {
+        const entry = modelToCatalogEntry(model, provider.metadata, fallbackOrigin);
+        newEntries.push(entry);
       }
-      return entry;
-    });
-    this.updateProvider(providerId, (state) => {
-      const nextModels = normalized.filter(
-        (nextModel) =>
-          !state.models.some((existingModel) => nextModel.model.id === existingModel.model.id)
-      );
-      if (nextModels.length === 0) {
+
+      if (!changed && newEntries.length === 0) {
         return undefined;
       }
+
+      didChange = true;
       return {
         error: undefined,
         status: 'ready',
-        models: [...nextModels, ...state.models],
+        models: [...newEntries, ...updatedModels],
       };
     });
+
+    return didChange;
+  }
+
+  private modelsEqual(a: ModelConfig, b: ModelConfig): boolean {
+    const keys = new Set<keyof ModelConfig>();
+    for (const key of Object.keys(a) as (keyof ModelConfig)[]) {
+      keys.add(key);
+    }
+    for (const key of Object.keys(b) as (keyof ModelConfig)[]) {
+      keys.add(key);
+    }
+    for (const key of keys) {
+      if (a[key] !== b[key]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
@@ -337,9 +330,13 @@ export class ModelCatalog {
         this.telemetry?.onFetchStart?.(providerId);
         const models = await provider.fetchModels();
         if (models.length > 0) {
-          this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
+          const changed = this.mergeModelsIntoSnapshot(provider, models, 'api');
           // TODO: remove / update builtin models based on API response
-          await this.persistNonBuiltin(providerId);
+          if (changed) {
+            await this.persistProviderModels(providerId);
+          } else {
+            this.setStatus(providerId, 'ready');
+          }
         } else {
           this.setStatus(providerId, 'ready');
         }
@@ -394,7 +391,7 @@ export class ModelCatalog {
       models: [modelEntry, ...state.models],
     }));
 
-    await this.persistNonBuiltin(providerId);
+    await this.persistProviderModels(providerId);
     this.telemetry?.onUserModelAdded?.(providerId, model.id);
   }
 
@@ -432,16 +429,7 @@ export class ModelCatalog {
       } satisfies ProviderModelsStatus;
     });
 
-    const hiddenSet = this.hiddenModelIds.get(providerId) ?? new Set<ModelId>();
-    if (visible) {
-      hiddenSet.delete(modelId);
-    } else {
-      hiddenSet.add(modelId);
-    }
-    this.hiddenModelIds.set(providerId, hiddenSet);
-
-    await this.persistNonBuiltin(providerId);
-    await this.persistHiddenModels(providerId);
+    await this.persistProviderModels(providerId);
   }
 
   async removeModel(providerId: ProviderId, modelId: string): Promise<void> {
@@ -459,7 +447,7 @@ export class ModelCatalog {
       models: remaining,
     }));
 
-    await this.persistNonBuiltin(providerId);
+    await this.persistProviderModels(providerId);
   }
 
   removeProvider(providerId: ProviderId): void {
@@ -467,7 +455,6 @@ export class ModelCatalog {
     // eslint-disable-next-line sonarjs/no-unused-vars
     const { [providerId]: _, ...rest } = this.snapshot;
     this.snapshot = rest;
-    this.hiddenModelIds.delete(providerId);
     this.emit();
   }
 }

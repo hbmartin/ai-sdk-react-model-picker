@@ -62,8 +62,8 @@ export function ModelSelect({
   } = useModelsWithConfiguredProvider(effectiveStorage, effectiveProviderRegistry, hookOptions);
 
   const selectModelAndNotify = useCallback(
-    (providerId: ProviderId, modelId?: ModelId) => {
-      const entry = setSelectedProviderAndModel(providerId, modelId);
+    async (providerId: ProviderId, modelId?: ModelId) => {
+      const entry = await setSelectedProviderAndModel(providerId, modelId);
       if (entry) {
         context?.selectModel(entry);
         onModelChange?.(entry);
@@ -188,11 +188,10 @@ export function ModelSelect({
           storage={effectiveStorage}
           onClose={() => setShowAddModelForm(false)}
           onProviderConfigured={(provider) => {
-            void selectModelAndNotify(provider.id);
-            // Trigger background refresh for this provider after configuration
+            // TODO: make this await?
             refreshProviderModels(provider.id);
+            void selectModelAndNotify(provider.id);
             setShowAddModelForm(false);
-            // TODO: refresh catalog
           }}
           onProviderDeleted={(providerId) => {
             const model = deleteProvider(providerId);

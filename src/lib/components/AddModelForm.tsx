@@ -130,7 +130,7 @@ export function AddModelForm({
   const providerModelsStatus = activeProviderId
     ? getProviderModelsStatus(activeProviderId)
     : undefined;
-  const canConfigureModels = selectedProvider !== undefined && providerHadCredentials;
+  const canConfigureModels = selectedProvider !== undefined && (providerHadCredentials || isValid);
 
   const updateContainerHeight = useCallback(() => {
     const activePanel = showModelConfigurator
@@ -423,6 +423,7 @@ export function AddModelForm({
                       type="button"
                       disabled={isSubmitting}
                       aria-busy={isSubmitting}
+                      aria-label="Delete provider"
                       onClick={() => {
                         void deleteProviderConfiguration(storage, selectedProvider.metadata.id);
                         setProviderHadCredentials(false);
@@ -443,6 +444,7 @@ export function AddModelForm({
                     type="submit"
                     disabled={isSubmitting || !isValid || selectedProvider === undefined}
                     aria-busy={isSubmitting}
+                    aria-label="Submit"
                     className="
                       mt-8 w-full rounded border border-border border-solid bg-primary px-4 py-2 text-sm font-medium text-primary-foreground
                       disabled:cursor-not-allowed disabled:opacity-50
