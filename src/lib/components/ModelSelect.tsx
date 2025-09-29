@@ -187,10 +187,10 @@ export function ModelSelect({
           providerRegistry={effectiveProviderRegistry}
           storage={effectiveStorage}
           onClose={() => setShowAddModelForm(false)}
-          onProviderConfigured={(provider) => {
+          onProviderConfigured={async (provider) => {
             // TODO: make this await?
-            refreshProviderModels(provider.id);
-            void selectModelAndNotify(provider.id);
+            await refreshProviderModels(provider.id);
+            await selectModelAndNotify(provider.id);
             setShowAddModelForm(false);
           }}
           onProviderDeleted={(providerId) => {

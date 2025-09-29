@@ -53,20 +53,12 @@ export class ModelCatalog {
     this.snapshot = this.buildInitialState();
   }
 
-  getPendingRefreshes(providerId: ProviderId): Promise<void> | undefined {
-    const promises: Promise<void>[] = [];
-    const refresh = this.pendingRefreshes.get(providerId);
-    if (refresh !== undefined) {
-      promises.push(refresh);
-    }
-    const hydration = this.pendingHydrations.get(providerId);
-    if (hydration !== undefined) {
-      promises.push(hydration);
-    }
-    if (promises.length > 0) {
-      return Promise.all(promises).then(() => {});
-    }
-    return undefined;
+  getPendingRefreshes(providerId: ProviderId): Promise<void> {
+    const pending = [
+      this.pendingHydrations.get(providerId),
+      this.pendingRefreshes.get(providerId),
+    ].filter((promise) => promise !== undefined);
+    return Promise.all(pending).then(() => {});
   }
 
   subscribe(listener: () => void): () => void {
@@ -82,10 +74,7 @@ export class ModelCatalog {
 
   async getModel(key: ProviderAndModelKey): Promise<CatalogEntry | undefined> {
     const { providerId, modelId } = idsFromKey(key);
-    const pendingRefreshes = this.getPendingRefreshes(providerId);
-    if (pendingRefreshes !== undefined) {
-      await pendingRefreshes;
-    }
+    await this.getPendingRefreshes(providerId);
 
     const provider = this.snapshot[providerId];
     if (provider === undefined) {
@@ -289,6 +278,7 @@ export class ModelCatalog {
         newEntries.push(entry);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!changed && newEntries.length === 0) {
         return undefined;
       }
@@ -304,6 +294,7 @@ export class ModelCatalog {
     return didChange;
   }
 
+  // eslint-disable-next-line code-complete/enforce-meaningful-names
   private modelsEqual(a: ModelConfig, b: ModelConfig): boolean {
     const keys = new Set<keyof ModelConfig>();
     for (const key of Object.keys(a) as (keyof ModelConfig)[]) {

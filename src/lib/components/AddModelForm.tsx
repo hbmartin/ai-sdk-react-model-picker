@@ -24,7 +24,7 @@ export interface AddModelFormProps {
   readonly providerRegistry: IProviderRegistry;
   readonly storage: StorageAdapter;
   readonly onClose: () => void;
-  readonly onProviderConfigured: (provider: ProviderMetadata) => void;
+  readonly onProviderConfigured: (provider: ProviderMetadata) => Promise<void>;
   readonly className?: string;
   readonly onProviderDeleted: (providerId: ProviderId) => void;
   readonly getProviderModels: (providerId: ProviderId) => CatalogEntry[];
@@ -143,18 +143,20 @@ export function AddModelForm({
     setContainerHeight((previous) => (previous === height ? previous : height));
   }, [showModelConfigurator]);
 
-  useLayoutEffect(() => {
+  const isResizeObserverSupported =
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
-    if (globalThis.window === undefined || !('ResizeObserver' in globalThis)) {
+    globalThis.window !== undefined && 'ResizeObserver' in globalThis;
+
+  useLayoutEffect(() => {
+    if (!isResizeObserverSupported) {
       setContainerHeight((previous) => (previous === undefined ? previous : undefined));
       return;
     }
     updateContainerHeight();
-  }, [updateContainerHeight]);
+  }, [updateContainerHeight, isResizeObserverSupported]);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
-    if (globalThis.window === undefined || !('ResizeObserver' in globalThis)) {
+    if (!isResizeObserverSupported) {
       setContainerHeight((previous) => (previous === undefined ? previous : undefined));
       return;
     }
@@ -176,7 +178,7 @@ export function AddModelForm({
     return () => {
       observer.disconnect();
     };
-  }, [updateContainerHeight]);
+  }, [updateContainerHeight, isResizeObserverSupported]);
 
   const validate = (key: string, value: string | undefined): string | undefined => {
     if (selectedProvider === undefined) {
@@ -233,7 +235,7 @@ export function AddModelForm({
       await setProviderConfiguration(storage, selectedProvider.metadata.id, formData);
 
       // Model and Provider are set as selected in the parent component
-      onProviderConfigured(selectedProvider.metadata);
+      await onProviderConfigured(selectedProvider.metadata);
       reset();
       setWarnings({});
       setSubmitError(undefined);

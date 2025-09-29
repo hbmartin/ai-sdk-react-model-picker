@@ -10,7 +10,7 @@ export interface UseModelCatalogOptions {
 export interface UseModelCatalogResult {
   catalog: ModelCatalog;
   snapshot: CatalogSnapshot;
-  refresh: (providerId: ProviderId, opts?: { force?: boolean }) => void;
+  refresh: (providerId: ProviderId, opts?: { force?: boolean }) => Promise<void>;
   refreshAll: () => void;
   addUserModel: (providerId: ProviderId, modelId: ModelId) => Promise<void>;
   removeModel: (providerId: ProviderId, modelId: ModelId) => Promise<void>;
@@ -35,8 +35,8 @@ export function useModelCatalog({
 
   const actions = useMemo(
     () => ({
-      refresh: (providerId: ProviderId, opts?: { force?: boolean }) =>
-        void catalog.refresh(providerId, opts),
+      refresh: (providerId: ProviderId, opts?: { force?: boolean }): Promise<void> =>
+        catalog.refresh(providerId, opts),
       refreshAll: () => void catalog.refreshAll(),
       addUserModel: (providerId: ProviderId, modelId: ModelId) =>
         catalog.addUserModel(providerId, modelId),

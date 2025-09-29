@@ -85,10 +85,8 @@ export function useModelsWithConfiguredProvider(
     providerId: ProviderId,
     modelId?: ModelId
   ): Promise<CatalogEntry | undefined> => {
-    const pendingRefreshes = catalog.getPendingRefreshes(providerId);
-    if (pendingRefreshes !== undefined) {
-      await pendingRefreshes;
-    }
+    await catalog.getPendingRefreshes(providerId);
+
     const provider = providerRegistry.getProvider(providerId);
     const providerSnapshot = snapshot[providerId];
 
@@ -96,8 +94,9 @@ export function useModelsWithConfiguredProvider(
 
     if (modelId === undefined) {
       catalogEntry =
-        providerSnapshot?.models.find((entry) => entry.model.isDefault === true) ??
-        providerSnapshot?.models.find((entry) => entry.model.visible === true);
+        providerSnapshot?.models.find(
+          (entry) => entry.model.isDefault === true && entry.model.visible !== false
+        ) ?? providerSnapshot?.models.find((entry) => entry.model.visible !== false);
     } else {
       catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
       if (catalogEntry === undefined) {
@@ -152,7 +151,8 @@ export function useModelsWithConfiguredProvider(
 
         // Recently used list, but only for models that currently exist in snapshot
         const recent = await Promise.all(
-          recentModelKeys.map(async (key) => await catalog.getModel(key))
+          // eslint-disable-next-line sonarjs/no-nested-functions
+          recentModelKeys.map(async (key) => await catalog.getModel(key).catch(() => undefined))
         );
         setRecentlyUsedModels(recent.filter((x): x is CatalogEntry => x !== undefined));
         setSelectedModel((prev) => prev ?? recent[0]);
@@ -211,9 +211,7 @@ export function useModelsWithConfiguredProvider(
     setSelectedProviderAndModel,
     deleteProvider,
     isLoadingOrError,
-    refreshProviderModels: (providerId: ProviderId) => {
-      refresh(providerId);
-    },
+    refreshProviderModels: (providerId: ProviderId): Promise<void> => refresh(providerId),
     getProviderModels,
     getProviderModelsStatus,
     toggleModelVisibility,
