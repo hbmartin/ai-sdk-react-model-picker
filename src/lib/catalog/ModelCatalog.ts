@@ -54,11 +54,11 @@ export class ModelCatalog {
   }
 
   getPendingRefreshes(providerId: ProviderId): Promise<void> {
-    const pending = [
-      this.pendingHydrations.get(providerId),
-      this.pendingRefreshes.get(providerId),
-    ].filter((promise) => promise !== undefined);
-    return Promise.all(pending).then(() => {});
+    return Promise.all(
+      [this.pendingHydrations.get(providerId), this.pendingRefreshes.get(providerId)].filter(
+        (promise) => promise !== undefined
+      )
+    ).then(() => {});
   }
 
   subscribe(listener: () => void): () => void {
