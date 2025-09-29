@@ -61,9 +61,7 @@ jobs:
         run: pnpm run build
 
       - name: Check package contents
-        run: |
-          echo "Package contents:"
-          pnpm pack --dry-run
+        run: pnpm pack
 
   publish-npm:
     name: Publish to NPM Registry
