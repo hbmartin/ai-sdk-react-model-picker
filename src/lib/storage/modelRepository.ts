@@ -123,6 +123,7 @@ export async function getHiddenModelIds(
       return [];
     }
 
+    // eslint-disable-next-line sonarjs/different-types-comparison, @typescript-eslint/no-unnecessary-condition
     if (raw['__json'] !== undefined) {
       try {
         const env = JSON.parse(raw['__json']) as PersistedVisibilityEnvelope;

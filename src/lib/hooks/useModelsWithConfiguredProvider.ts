@@ -42,7 +42,12 @@ export function useModelsWithConfiguredProvider(
   const catalog = useMemo(
     () =>
       options?.catalog ??
-      new ModelCatalog(providerRegistry, options?.modelStorage ?? storage, options?.telemetry),
+      new ModelCatalog(
+        providerRegistry,
+        storage,
+        options?.modelStorage ?? storage,
+        options?.telemetry
+      ),
     [providerRegistry, storage, options?.catalog, options?.modelStorage, options?.telemetry]
   );
   const { snapshot, refresh, removeProvider, addUserModel, setModelVisibility } = useModelCatalog({
@@ -89,14 +94,6 @@ export function useModelsWithConfiguredProvider(
       catalogEntry =
         providerSnapshot?.models.find((entry) => entry.model.isDefault === true) ??
         providerSnapshot?.models[0];
-      if (catalogEntry === undefined) {
-        const fallbackModel = provider.getDefaultModel();
-        catalogEntry = {
-          model: fallbackModel,
-          provider: provider.metadata,
-          key: providerAndModelKey({ model: fallbackModel, provider: provider.metadata }),
-        };
-      }
     } else {
       catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
       if (catalogEntry === undefined) {
@@ -121,22 +118,16 @@ export function useModelsWithConfiguredProvider(
 
     setProvidersWithCreds((prev) => (prev.includes(providerId) ? prev : [providerId, ...prev]));
 
-    const entry: CatalogEntry = {
-      model: catalogEntry.model,
-      provider: catalogEntry.provider,
-      key: catalogEntry.key,
-    };
-
-    setSelectedModel(entry);
+    setSelectedModel(catalogEntry);
     setRecentlyUsedModels((prev) => {
-      const index = prev.findIndex((model) => model.key === entry.key);
+      const index = prev.findIndex((model) => model.key === catalogEntry.key);
       if (index === -1) {
-        return [entry, ...prev];
+        return [catalogEntry, ...prev];
       }
-      return [entry, ...prev.slice(0, index), ...prev.slice(index + 1)];
+      return [catalogEntry, ...prev.slice(0, index), ...prev.slice(index + 1)];
     });
 
-    return entry;
+    return catalogEntry;
   };
 
   useEffect(() => {
@@ -187,7 +178,12 @@ export function useModelsWithConfiguredProvider(
 
   const getProviderModelsStatus = (providerId: ProviderId) => snapshot[providerId];
 
-  const toggleModelVisibility = (providerId: ProviderId, modelId: ModelId, visible: boolean) => {
+  const toggleModelVisibility = (
+    providerId: ProviderId,
+    modelId: ModelId,
+    // eslint-disable-next-line code-complete/no-boolean-params
+    visible: boolean
+  ): Promise<void> => {
     return setModelVisibility(providerId, modelId, visible);
   };
 

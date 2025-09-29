@@ -19,6 +19,7 @@ import {
   getPersistedModels,
   getHiddenModelIds,
   setPersistedModels,
+  setHiddenModelIds,
 } from '../storage/modelRepository';
 import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
 import type { ModelPickerTelemetry } from '../telemetry';
@@ -43,18 +44,6 @@ function modelToCatalogEntry(
 }
 
 export class ModelCatalog {
-  getModel(key: ProviderAndModelKey): CatalogEntry | undefined {
-    const { providerId, modelId } = idsFromKey(key);
-    const provider = this.snapshot[providerId];
-    if (provider === undefined) {
-      return undefined;
-    }
-    const model = provider.models.find((model) => model.model.id === modelId);
-    if (model === undefined) {
-      return undefined;
-    }
-    return { ...model, key };
-  }
   private snapshot: CatalogSnapshot;
   private readonly listeners = new Set<() => void>();
   private readonly pendingHydrations = new Map<ProviderId, Promise<void>>();
@@ -63,6 +52,7 @@ export class ModelCatalog {
 
   constructor(
     private readonly providerRegistry: IProviderRegistry,
+    private readonly providerStorage: StorageAdapter,
     private readonly modelStorage: StorageAdapter,
     private readonly telemetry?: ModelPickerTelemetry
   ) {
@@ -78,6 +68,19 @@ export class ModelCatalog {
 
   getSnapshot(): CatalogSnapshot {
     return this.snapshot;
+  }
+
+  getModel(key: ProviderAndModelKey): CatalogEntry | undefined {
+    const { providerId, modelId } = idsFromKey(key);
+    const provider = this.snapshot[providerId];
+    if (provider === undefined) {
+      return undefined;
+    }
+    const model = provider.models.find((model) => model.model.id === modelId);
+    if (model === undefined) {
+      return undefined;
+    }
+    return { ...model, key };
   }
 
   private emit(): void {
@@ -191,7 +194,7 @@ export class ModelCatalog {
     );
 
     if (prefetch) {
-      const providerIdsWithCreds = await getProvidersWithCredentials(this.modelStorage);
+      const providerIdsWithCreds = await getProvidersWithCredentials(this.providerStorage);
       for (const providerId of providerIdsWithCreds) {
         try {
           await this.refresh(providerId);
@@ -253,7 +256,6 @@ export class ModelCatalog {
     }
 
     this.updateProvider(providerId, (prev) => {
-      let changed = false;
       const models = prev.models.map((entry) => {
         const shouldHide = hiddenSet.has(entry.model.id);
         const currentVisible = entry.model.visible ?? true;
@@ -261,7 +263,6 @@ export class ModelCatalog {
         if (currentVisible === nextVisible) {
           return entry;
         }
-        changed = true;
         return {
           ...entry,
           model: {
@@ -270,7 +271,7 @@ export class ModelCatalog {
           },
         } satisfies CatalogEntry;
       });
-      return changed ? { ...prev, models } : prev;
+      return { ...prev, status: 'ready', models };
     });
   }
 
@@ -325,7 +326,7 @@ export class ModelCatalog {
 
     const run = (async () => {
       try {
-        const config = await getProviderConfiguration(this.modelStorage, providerId);
+        const config = await getProviderConfiguration(this.providerStorage, providerId);
         const valid = config ? provider.configuration.validateConfig(config).ok : false;
         if (!valid && opts?.force !== true) {
           this.telemetry?.onProviderInvalidConfig?.(providerId);
@@ -335,9 +336,13 @@ export class ModelCatalog {
         this.setStatus(providerId, 'refreshing');
         this.telemetry?.onFetchStart?.(providerId);
         const models = await provider.fetchModels();
-        this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
-        // TODO: remove / update builtin models based on API response
-        await this.persistNonBuiltin(providerId);
+        if (models.length > 0) {
+          this.mergeAddedModelsIntoSnapshot(provider, models, 'api');
+          // TODO: remove / update builtin models based on API response
+          await this.persistNonBuiltin(providerId);
+        } else {
+          this.setStatus(providerId, 'ready');
+        }
         this.telemetry?.onFetchSuccess?.(providerId, models.length);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -352,7 +357,7 @@ export class ModelCatalog {
   }
 
   async refreshAll(): Promise<void> {
-    const providers = await getProvidersWithCredentials(this.modelStorage);
+    const providers = await getProvidersWithCredentials(this.providerStorage);
     const providersWithCreds = providers.filter((pid) => this.providerRegistry.hasProvider(pid));
     for (const pid of providersWithCreds) {
       await this.refresh(pid);
@@ -396,13 +401,13 @@ export class ModelCatalog {
   async setModelVisibility(
     providerId: ProviderId,
     modelId: ModelId,
+    // eslint-disable-next-line code-complete/no-boolean-params
     visible: boolean
   ): Promise<void> {
     if (this.ensureProviderState(providerId) === undefined) {
       return;
     }
 
-    let didChange = false;
     this.updateProvider(providerId, (prev) => {
       const index = prev.models.findIndex((entry) => entry.model.id === modelId);
       if (index === -1) {
@@ -421,16 +426,11 @@ export class ModelCatalog {
           visible,
         },
       } satisfies CatalogEntry;
-      didChange = true;
       return {
         ...prev,
         models,
       } satisfies ProviderModelsStatus;
     });
-
-    if (!didChange) {
-      return;
-    }
 
     const hiddenSet = this.hiddenModelIds.get(providerId) ?? new Set<ModelId>();
     if (visible) {

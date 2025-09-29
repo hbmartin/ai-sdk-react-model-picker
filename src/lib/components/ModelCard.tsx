@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-nested-conditional */
 import { useState, type MouseEvent } from 'react';
 import { ModelProviderTags, type ModelConfigWithProvider } from '../types';
 import { ModelProviderTag } from './ModelProviderTag';

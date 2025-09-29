@@ -14,7 +14,7 @@ export interface ModelPickerTelemetry {
 let globalTelemetry: ModelPickerTelemetry | undefined;
 
 export function setGlobalTelemetry(modelPickerTelemetry?: ModelPickerTelemetry) {
-  globalTelemetry = modelPickerTelemetry;
+  globalTelemetry = modelPickerTelemetry ? Object.freeze({ ...modelPickerTelemetry }) : undefined;
 }
 
 export function getTelemetry(): ModelPickerTelemetry | undefined {

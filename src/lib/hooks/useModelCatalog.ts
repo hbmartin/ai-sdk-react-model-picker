@@ -43,6 +43,7 @@ export function useModelCatalog({
       removeProvider: (providerId: ProviderId) => catalog.removeProvider(providerId),
       removeModel: (providerId: ProviderId, modelId: ModelId) =>
         catalog.removeModel(providerId, modelId),
+      // eslint-disable-next-line code-complete/no-boolean-params
       setModelVisibility: (providerId: ProviderId, modelId: ModelId, visible: boolean) =>
         catalog.setModelVisibility(providerId, modelId, visible),
     }),
