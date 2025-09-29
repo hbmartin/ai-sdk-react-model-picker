@@ -57,7 +57,7 @@ interface ModelPickerContextValue {
   // Callbacks
   onConfigureProvider: (providerId: ProviderId) => void;
   onMissingConfiguration: (keys: string[]) => void;
-  refreshModels: (providerId?: ProviderId) => void;
+  refreshModels: (providerId?: ProviderId) => Promise<void>;
 }
 
 const ModelPickerContext = createContext<ModelPickerContextValue | undefined>(undefined);
@@ -197,9 +197,9 @@ export function ModelPickerProvider({
       setError,
       onConfigureProvider,
       onMissingConfiguration,
-      refreshModels: (providerId?: ProviderId) => {
+      refreshModels: async (providerId?: ProviderId) => {
         if (providerId) {
-          refresh(providerId);
+          await refresh(providerId);
         } else {
           refreshAll();
         }

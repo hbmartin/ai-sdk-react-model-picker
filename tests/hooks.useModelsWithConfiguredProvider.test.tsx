@@ -148,7 +148,7 @@ describe('useModelsWithConfiguredProvider', () => {
     });
 
     await act(async () => {
-      result.current.setSelectedProviderAndModel(provId);
+      await result.current.setSelectedProviderAndModel(provId);
     });
 
     // Selected model should be default
@@ -186,7 +186,7 @@ describe('useModelsWithConfiguredProvider', () => {
     });
 
     await act(async () => {
-      result.current.setSelectedProviderAndModel(provId, b.id);
+      await result.current.setSelectedProviderAndModel(provId, b.id);
     });
 
     expect(result.current.selectedModel?.model.id).toBe(b.id);
@@ -227,10 +227,10 @@ describe('useModelsWithConfiguredProvider', () => {
 
     // Select models from both providers so both are present in state
     await act(async () => {
-      result.current.setSelectedProviderAndModel(p1, p1m1.id);
+      await result.current.setSelectedProviderAndModel(p1, p1m1.id);
     });
     await act(async () => {
-      result.current.setSelectedProviderAndModel(p2, p2n2.id);
+      await result.current.setSelectedProviderAndModel(p2, p2n2.id);
     });
 
     // p2n2 should be selected and on top
@@ -382,7 +382,7 @@ describe('useModelsWithConfiguredProvider lifecycle', () => {
 
       await waitFor(() => result.current.modelsWithCredentials.length > 0);
       await act(async () => {
-        result.current.setSelectedProviderAndModel(pid, altModel.id);
+        await result.current.setSelectedProviderAndModel(pid, altModel.id);
       });
       await waitFor(() => result.current.selectedModel?.model.id === altModel.id);
       expect(result.current.recentlyUsedModels[0]?.model.id).toBe(altModel.id);
