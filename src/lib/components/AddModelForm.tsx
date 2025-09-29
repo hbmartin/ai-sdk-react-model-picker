@@ -144,12 +144,18 @@ export function AddModelForm({
   }, [showModelConfigurator]);
 
   useLayoutEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+    if (globalThis.window === undefined || !('ResizeObserver' in globalThis)) {
+      setContainerHeight((previous) => (previous === undefined ? previous : undefined));
+      return;
+    }
     updateContainerHeight();
   }, [updateContainerHeight]);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
     if (globalThis.window === undefined || !('ResizeObserver' in globalThis)) {
+      setContainerHeight((previous) => (previous === undefined ? previous : undefined));
       return;
     }
 
