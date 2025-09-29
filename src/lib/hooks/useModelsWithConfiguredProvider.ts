@@ -88,7 +88,8 @@ export function useModelsWithConfiguredProvider(
     await catalog.getPendingRefreshes(providerId);
 
     const provider = providerRegistry.getProvider(providerId);
-    const providerSnapshot = snapshot[providerId];
+    const currentSnapshot = catalog.getSnapshot();
+    const providerSnapshot = currentSnapshot[providerId] ?? snapshot[providerId];
 
     let catalogEntry: CatalogEntry | undefined;
 
@@ -99,6 +100,11 @@ export function useModelsWithConfiguredProvider(
         ) ?? providerSnapshot?.models.find((entry) => entry.model.visible !== false);
     } else {
       catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
+      if (catalogEntry === undefined) {
+        catalogEntry = currentSnapshot[providerId]?.models.find(
+          (entry) => entry.model.id === modelId
+        );
+      }
       if (catalogEntry === undefined) {
         const fallbackModel = provider.models.find((model) => model.id === modelId);
         if (fallbackModel === undefined) {
