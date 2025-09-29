@@ -3,22 +3,6 @@ name: Publish to NPM
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g., 1.0.0, 1.0.0-beta.1)'
-        required: true
-        type: string
-      tag:
-        description: 'NPM tag (latest, beta, next)'
-        required: true
-        default: 'latest'
-        type: choice
-        options:
-          - latest
-          - beta
-          - next
-          - alpha
 
 permissions:
   id-token: write
@@ -92,14 +76,7 @@ jobs:
       - name: Build library
         run: pnpm run build
 
-      - name: Update package version (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
-          echo "Updated version to ${{ github.event.inputs.version }}"
-
-      - name: Publish to NPM (release trigger)
-        if: github.event_name == 'release'
+      - name: Publish to NPM
         run: |
           # Determine tag from release (beta, alpha, etc.)
           TAG="latest"
@@ -108,81 +85,4 @@ jobs:
           fi
 
           echo "Publishing with tag: $TAG"
-          pnpm publish --access public --tag $TAG
-
-      - name: Publish to NPM (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "Publishing version ${{ github.event.inputs.version }} with tag: ${{ github.event.inputs.tag }}"
-          pnpm publish --access public --tag ${{ github.event.inputs.tag }}
-
-  create-release-pr:
-    name: Create Release Pull Request
-    if: github.event_name == 'workflow_dispatch'
-    needs: [publish-npm]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Update version in package.json
-        run: |
-          pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
-
-          # Update changelog
-          cat > RELEASE_NOTES.md << EOF
-          ## Version ${{ github.event.inputs.version }}
-
-          Published to NPM with tag: ${{ github.event.inputs.tag }}
-
-          ### Changes
-          - Updated version to ${{ github.event.inputs.version }}
-
-          ### Installation
-          \`\`\`bash
-          pnpm add ai-sdk-react-model-picker@${{ github.event.inputs.tag }}
-          \`\`\`
-          EOF
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: release version ${{ github.event.inputs.version }}'
-          title: 'Release: v${{ github.event.inputs.version }}'
-          body: |
-            ## 🚀 Release v${{ github.event.inputs.version }}
-
-            This PR updates the package version to ${{ github.event.inputs.version }}.
-
-            ### NPM Package
-            - Published with tag: `${{ github.event.inputs.tag }}`
-            - Install: `pnpm add ai-sdk-react-model-picker@${{ github.event.inputs.tag }}`
-
-            ### Checklist
-            - [x] Version updated in package.json
-            - [x] Published to NPM registry
-            - [ ] Changelog updated
-            - [ ] Documentation updated
-
-            ---
-            *This PR was automatically created by the publish workflow.*
-          branch: release/v${{ github.event.inputs.version }}
-          delete-branch: true
+          pnpm publish --access public --tag $TAG --no-git-checks

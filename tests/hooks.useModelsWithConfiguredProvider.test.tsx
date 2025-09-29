@@ -166,6 +166,38 @@ describe('useModelsWithConfiguredProvider', () => {
     expect(creds).toContain(provId);
   });
 
+  it('selects newly added user models and pushes them to the top of recents', async () => {
+    const storage = new MemoryStorageAdapter('test-add-user');
+    const registry = new ProviderRegistry(undefined);
+
+    const provId = createProviderId('prov-add');
+    const builtin = makeModel('builtin', 'Builtin', true);
+    registry.register(new FakeProvider(provId, 'Provider Add', [builtin]));
+
+    await addProviderWithCredentials(storage, provId);
+
+    const { result } = renderHook(() => useModelsWithConfiguredProvider(storage, registry));
+
+    await waitFor(() => {
+      expect(result.current.isLoadingOrError.state).toBe('ready');
+    });
+
+    const userModelId = 'custom-model';
+
+    await act(async () => {
+      await result.current.addUserModelAndSelect(provId, userModelId);
+    });
+
+    const branded = createModelId(userModelId);
+    await waitFor(() => {
+      expect(result.current.selectedModel?.model.id).toBe(branded);
+      expect(result.current.recentlyUsedModels[0]?.model.id).toBe(branded);
+    });
+
+    const recents = await getRecentlyUsedModels(storage);
+    expect(recents[0]).toBe(keyFor(provId, branded));
+  });
+
   it.skip('selects specific model and updates states and storage', async () => {
     const storage = new MemoryStorageAdapter('test-4');
     const registry = new ProviderRegistry(undefined);
