@@ -225,8 +225,7 @@ export function ListboxOptions({ children, className = '', ...props }: ListboxOp
   }, [isOpen, optionsRef]);
 
   if (!isOpen || typeof document === 'undefined') {
-    // eslint-disable-next-line unicorn/no-null
-    return null;
+    return undefined;
   }
 
   return createPortal(

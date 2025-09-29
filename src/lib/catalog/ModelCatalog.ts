@@ -54,7 +54,19 @@ export class ModelCatalog {
   }
 
   getPendingRefreshes(providerId: ProviderId): Promise<void> | undefined {
-    return this.pendingRefreshes.get(providerId) ?? this.pendingHydrations.get(providerId);
+    const promises: Promise<void>[] = [];
+    const refresh = this.pendingRefreshes.get(providerId);
+    if (refresh !== undefined) {
+      promises.push(refresh);
+    }
+    const hydration = this.pendingHydrations.get(providerId);
+    if (hydration !== undefined) {
+      promises.push(hydration);
+    }
+    if (promises.length > 0) {
+      return Promise.all(promises).then(() => {});
+    }
+    return undefined;
   }
 
   subscribe(listener: () => void): () => void {
@@ -68,8 +80,13 @@ export class ModelCatalog {
     return this.snapshot;
   }
 
-  getModel(key: ProviderAndModelKey): CatalogEntry | undefined {
+  async getModel(key: ProviderAndModelKey): Promise<CatalogEntry | undefined> {
     const { providerId, modelId } = idsFromKey(key);
+    const pendingRefreshes = this.getPendingRefreshes(providerId);
+    if (pendingRefreshes !== undefined) {
+      await pendingRefreshes;
+    }
+
     const provider = this.snapshot[providerId];
     if (provider === undefined) {
       return undefined;
@@ -157,9 +174,8 @@ export class ModelCatalog {
     const run = (async () => {
       try {
         const persisted = await getPersistedModels(this.modelStorage, providerId);
-        const changed = persisted.length > 0
-          ? this.mergeModelsIntoSnapshot(provider, persisted, 'user')
-          : false;
+        const changed =
+          persisted.length > 0 ? this.mergeModelsIntoSnapshot(provider, persisted, 'user') : false;
         if (!changed) {
           this.setStatus(providerId, 'ready');
         }

@@ -151,10 +151,10 @@ export function useModelsWithConfiguredProvider(
         setProvidersWithCreds(providers);
 
         // Recently used list, but only for models that currently exist in snapshot
-        const recent = recentModelKeys
-          .map((key) => catalog.getModel(key))
-          .filter((x): x is CatalogEntry => x !== undefined);
-        setRecentlyUsedModels(recent);
+        const recent = await Promise.all(
+          recentModelKeys.map(async (key) => await catalog.getModel(key))
+        );
+        setRecentlyUsedModels(recent.filter((x): x is CatalogEntry => x !== undefined));
         setSelectedModel((prev) => prev ?? recent[0]);
         setIsLoadingOrError({ state: 'ready' });
       } catch (error) {
