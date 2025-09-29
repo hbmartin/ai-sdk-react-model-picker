@@ -17,7 +17,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Upgrade npm to latest
-        run: npm install -g npm@latest
+        run: |
+          npm -v
+          npm config set prefix ~/.local
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          npm install -g npm@latest
+          npm -v
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -57,7 +63,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Upgrade npm to latest
-        run: npm install -g npm@latest
+        run: |
+          npm -v
+          npm config set prefix ~/.local
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          npm install -g np
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
