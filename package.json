@@ -81,7 +81,8 @@
     "node": ">=20"
   },
   "publishConfig": {
-    "provenance": true
+    "provenance": true,
+    "access": "public"
   },
   "peerDependencies": {
     "@ai-sdk/amazon-bedrock": ">=2.0.0",
