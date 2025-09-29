@@ -81,10 +81,14 @@ export function useModelsWithConfiguredProvider(
     return modelToSelect;
   };
 
-  const setSelectedProviderAndModel = (
+  const setSelectedProviderAndModel = async (
     providerId: ProviderId,
     modelId?: ModelId
-  ): CatalogEntry | undefined => {
+  ): Promise<CatalogEntry | undefined> => {
+    const pendingRefreshes = catalog.getPendingRefreshes(providerId);
+    if (pendingRefreshes !== undefined) {
+      await pendingRefreshes;
+    }
     const provider = providerRegistry.getProvider(providerId);
     const providerSnapshot = snapshot[providerId];
 
@@ -93,7 +97,7 @@ export function useModelsWithConfiguredProvider(
     if (modelId === undefined) {
       catalogEntry =
         providerSnapshot?.models.find((entry) => entry.model.isDefault === true) ??
-        providerSnapshot?.models[0];
+        providerSnapshot?.models.find((entry) => entry.model.visible === true);
     } else {
       catalogEntry = providerSnapshot?.models.find((entry) => entry.model.id === modelId);
       if (catalogEntry === undefined) {
@@ -147,10 +151,10 @@ export function useModelsWithConfiguredProvider(
         setProvidersWithCreds(providers);
 
         // Recently used list, but only for models that currently exist in snapshot
-        const recent = recentModelKeys
-          .map((key) => catalog.getModel(key))
-          .filter((x): x is CatalogEntry => x !== undefined);
-        setRecentlyUsedModels(recent);
+        const recent = await Promise.all(
+          recentModelKeys.map(async (key) => await catalog.getModel(key))
+        );
+        setRecentlyUsedModels(recent.filter((x): x is CatalogEntry => x !== undefined));
         setSelectedModel((prev) => prev ?? recent[0]);
         setIsLoadingOrError({ state: 'ready' });
       } catch (error) {
