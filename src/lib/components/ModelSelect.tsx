@@ -148,9 +148,12 @@ export function ModelSelect({
           </ListboxButton>
 
           <ListboxOptions className="min-w-[160px]">
-            <div className="no-scrollbar max-h-[300px] mb-1">
+            <div className="no-scrollbar mb-1">
               {modelsWithCredentials.length === 0 && recentlyUsedModels.length === 0 ? (
-                <div className="text-muted px-2 py-4 text-center text-xs">No models configured</div>
+                <div className="text-muted px-2 py-4 text-center text-xs">
+                  No models configured, please add models by selecting the "Add Model Provider"
+                  option below and optionally configuring additional models.
+                </div>
               ) : (
                 <>
                   <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase">
@@ -188,7 +191,6 @@ export function ModelSelect({
           storage={effectiveStorage}
           onClose={() => setShowAddModelForm(false)}
           onProviderConfigured={async (provider) => {
-            // TODO: make this await?
             await refreshProviderModels(provider.id);
             await selectModelAndNotify(provider.id);
             setShowAddModelForm(false);
