@@ -80,6 +80,9 @@
   "engines": {
     "node": ">=20"
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "peerDependencies": {
     "@ai-sdk/amazon-bedrock": ">=2.0.0",
     "@ai-sdk/anthropic": ">=2.0.0",

@@ -16,7 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      - name: Upgrade npm to latest
+        run: npm install -g npm@latest
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -55,7 +56,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      - name: Upgrade npm to latest
+        run: npm install -g npm@latest
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
