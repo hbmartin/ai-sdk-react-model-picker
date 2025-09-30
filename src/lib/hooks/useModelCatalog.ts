@@ -35,8 +35,7 @@ export function useModelCatalog({
 
   const actions = useMemo(
     () => ({
-      refresh: (providerId: ProviderId, opts?: { force?: boolean }): Promise<void> =>
-        catalog.refresh(providerId, opts),
+      refresh: (providerId: ProviderId): Promise<void> => catalog.refresh(providerId),
       refreshAll: () => void catalog.refreshAll(),
       addUserModel: (providerId: ProviderId, modelId: ModelId) =>
         catalog.addUserModel(providerId, modelId),

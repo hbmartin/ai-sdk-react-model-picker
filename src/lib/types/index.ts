@@ -24,7 +24,7 @@ export interface ModelConfig {
   maxTokens?: number;
   supportsVision?: boolean;
   supportsTools?: boolean;
-  contextLength?: number;
+  contextLength?: number | undefined;
   // Catalog-specific fields
   origin?: ModelOrigin;
   visible?: boolean;
@@ -85,7 +85,7 @@ export interface ProviderMetadata {
   documentationUrl?: string;
   apiKeyUrl?: string;
   // Presence indicates the provider supports model list fetching
-  fetchModelListUrl?: string;
+  fetchModelListPath?: string;
 }
 
 // Provider instance parameters for AI SDK
@@ -196,11 +196,14 @@ export abstract class AIProvider {
     return { isValid: true };
   }
 
-  async fetchModels(): Promise<ModelConfig[]> {
-    if (this.metadata.fetchModelListUrl === undefined) {
+  async fetchModels(
+    options: ProviderInstanceParams['options'] | undefined
+  ): Promise<ModelConfig[]> {
+    if (this.metadata.fetchModelListPath === undefined) {
       return [];
     }
-    const response = await fetch(this.metadata.fetchModelListUrl);
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(options);
+    const response = await fetch(this.metadata.fetchModelListPath);
     // TODO: parse openai response  by default
     // Add validation, timeouts, size limits, and schema checking for parsed JSON.
     // Additionally, consider error handling for non-2xx responses and content-type verification.
@@ -221,6 +224,7 @@ export interface IProviderRegistry {
   getAllProviders(): AIProvider[];
   getProviderMetadata(providerId: ProviderId): ProviderMetadata;
   hasProvider(providerId: ProviderId): boolean;
+  getProvidersNotRequiringCredentials(): AIProvider[];
 }
 
 export type CatalogSnapshot = Record<ProviderId, ProviderModelsStatus | undefined>;

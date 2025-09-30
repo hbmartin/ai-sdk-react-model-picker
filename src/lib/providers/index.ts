@@ -6,6 +6,7 @@ import { BedrockProvider } from './BedrockProvider';
 import { CohereProvider } from './CohereProvider';
 import { DeepseekProvider } from './DeepseekProvider';
 import { GoogleProvider } from './GoogleProvider';
+import { LmStudioProvider } from './LmStudioProvider';
 import { MistralProvider } from './MistralProvider';
 import { MoonshotProvider } from './MoonshotProvider';
 import { OpenAIProvider } from './OpenAIProvider';
@@ -34,6 +35,7 @@ export const allProviders = {
   [createProviderId('bedrock')]: BedrockProvider,
   [createProviderId('cohere')]: CohereProvider,
   [createProviderId('deepseek')]: DeepseekProvider,
+  [createProviderId('lmstudio')]: LmStudioProvider,
   [createProviderId('mistral')]: MistralProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
   [createProviderId('openrouter')]: OpenRouterProvider,

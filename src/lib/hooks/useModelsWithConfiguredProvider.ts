@@ -128,9 +128,15 @@ export function useModelsWithConfiguredProvider(
         ]);
 
         // Track providers with credentials
-        const providers = providersWithCredentials.filter((pid) =>
+        const providersRequiringCredentials = providersWithCredentials.filter((pid) =>
           providerRegistry.hasProvider(pid)
         );
+        const providersNotRequiringCredentials = providerRegistry
+          .getProvidersNotRequiringCredentials()
+          .map((provider) => provider.metadata.id);
+        const providers = [
+          ...new Set([...providersRequiringCredentials, ...providersNotRequiringCredentials]),
+        ];
         setProvidersWithCreds(providers);
 
         // Recently used list, but only for models that currently exist in snapshot
