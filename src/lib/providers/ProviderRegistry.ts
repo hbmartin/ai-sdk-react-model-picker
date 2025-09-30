@@ -91,4 +91,10 @@ export class ProviderRegistry implements IProviderRegistry {
   unregister(providerId: ProviderId): boolean {
     return this.providers.delete(providerId);
   }
+
+  getProvidersNotRequiringCredentials(): AIProvider[] {
+    return [...this.providers.values()].filter(
+      (provider) => provider.configuration.validateConfig({}).ok
+    );
+  }
 }

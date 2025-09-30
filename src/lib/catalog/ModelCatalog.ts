@@ -196,7 +196,12 @@ export class ModelCatalog {
     );
 
     if (prefetch) {
-      const providerIdsWithCreds = await getProvidersWithCredentials(this.providerStorage);
+      const providerIdsWithCreds = [
+        ...(await getProvidersWithCredentials(this.providerStorage)),
+        ...this.providerRegistry
+          .getProvidersNotRequiringCredentials()
+          .map((provider) => provider.metadata.id),
+      ];
       for (const providerId of providerIdsWithCreds) {
         try {
           await this.refresh(providerId);
@@ -311,7 +316,7 @@ export class ModelCatalog {
     return true;
   }
 
-  async refresh(providerId: ProviderId, opts?: { force?: boolean }): Promise<void> {
+  async refresh(providerId: ProviderId): Promise<void> {
     if (this.ensureProviderState(providerId) === undefined) {
       return;
     }
@@ -327,15 +332,9 @@ export class ModelCatalog {
     const run = (async () => {
       try {
         const config = await getProviderConfiguration(this.providerStorage, providerId);
-        const valid = config ? provider.configuration.validateConfig(config).ok : false;
-        if (!valid && opts?.force !== true) {
-          this.telemetry?.onProviderInvalidConfig?.(providerId);
-          this.setStatus(providerId, 'missing-config');
-          return;
-        }
         this.setStatus(providerId, 'refreshing');
         this.telemetry?.onFetchStart?.(providerId);
-        const models = await provider.fetchModels();
+        const models = await provider.fetchModels(config);
         if (models.length > 0) {
           const changed = this.mergeModelsIntoSnapshot(provider, models, 'api');
           // TODO: remove / update builtin models based on API response
@@ -351,7 +350,12 @@ export class ModelCatalog {
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         this.telemetry?.onFetchError?.(providerId, err);
-        this.setStatus(providerId, 'ready', err.message);
+        this.setStatus(
+          providerId,
+          'ready',
+          err.message + (err.cause === undefined ? '' : `: ${JSON.stringify(err.cause)}`)
+        );
+        console.error('refresh error', err);
       }
     })().finally(() => {
       this.pendingRefreshes.delete(providerId);
@@ -361,7 +365,12 @@ export class ModelCatalog {
   }
 
   async refreshAll(): Promise<void> {
-    const providers = await getProvidersWithCredentials(this.providerStorage);
+    const providers = [
+      ...(await getProvidersWithCredentials(this.providerStorage)),
+      ...this.providerRegistry
+        .getProvidersNotRequiringCredentials()
+        .map((provider) => provider.metadata.id),
+    ];
     const providersWithCreds = providers.filter((pid) => this.providerRegistry.hasProvider(pid));
     for (const pid of providersWithCreds) {
       await this.refresh(pid);
