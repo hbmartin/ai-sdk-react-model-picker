@@ -16,7 +16,8 @@ import type {
 } from '../types';
 import { createModelId, idsFromKey, providerAndModelKey } from '../types';
 import { getPersistedModels, setPersistedModels } from '../storage/modelRepository';
-import { getProviderConfiguration, getProvidersWithCredentials } from '../storage/repository';
+import { getProviderConfiguration } from '../storage/repository';
+import { getProvidersWithAccess } from './providerCredentials';
 import type { ModelPickerTelemetry } from '../telemetry';
 
 function modelToCatalogEntry(
@@ -196,12 +197,10 @@ export class ModelCatalog {
     );
 
     if (prefetch) {
-      const providerIdsWithCreds = [
-        ...(await getProvidersWithCredentials(this.providerStorage)),
-        ...this.providerRegistry
-          .getProvidersNotRequiringCredentials()
-          .map((provider) => provider.metadata.id),
-      ];
+      const providerIdsWithCreds = await getProvidersWithAccess(
+        this.providerRegistry,
+        this.providerStorage
+      );
       for (const providerId of providerIdsWithCreds) {
         try {
           await this.refresh(providerId);
@@ -331,7 +330,23 @@ export class ModelCatalog {
 
     const run = (async () => {
       try {
-        const config = await getProviderConfiguration(this.providerStorage, providerId);
+        const storedConfig = await getProviderConfiguration(this.providerStorage, providerId);
+        const config = storedConfig === undefined ? undefined : { ...storedConfig };
+
+        try {
+          provider.configuration.assertValidConfigAndRemoveEmptyKeys(config);
+        } catch (validationError) {
+          const message =
+            validationError instanceof Error ? validationError.message : String(validationError);
+          this.setStatus(providerId, 'missing-config', message);
+          return;
+        }
+
+        if (typeof provider.fetchModels !== 'function') {
+          this.setStatus(providerId, 'ready');
+          return;
+        }
+
         this.setStatus(providerId, 'refreshing');
         this.telemetry?.onFetchStart?.(providerId);
         const models = await provider.fetchModels(config);
@@ -365,13 +380,10 @@ export class ModelCatalog {
   }
 
   async refreshAll(): Promise<void> {
-    const providers = [
-      ...(await getProvidersWithCredentials(this.providerStorage)),
-      ...this.providerRegistry
-        .getProvidersNotRequiringCredentials()
-        .map((provider) => provider.metadata.id),
-    ];
-    const providersWithCreds = providers.filter((pid) => this.providerRegistry.hasProvider(pid));
+    const providersWithCreds = await getProvidersWithAccess(
+      this.providerRegistry,
+      this.providerStorage
+    );
     for (const pid of providersWithCreds) {
       await this.refresh(pid);
     }

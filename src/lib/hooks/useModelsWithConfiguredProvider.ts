@@ -8,11 +8,11 @@ import type {
   CatalogEntry,
 } from '../types';
 import { ModelCatalog } from '../catalog/ModelCatalog';
+import { getProvidersWithAccess } from '../catalog/providerCredentials';
 import {
   addProviderWithCredentials,
   addRecentlyUsedModel,
   deleteProviderWithCredentials,
-  getProvidersWithCredentials,
   getRecentlyUsedModels,
   removeRecentlyUsedModels,
 } from '../storage/repository';
@@ -124,20 +124,10 @@ export function useModelsWithConfiguredProvider(
 
         const [recentModelKeys, providersWithCredentials] = await Promise.all([
           getRecentlyUsedModels(storage),
-          getProvidersWithCredentials(storage),
+          getProvidersWithAccess(providerRegistry, storage),
         ]);
 
-        // Track providers with credentials
-        const providersRequiringCredentials = providersWithCredentials.filter((pid) =>
-          providerRegistry.hasProvider(pid)
-        );
-        const providersNotRequiringCredentials = providerRegistry
-          .getProvidersNotRequiringCredentials()
-          .map((provider) => provider.metadata.id);
-        const providers = [
-          ...new Set([...providersRequiringCredentials, ...providersNotRequiringCredentials]),
-        ];
-        setProvidersWithCreds(providers);
+        setProvidersWithCreds(providersWithCredentials);
 
         // Recently used list, but only for models that currently exist in snapshot
         const recent = await Promise.all(
