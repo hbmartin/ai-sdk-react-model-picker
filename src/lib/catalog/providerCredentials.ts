@@ -12,7 +12,24 @@ export async function getProvidersWithAccess(
 
   const allProviders = new Set<ProviderId>();
 
-  for (const providerId of credentialedProviders) {
+// You can collapse the two loops into a single chained operation,
+// reducing boilerplate while preserving order & uniqueness.
+export async function getProvidersWithAccess(
+  providerRegistry: IProviderRegistry,
+  storage: StorageAdapter
+): Promise<ProviderId[]> {
+  const credentialed = await getProvidersWithCredentials(storage);
+  const noCredIds = providerRegistry
+    .getProvidersNotRequiringCredentials()
+    .map(({ metadata: { id } }) => id);
+
+  return [
+    ...new Set([
+      ...credentialed,
+      ...noCredIds
+    ])
+  ].filter(id => providerRegistry.hasProvider(id));
+}
     if (providerRegistry.hasProvider(providerId)) {
       allProviders.add(providerId);
     }
