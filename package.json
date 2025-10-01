@@ -93,7 +93,7 @@
     "@ai-sdk/google": ">=2.0.0",
     "@ai-sdk/mistral": ">=2.0.0",
     "@ai-sdk/openai": ">=2.0.0",
-    "@ai-sdk/openai-compatible": ">-1.0.0",
+    "@ai-sdk/openai-compatible": ">=1.0.0",
     "@openrouter/ai-sdk-provider": ">=1.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",

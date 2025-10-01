@@ -330,22 +330,7 @@ export class ModelCatalog {
 
     const run = (async () => {
       try {
-        const storedConfig = await getProviderConfiguration(this.providerStorage, providerId);
-        const config = storedConfig === undefined ? undefined : { ...storedConfig };
-
-        try {
-          provider.configuration.assertValidConfigAndRemoveEmptyKeys(config);
-        } catch (validationError) {
-          const message =
-            validationError instanceof Error ? validationError.message : String(validationError);
-          this.setStatus(providerId, 'missing-config', message);
-          return;
-        }
-
-        if (typeof provider.fetchModels !== 'function') {
-          this.setStatus(providerId, 'ready');
-          return;
-        }
+        const config = await getProviderConfiguration(this.providerStorage, providerId);
 
         this.setStatus(providerId, 'refreshing');
         this.telemetry?.onFetchStart?.(providerId);
