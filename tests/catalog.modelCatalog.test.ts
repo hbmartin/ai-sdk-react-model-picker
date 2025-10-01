@@ -67,14 +67,12 @@ function builtin(id: string, name?: string): ModelConfig {
 }
 
 describe('ModelCatalog merge and persistence', () => {
-  let storage: MemoryStorageAdapter;
   let modelStorage: MemoryStorageAdapter;
   let registry: ProviderRegistry;
   let provider: FakeProvider;
   const pid = createProviderId('prov');
 
   beforeEach(() => {
-    storage = new MemoryStorageAdapter('test-catalog');
     modelStorage = new MemoryStorageAdapter('test-catalog-models');
     registry = new ProviderRegistry(undefined);
     provider = new FakeProvider(pid, 'Prov', [
