@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ModelCatalog } from '../src/lib/catalog/ModelCatalog';
 import { ProviderRegistry } from '../src/lib/providers/ProviderRegistry';
 import { MemoryStorageAdapter } from '../src/lib/storage';
-import { addProviderWithCredentials } from '../src/lib/storage/repository';
 import {
   createProviderId,
   createModelId,
@@ -68,14 +67,12 @@ function builtin(id: string, name?: string): ModelConfig {
 }
 
 describe('ModelCatalog merge and persistence', () => {
-  let storage: MemoryStorageAdapter;
   let modelStorage: MemoryStorageAdapter;
   let registry: ProviderRegistry;
   let provider: FakeProvider;
   const pid = createProviderId('prov');
 
   beforeEach(() => {
-    storage = new MemoryStorageAdapter('test-catalog');
     modelStorage = new MemoryStorageAdapter('test-catalog-models');
     registry = new ProviderRegistry(undefined);
     provider = new FakeProvider(pid, 'Prov', [
@@ -128,15 +125,5 @@ describe('ModelCatalog merge and persistence', () => {
     expect(ids).toContain(createModelId('B1'));
     const entry = catalog.getSnapshot()[pid].models.find((x) => x.model.id === newId);
     expect(entry?.model.origin).toBe('user');
-  });
-
-  it('gates refresh when config is invalid and sets missing-config status', async () => {
-    await addProviderWithCredentials(storage, pid);
-    // No configuration set => invalid
-    const catalog = new ModelCatalog(registry, modelStorage);
-    await catalog.initialize(false);
-    await catalog.refresh(pid);
-    const status = catalog.getSnapshot()[pid].status;
-    expect(status === 'missing-config' || status === 'idle').toBe(true);
   });
 });

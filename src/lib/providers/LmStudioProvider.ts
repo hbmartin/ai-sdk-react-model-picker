@@ -75,7 +75,7 @@ export class LmStudioProvider extends AIProvider {
   override readonly metadata: ProviderMetadata = {
     id: createProviderId('lmstudio'),
     name: 'LMStudio',
-    description: 'Use GPT-4o, GPT-4, or other OpenAI models',
+    description: 'Use local AI models like gpt-oss, Qwen, Gemma, DeepSeek hosted on your computer.',
     icon: LmStudioIcon,
     documentationUrl: 'https://lmstudio.ai/docs/app/api/endpoints/openai',
     fetchModelListPath: '/api/v0/models',
@@ -124,6 +124,7 @@ export class LmStudioProvider extends AIProvider {
       throw new TypeError('Unexpected LM Studio model list response payload');
     }
 
+    // TODO: consider how discoveredAt effects sorting
     return payload.data
       .filter((model) => model.type !== 'embeddings')
       .map((model) => ({
