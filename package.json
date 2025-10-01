@@ -95,6 +95,7 @@
     "@ai-sdk/openai": ">=2.0.0",
     "@ai-sdk/openai-compatible": ">=1.0.0",
     "@openrouter/ai-sdk-provider": ">=1.0.0",
+    "ollama-ai-provider-v2": ">=1.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-hook-form": "^7.62.0"
@@ -131,6 +132,9 @@
       "optional": true
     },
     "@ai-sdk/deepseek": {
+      "optional": true
+    },
+    "ollama-ai-provider-v2": {
       "optional": true
     }
   },
@@ -179,6 +183,7 @@
     "globals": "^16.4.0",
     "jiti": "^2.6.1",
     "jsdom": "^27.0.0",
+    "ollama-ai-provider-v2": "^1.4.1",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "publint": "^0.3.13",

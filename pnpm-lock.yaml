@@ -140,6 +140,9 @@ importers:
       jsdom:
         specifier: ^27.0.0
         version: 27.0.0(postcss@8.5.6)
+      ollama-ai-provider-v2:
+        specifier: ^1.4.1
+        version: 1.4.1(zod@4.1.8)
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -2659,6 +2662,12 @@ packages:
   object.values@1.2.1:
     resolution: {integrity: sha512-gXah6aZrcUxjWg2zR2MwouP2eHlCBzdV4pygudehaKXSGW4v2AsRQUK+lwwXhii6KFZcunEnmSUoYp5CXibxtA==}
     engines: {node: '>= 0.4'}
+
+  ollama-ai-provider-v2@1.4.1:
+    resolution: {integrity: sha512-coo3+IvnL6O4Ku0TekUiQCEYYvLRbfLfPBcx0e30fxrfKTArEff0oinTKGZ0RRGFxvqd0LgFa6f3kxppA71f3A==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^4.0.16
 
   open@8.4.2:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
@@ -6191,6 +6200,12 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
+
+  ollama-ai-provider-v2@1.4.1(zod@4.1.8):
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.10(zod@4.1.8)
+      zod: 4.1.8
 
   open@8.4.2:
     dependencies:
