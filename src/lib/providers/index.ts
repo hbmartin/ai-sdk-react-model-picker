@@ -9,6 +9,7 @@ import { GoogleProvider } from './GoogleProvider';
 import { LmStudioProvider } from './LmStudioProvider';
 import { MistralProvider } from './MistralProvider';
 import { MoonshotProvider } from './MoonshotProvider';
+import { OllamaProvider } from './OllamaProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderRegistry } from './ProviderRegistry';
@@ -36,6 +37,7 @@ export const allProviders = {
   [createProviderId('cohere')]: CohereProvider,
   [createProviderId('deepseek')]: DeepseekProvider,
   [createProviderId('lmstudio')]: LmStudioProvider,
+  [createProviderId('ollama')]: OllamaProvider,
   [createProviderId('mistral')]: MistralProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
   [createProviderId('openrouter')]: OpenRouterProvider,
