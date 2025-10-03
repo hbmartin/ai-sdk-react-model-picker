@@ -31,7 +31,6 @@ export default defineConfig([
       js.configs.recommended,
       ...tsConfigs.recommendedTypeChecked,
       ...tsConfigs.strictTypeChecked,
-      reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
       reactRefresh.configs.recommended,
       eslintPluginUnicorn.configs.all,
@@ -44,6 +43,7 @@ export default defineConfig([
       'unused-imports': unusedImports,
       'code-complete': codeComplete,
       react: reactPlugin,
+      'react-hooks': reactHooks,
     },
     languageOptions: {
       // eslint-disable-next-line code-complete/no-magic-numbers-except-zero-one
@@ -268,7 +268,6 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       ...tsConfigs.recommended, // Use non-type-checked config for stories
-      reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
       eslintPluginUnicorn.configs.recommended,
       eslintPluginPrettierRecommended,

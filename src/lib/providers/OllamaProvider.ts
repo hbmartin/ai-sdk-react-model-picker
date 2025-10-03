@@ -6,6 +6,8 @@ import { OllamaIcon } from '../icons';
 import { baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 import type { OllamaProviderSettings } from 'ollama-ai-provider-v2';
 
+const DEFAULT_BASE_URL = 'http://localhost:11434/api';
+
 interface OllamaModelDetails {
   format?: string;
   family?: string;
@@ -95,7 +97,7 @@ export class OllamaProvider extends AIProvider {
   override readonly metadata: ProviderMetadata = {
     id: createProviderId('ollama'),
     name: 'Ollama',
-    description: 'Use local AI models like gpt-oss, Qwen, Gemma, DeepSeek hosted on your computer.',
+    description: 'Use local AI models like Llama, Qwen, Gemma, DeepSeek hosted on your computer.',
     icon: OllamaIcon,
     documentationUrl: 'https://docs.ollama.com/quickstart',
     fetchModelListPath: '/api/tags',
@@ -105,7 +107,7 @@ export class OllamaProvider extends AIProvider {
 
   override readonly configuration: ConfigAPI<OllamaProviderSettings> =
     makeConfiguration<OllamaProviderSettings>()({
-      fields: [baseUrlField('http://localhost:11434/api')],
+      fields: [baseUrlField(DEFAULT_BASE_URL)],
     });
 
   override async fetchModels(
@@ -121,7 +123,7 @@ export class OllamaProvider extends AIProvider {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
       options !== undefined && 'baseURL' in options && options.baseURL.trim().length > 0
         ? options.baseURL
-        : 'http://localhost:11434/api';
+        : DEFAULT_BASE_URL;
 
     let requestUrl: URL;
     try {
@@ -154,7 +156,6 @@ export class OllamaProvider extends AIProvider {
     }));
   }
 
-  // TODO: need to handle case where params.options is undefined?
   async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
     // Dynamic import to avoid bundling if not needed
     let ollama: OllamaModule;
@@ -171,17 +172,21 @@ export class OllamaProvider extends AIProvider {
 
     const options = params.options ?? {};
 
-    const baseURL = options.baseURL?.trim().length ? options.baseURL : 'http://localhost:11434/api';
+    const baseURL =
+      'baseURL' in options && options['baseURL'].trim().length > 0
+        ? options['baseURL'].trim()
+        : DEFAULT_BASE_URL;
     const compatibility =
-      options.compatibility === 'compatible' || options.compatibility === 'strict'
-        ? options.compatibility
+      options['compatibility'] === 'compatible' || options['compatibility'] === 'strict'
+        ? options['compatibility']
         : 'strict';
 
-    const clientOptions: OllamaProviderSettings = {
+    const clientOptions = {
+      ...options,
       baseURL,
       compatibility,
-    };
-    this.configuration.assertValidConfigAndRemoveEmptyKeys(options);
+    } satisfies OllamaProviderSettings;
+    this.configuration.assertValidConfigAndRemoveEmptyKeys(clientOptions);
 
     const client = ollama.createOllama(clientOptions);
     return client(params.model);

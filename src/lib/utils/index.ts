@@ -15,10 +15,11 @@ export async function getSdkLanguageModel(storage: StorageAdapter): Promise<Lang
   if (provider === undefined) {
     throw new Error(`Could not find the required provider: ${providerId}`);
   }
+  const providerInstance = new provider();
   const config = await getProviderConfiguration(storage, providerId);
-  if (config === undefined) {
+
+  if (config === undefined && !providerInstance.configuration.validateConfig({}).ok) {
     throw new Error(`Could not find the required provider configuration: ${providerId}`);
   }
-  const providerInstance = new provider();
-  return providerInstance.createInstance({ model: modelId, options: config });
+  return providerInstance.createInstance({ model: modelId, options: config ?? {} });
 }
