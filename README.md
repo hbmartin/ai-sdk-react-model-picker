@@ -6,7 +6,7 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hbmartin/ai-sdk-react-model-picker)
 [![CI](https://github.com/hbmartin/ai-sdk-react-model-picker/actions/workflows/ci.yml/badge.svg)](https://github.com/hbmartin/ai-sdk-react-model-picker/actions/workflows/ci.yml)
 [![NPM License](https://img.shields.io/npm/l/ai-sdk-react-model-picker?color=blue)](https://github.com/hbmartin/ai-sdk-react-model-picker/blob/main/LICENSE.txt)
-[![Storybook](https://img.shields.io/badge/Storybook-white?logo=storybook)](https://hbmartin.github.io/ai-sdk-react-model-picker)
+[![Storybook](https://img.shields.io/badge/Storybook-white?logo=storybook)](https://hbmartin.github.io/ai-sdk-react-model-picker/?path=/docs/components-modelselect--docs)
 
 ## Features
 
@@ -18,6 +18,9 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 🔒 **Type Safe** - Full TypeScript support with branded types  
 💾 **Flexible Storage** - Pluggable storage adapters (localStorage, sessionStorage, custom)  
 🎭 **Minimal Dependencies** - No Redux, React Router, or IDE-specific APIs
+🖥️ **Local Model Detection** - Automatically find installed models from Ollama and LMStudio
+
+<img src="docs/demo.gif" />
 
 ## Installation
 

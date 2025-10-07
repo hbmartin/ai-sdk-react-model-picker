@@ -19,6 +19,13 @@ const meta = {
       description: {
         component: 'A flexible model selection component for AI providers',
       },
+      canvas: {
+        layout: 'padded',
+        story: {
+          inline: false,
+          height: '720px',
+        },
+      },
     },
   },
   tags: ['autodocs'],
