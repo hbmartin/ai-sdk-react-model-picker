@@ -14,7 +14,7 @@ const meta = {
   title: 'Components/ModelSelect',
   component: ModelSelect,
   parameters: {
-    layout: 'centered',
+    layout: 'padded',
     docs: {
       description: {
         component: 'A flexible model selection component for AI providers',
@@ -71,7 +71,12 @@ const ModelSelectWrapper = (props: Partial<ModelSelectProps>) => {
   };
 
   return (
-    <div style={{ width: '300px' }}>
+    <div
+      style={{
+        width: 'min(640px, 100%)',
+        margin: '0 auto',
+      }}
+    >
       <ModelSelect {...props} onModelChange={handleModelChange} />
     </div>
   );
