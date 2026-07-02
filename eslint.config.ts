@@ -21,6 +21,8 @@ export default defineConfig([
     'vite.config.ts',
     'postcss.config.js',
     'tailwind.config.js',
+    'tailwind-preset.d.ts',
+    'tailwind-preset.d.cts',
     '.github/**',
     'storybook-static',
     '.storybook',

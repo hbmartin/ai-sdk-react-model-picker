@@ -16,9 +16,11 @@ import {
   useModelSelection,
   useProviders,
   ModelSelect,
+  ProviderRegistry,
+  AnthropicProvider,
+  OpenAIProvider,
+  MemoryStorageAdapter,
 } from 'ai-sdk-react-model-picker';
-import { ProviderRegistry, AnthropicProvider, OpenAIProvider } from 'ai-sdk-react-model-picker/providers';
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
 import 'ai-sdk-react-model-picker/styles.css';
 
 const storage = new MemoryStorageAdapter();

@@ -39,6 +39,9 @@ export type {
   ConfigTypeValidationResult,
 } from './providers/configuration';
 
+// Provider base class (extend this to build custom providers)
+export { AIProvider } from './types';
+
 // Storage
 export { MemoryStorageAdapter } from './storage';
 export { assertRecordStringString, idsFromKey } from './types';
@@ -59,7 +62,6 @@ export type {
   ModelId,
   ApiKey,
   ApiUrl,
-  AIProvider,
   IProviderRegistry,
   ProviderInstanceParams,
   ValidationResult,

@@ -14,7 +14,7 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 🔧 **Provider Extensibility** - Easy-to-extend provider system with built-in validation  
 🎨 **Theme Aware** - Auto-detects VSCode, JetBrains IDEs, and web environments  
 ⚡ **AI SDK v5 Ready** - Direct integration with Vercel AI SDK  
-📦 **Progressive Enhancement** - Simple defaults, advanced APIs via subpath exports  
+📦 **Progressive Enhancement** - Simple defaults, advanced APIs all available from the package root  
 🔒 **Type Safe** - Full TypeScript support with branded types  
 💾 **Flexible Storage** - Pluggable storage adapters (localStorage, sessionStorage, custom)  
 🎭 **Minimal Dependencies** - No Redux, React Router, or IDE-specific APIs
@@ -33,7 +33,7 @@ npm install ai-sdk-react-model-picker
 Install the AI SDK providers you plan to use:
 
 ```bash
-# Core (always needed)
+# Core (always needed, React 19 is required)
 npm install react react-dom react-hook-form
 
 # AI SDK providers (install as needed)
@@ -60,13 +60,13 @@ import 'ai-sdk-react-model-picker/styles.css';
 ```tsx
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { ModelSelect } from 'ai-sdk-react-model-picker';
 import {
+  ModelSelect,
   ProviderRegistry,
   OpenAIProvider,
   AnthropicProvider,
-} from 'ai-sdk-react-model-picker/providers';
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+  MemoryStorageAdapter,
+} from 'ai-sdk-react-model-picker';
 import 'ai-sdk-react-model-picker/styles.css'; // Required!
 
 function App() {
@@ -142,13 +142,13 @@ module.exports = [
 ## Quick Start
 
 ```tsx
-import { ModelSelect } from 'ai-sdk-react-model-picker';
 import {
+  ModelSelect,
   ProviderRegistry,
   OpenAIProvider,
   AnthropicProvider,
-} from 'ai-sdk-react-model-picker/providers';
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+  MemoryStorageAdapter,
+} from 'ai-sdk-react-model-picker';
 import 'ai-sdk-react-model-picker/styles.css';
 
 function App() {
@@ -192,7 +192,7 @@ Built-in providers:
 Handle persistence of API keys and configuration:
 
 ```tsx
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker';
 
 const memoryStorage = new MemoryStorageAdapter();
 
@@ -224,7 +224,7 @@ See guides for type-accurate props and APIs:
 Manages all available providers.
 
 ```tsx
-import { ProviderRegistry } from 'ai-sdk-react-model-picker/providers';
+import { ProviderRegistry } from 'ai-sdk-react-model-picker';
 
 const registry = new ProviderRegistry();
 
@@ -241,7 +241,7 @@ const openaiModels = registry.getModelsForProvider('openai');
 Extend the `AIProvider` base class:
 
 ```tsx
-import { AIProvider } from 'ai-sdk-react-model-picker/providers';
+import { AIProvider } from 'ai-sdk-react-model-picker';
 
 class CustomProvider extends AIProvider {
   metadata = {

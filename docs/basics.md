@@ -11,6 +11,7 @@ npm install ai-sdk-react-model-picker
 Peer deps you’ll likely need:
 
 ```bash
+# React 19 is required
 npm install react react-dom react-hook-form
 # Add only the AI SDK providers you use
 npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
@@ -27,9 +28,13 @@ import 'ai-sdk-react-model-picker/styles.css';
 ## Quick Start (Controlled)
 
 ```tsx
-import { ModelSelect, ProviderRegistry } from 'ai-sdk-react-model-picker';
-import { OpenAIProvider, AnthropicProvider } from 'ai-sdk-react-model-picker/providers';
-import { MemoryStorageAdapter } from 'ai-sdk-react-model-picker/storage';
+import {
+  ModelSelect,
+  ProviderRegistry,
+  OpenAIProvider,
+  AnthropicProvider,
+  MemoryStorageAdapter,
+} from 'ai-sdk-react-model-picker';
 import 'ai-sdk-react-model-picker/styles.css';
 
 function App() {
