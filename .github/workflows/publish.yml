@@ -54,6 +54,11 @@ jobs:
       - name: Build library
         run: pnpm run build
 
+      - name: Validate packaging
+        run: |
+          pnpm exec publint --strict
+          pnpm exec attw --pack . --exclude-entrypoints styles.css
+
       - name: Check package contents
         run: pnpm pack
 

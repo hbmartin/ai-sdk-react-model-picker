@@ -49,11 +49,10 @@ jobs:
       - name: Check for security vulnerabilities
         run: pnpm audit --audit-level=moderate
 
-      - name: Validate package.json
+      - name: Validate packaging
         run: |
-          pnpm exec publint
-          pnpm exec are-the-types-wrong --pack .
-        continue-on-error: true
+          pnpm exec publint --strict
+          pnpm exec attw --pack . --exclude-entrypoints styles.css
 
   compatibility:
     name: Check AI SDK Compatibility
@@ -79,19 +78,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install AI SDK providers
-        run: |
-          pnpm add --no-save @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google || true
-        continue-on-error: true
+      - name: Update AI SDK providers to latest
+        run: pnpm add --no-save @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
 
-      - name: Build with AI SDK providers
+      - name: Build with latest AI SDK providers
         run: pnpm run build
-
-      - name: Check peer dependency compatibility
-        run: |
-          echo "Checking peer dependencies..."
-          if [ -d node_modules/@ai-sdk ]; then
-            ls node_modules/@ai-sdk
-          else
-            echo "AI SDK providers are optional"
-          fi
