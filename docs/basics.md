@@ -12,7 +12,7 @@ Peer deps you’ll likely need:
 
 ```bash
 # React 19 is required
-npm install react react-dom react-hook-form
+npm install react@^19 react-dom@^19 react-hook-form
 # Add only the AI SDK providers you use
 npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
 npm install @ai-sdk/azure @ai-sdk/mistral @ai-sdk/cohere @ai-sdk/amazon-bedrock

@@ -34,7 +34,7 @@ Install the AI SDK providers you plan to use:
 
 ```bash
 # Core (always needed, React 19 is required)
-npm install react react-dom react-hook-form
+npm install react@^19 react-dom@^19 react-hook-form
 
 # AI SDK providers (install as needed)
 npm install @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
@@ -224,7 +224,7 @@ See guides for type-accurate props and APIs:
 Manages all available providers.
 
 ```tsx
-import { ProviderRegistry } from 'ai-sdk-react-model-picker';
+import { AnthropicProvider, OpenAIProvider, ProviderRegistry } from 'ai-sdk-react-model-picker';
 
 const registry = new ProviderRegistry();
 
