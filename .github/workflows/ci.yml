@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, develop]
@@ -50,9 +53,7 @@ jobs:
         run: pnpm audit --audit-level=moderate
 
       - name: Validate packaging
-        run: |
-          pnpm exec publint --strict
-          pnpm exec attw --pack . --exclude-entrypoints styles.css
+        run: pnpm run validate:packaging
 
   compatibility:
     name: Check AI SDK Compatibility
