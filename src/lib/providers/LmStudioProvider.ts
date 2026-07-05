@@ -6,11 +6,11 @@ import { AIProvider, createModelId, createProviderId, isObject } from '../types'
 import { LmStudioIcon } from '../icons';
 import { baseUrlField, makeConfiguration, type ConfigAPI } from './configuration';
 
-type LmStudioModelType = 'llm' | 'embeddings';
-
 interface LmStudioModel {
   id: string;
-  type: LmStudioModelType;
+  // '/api/v0/models' returns 'llm', 'vlm', and 'embeddings' today, but the set
+  // is not documented as closed — treat any other value as a usable model
+  type: string;
   max_context_length?: number;
   capabilities?: string[];
 }
@@ -31,11 +31,11 @@ function isLmStudioModel(value: unknown): value is LmStudioModel {
     capabilities?: unknown;
   };
 
-  if (typeof candidate.id !== 'string') {
+  if (typeof candidate.id !== 'string' || candidate.id.trim().length === 0) {
     return false;
   }
 
-  if (candidate.type !== 'llm' && candidate.type !== 'embeddings') {
+  if (typeof candidate.type !== 'string') {
     return false;
   }
 
@@ -64,11 +64,7 @@ function isLmStudioModelListResponse(value: unknown): value is LmStudioModelList
 
   const candidate = value as { data?: unknown };
 
-  if (!Array.isArray(candidate.data)) {
-    return false;
-  }
-
-  return candidate.data.every((item) => isLmStudioModel(item));
+  return Array.isArray(candidate.data);
 }
 
 export class LmStudioProvider extends AIProvider {
@@ -124,14 +120,19 @@ export class LmStudioProvider extends AIProvider {
       throw new TypeError('Unexpected LM Studio model list response payload');
     }
 
+    // Skip entries we don't understand instead of rejecting the whole list;
+    // with JIT loading enabled the list includes every downloaded model
+    // (loaded or not), and formats vary across LM Studio versions.
     // TODO: consider how discoveredAt effects sorting
     return payload.data
+      .filter((model) => isLmStudioModel(model))
       .filter((model) => model.type !== 'embeddings')
       .map((model) => ({
         id: createModelId(model.id),
         displayName: model.id,
         contextLength: model.max_context_length,
         supportsTools: model.capabilities?.includes('tool_use') ?? false,
+        supportsVision: model.type === 'vlm' || (model.capabilities?.includes('vision') ?? false),
         discoveredAt: Date.now(),
       }));
   }
