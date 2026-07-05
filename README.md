@@ -187,6 +187,8 @@ Built-in providers:
 - **Azure OpenAI** - Azure-hosted OpenAI models
 - **Mistral** - Mistral Large/Medium/Small, Codestral
 - **Cohere** - Command R+, Command R, Command
+- **Qwen** - Qwen3 Max, Qwen3 Coder Plus, Qwen Plus/Turbo (Alibaba Cloud Model Studio)
+- **Z.ai (GLM)** - GLM 4.6, GLM 4.5, GLM 4.5 Air (Zhipu AI)
 
 ### Storage Adapters
 

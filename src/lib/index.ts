@@ -33,6 +33,8 @@ export { AzureProvider } from './providers/AzureProvider';
 export { GoogleProvider } from './providers/GoogleProvider';
 export { MistralProvider } from './providers/MistralProvider';
 export { CohereProvider } from './providers/CohereProvider';
+export { QwenProvider } from './providers/QwenProvider';
+export { ZaiProvider } from './providers/ZaiProvider';
 export { makeConfiguration, apiKeyField, baseUrlField } from './providers/configuration';
 export type {
   ConfigAPI,

@@ -14,6 +14,8 @@ import { OllamaProvider } from './OllamaProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderRegistry } from './ProviderRegistry';
+import { QwenProvider } from './QwenProvider';
+import { ZaiProvider } from './ZaiProvider';
 
 export type {
   AIProvider,
@@ -43,6 +45,8 @@ export const allProviders = {
   [createProviderId('mistral')]: MistralProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
   [createProviderId('openrouter')]: OpenRouterProvider,
+  [createProviderId('qwen')]: QwenProvider,
+  [createProviderId('zai')]: ZaiProvider,
   [createProviderId('azure')]: AzureProvider,
 } satisfies Record<ProviderId, ProviderCtor>;
 
