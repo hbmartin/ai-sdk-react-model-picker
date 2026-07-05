@@ -3,6 +3,7 @@ import { getTelemetry } from '../telemetry';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
 import { BedrockProvider } from './BedrockProvider';
+import { ClaudeCodeProvider } from './ClaudeCodeProvider';
 import { CohereProvider } from './CohereProvider';
 import { DeepseekProvider } from './DeepseekProvider';
 import { GoogleProvider } from './GoogleProvider';
@@ -32,6 +33,7 @@ export type {
 export const allProviders = {
   [createProviderId('openai')]: OpenAIProvider,
   [createProviderId('anthropic')]: AnthropicProvider,
+  [createProviderId('claude-code')]: ClaudeCodeProvider,
   [createProviderId('google')]: GoogleProvider,
   [createProviderId('bedrock')]: BedrockProvider,
   [createProviderId('cohere')]: CohereProvider,

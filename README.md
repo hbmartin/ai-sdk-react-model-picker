@@ -182,6 +182,7 @@ Built-in providers:
 
 - **OpenAI** - GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo
 - **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus/Sonnet/Haiku
+- **Claude Code** - Claude Opus/Sonnet/Haiku via the Claude Code CLI (subscription auth, no API key)
 - **Google** - Gemini 1.5 Pro/Flash, Gemini Pro
 - **Azure OpenAI** - Azure-hosted OpenAI models
 - **Mistral** - Mistral Large/Medium/Small, Codestral

@@ -27,6 +27,7 @@ export type { VSCodeContext, UniversalTheme } from './hooks';
 export { createDefaultRegistry, allProviders } from './providers';
 export { ProviderRegistry } from './providers/ProviderRegistry';
 export { AnthropicProvider } from './providers/AnthropicProvider';
+export { ClaudeCodeProvider } from './providers/ClaudeCodeProvider';
 export { OpenAIProvider } from './providers/OpenAIProvider';
 export { AzureProvider } from './providers/AzureProvider';
 export { GoogleProvider } from './providers/GoogleProvider';
