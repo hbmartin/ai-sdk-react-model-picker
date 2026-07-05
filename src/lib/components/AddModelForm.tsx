@@ -80,6 +80,7 @@ export function AddModelForm({
     formState: { errors, isValid, isSubmitting },
     reset,
     getFieldState,
+    getValues,
   } = useForm<AddModelFormData>({
     mode: 'onTouched',
   });
@@ -184,7 +185,12 @@ export function AddModelForm({
     if (selectedProvider === undefined) {
       return 'Provider is required';
     }
-    const fieldValidation = selectedProvider.configuration.validateField(key, value);
+    const formValues = Object.fromEntries(
+      Object.entries(getValues()).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string'
+      )
+    );
+    const fieldValidation = selectedProvider.configuration.validateField(key, value, formValues);
     const hasValue = value !== undefined && value.trim().length > 0;
     const { isDirty } = getFieldState(key);
     if (fieldValidation?.error !== undefined) {

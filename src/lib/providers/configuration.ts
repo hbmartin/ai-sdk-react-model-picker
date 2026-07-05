@@ -36,7 +36,11 @@ export interface ConfigAPI<ConfigObj extends object> {
     rec: Record<string, string> | undefined
   ): asserts rec is StringSlice<ConfigObj>;
   validateConfig(record: Record<string, string>): ConfigTypeValidationResult<ConfigObj>;
-  validateField(key: string, value: string | undefined): FieldValidationProblem | undefined;
+  validateField(
+    key: string,
+    value: string | undefined,
+    record?: Record<string, string>
+  ): FieldValidationProblem | undefined;
 }
 
 function formatMessage(
@@ -78,7 +82,11 @@ export function makeConfiguration<ConfigObj extends object>(
     );
     const fieldValidators: Map<
       string,
-      undefined | ((value: string | undefined) => FieldValidationProblem | undefined)
+      | undefined
+      | ((
+          value: string | undefined,
+          record?: Record<string, string>
+        ) => FieldValidationProblem | undefined)
     > = new Map(fields.map((field) => [String(field.key), field.validation]));
 
     // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -101,7 +109,7 @@ export function makeConfiguration<ConfigObj extends object>(
       const fieldValidationWarnings: string[] = [];
       for (const [key, validator] of fieldValidators) {
         if (key in record && validator !== undefined) {
-          const validation = validator(record[key]);
+          const validation = validator(record[key], record);
           if (validation?.error !== undefined) {
             fieldValidationErrors.push(validation.error);
           }
@@ -134,9 +142,13 @@ export function makeConfiguration<ConfigObj extends object>(
       };
     }
 
-    function validateField(key: string, value: string): FieldValidationProblem | undefined {
+    function validateField(
+      key: string,
+      value: string,
+      record?: Record<string, string>
+    ): FieldValidationProblem | undefined {
       if (fieldValidators.has(key)) {
-        return fieldValidators.get(key)?.(value);
+        return fieldValidators.get(key)?.(value, record);
       }
       return undefined;
     }
@@ -191,7 +203,10 @@ export interface ConfigurationField<T extends object> {
   label: string;
   placeholder: string;
   required?: boolean;
-  validation?: (value: string | undefined) => FieldValidationProblem | undefined;
+  validation?: (
+    value: string | undefined,
+    record?: Record<string, string>
+  ) => FieldValidationProblem | undefined;
 }
 
 function hasAny<T extends object>(
@@ -237,11 +252,18 @@ export function apiKeyField<T extends { apiKey?: string }>(
     label: 'API Key',
     placeholder: typeof requirement === 'string' ? `${requirement}...` : '',
     required,
-    validation: (value: string | undefined) => {
+    validation: (value: string | undefined, record?: Record<string, string>) => {
       if (required && (value === undefined || value.trim().length === 0)) {
         return { error: 'API key is required' };
       }
-      if (typeof requirement === 'string' && value?.startsWith(requirement) === false) {
+      // Custom endpoints issue their own key formats, so only nudge about the
+      // vendor's typical prefix when talking to the default base URL
+      const hasCustomBaseUrl = (record?.['baseURL']?.trim().length ?? 0) > 0;
+      if (
+        typeof requirement === 'string' &&
+        value?.startsWith(requirement) === false &&
+        !hasCustomBaseUrl
+      ) {
         return { warning: `API key typically starts with "${requirement}"` };
       }
       if (typeof requirement === 'number' && (value?.length ?? 0) < requirement) {
