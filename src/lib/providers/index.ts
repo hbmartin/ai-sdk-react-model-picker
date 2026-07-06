@@ -3,6 +3,7 @@ import { getTelemetry } from '../telemetry';
 import { AnthropicProvider } from './AnthropicProvider';
 import { AzureProvider } from './AzureProvider';
 import { BedrockProvider } from './BedrockProvider';
+import { ClaudeCodeProvider } from './ClaudeCodeProvider';
 import { CohereProvider } from './CohereProvider';
 import { DeepseekProvider } from './DeepseekProvider';
 import { GoogleProvider } from './GoogleProvider';
@@ -13,6 +14,8 @@ import { OllamaProvider } from './OllamaProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { ProviderRegistry } from './ProviderRegistry';
+import { QwenProvider } from './QwenProvider';
+import { ZaiProvider } from './ZaiProvider';
 
 export type {
   AIProvider,
@@ -32,6 +35,7 @@ export type {
 export const allProviders = {
   [createProviderId('openai')]: OpenAIProvider,
   [createProviderId('anthropic')]: AnthropicProvider,
+  [createProviderId('claude-code')]: ClaudeCodeProvider,
   [createProviderId('google')]: GoogleProvider,
   [createProviderId('bedrock')]: BedrockProvider,
   [createProviderId('cohere')]: CohereProvider,
@@ -41,6 +45,8 @@ export const allProviders = {
   [createProviderId('mistral')]: MistralProvider,
   [createProviderId('moonshot')]: MoonshotProvider,
   [createProviderId('openrouter')]: OpenRouterProvider,
+  [createProviderId('qwen')]: QwenProvider,
+  [createProviderId('zai')]: ZaiProvider,
   [createProviderId('azure')]: AzureProvider,
 } satisfies Record<ProviderId, ProviderCtor>;
 

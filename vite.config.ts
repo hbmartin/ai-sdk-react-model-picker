@@ -40,6 +40,8 @@ export default defineConfig({
         '@ai-sdk/mistral',
         '@ai-sdk/cohere',
         'ai',
+        // Node-only provider: must stay a dynamic peer import, never bundled
+        'ai-sdk-provider-claude-code',
       ],
       output: {
         preserveModules: false,

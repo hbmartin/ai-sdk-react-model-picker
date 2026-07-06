@@ -27,11 +27,14 @@ export type { VSCodeContext, UniversalTheme } from './hooks';
 export { createDefaultRegistry, allProviders } from './providers';
 export { ProviderRegistry } from './providers/ProviderRegistry';
 export { AnthropicProvider } from './providers/AnthropicProvider';
+export { ClaudeCodeProvider } from './providers/ClaudeCodeProvider';
 export { OpenAIProvider } from './providers/OpenAIProvider';
 export { AzureProvider } from './providers/AzureProvider';
 export { GoogleProvider } from './providers/GoogleProvider';
 export { MistralProvider } from './providers/MistralProvider';
 export { CohereProvider } from './providers/CohereProvider';
+export { QwenProvider } from './providers/QwenProvider';
+export { ZaiProvider } from './providers/ZaiProvider';
 export { makeConfiguration, apiKeyField, baseUrlField } from './providers/configuration';
 export type {
   ConfigAPI,
