@@ -211,7 +211,7 @@ export abstract class AIProvider {
     return data;
   }
 
-  // AI SDK v5 integration - return configured model instance
+  // AI SDK v7 integration - return configured model instance
   abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4>;
 }
 

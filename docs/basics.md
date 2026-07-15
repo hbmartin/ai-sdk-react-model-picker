@@ -53,7 +53,7 @@ function App() {
 }
 ```
 
-To create an AI SDK v5 `LanguageModelV2` for the user’s current selection:
+To create an AI SDK v7 `LanguageModelV4` for the user’s current selection:
 
 ```tsx
 import { getSdkLanguageModel } from 'ai-sdk-react-model-picker';
@@ -129,7 +129,7 @@ export class ProviderRegistry implements IProviderRegistry {
 ```ts
 export async function getSdkLanguageModel(
   storage: StorageAdapter
-): Promise<LanguageModelV2>;
+): Promise<LanguageModelV4>;
 ```
 
 ## Notes
