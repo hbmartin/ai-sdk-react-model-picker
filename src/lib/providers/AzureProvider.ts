@@ -1,6 +1,6 @@
 type AzureModule = typeof import('@ai-sdk/azure');
 import type { AzureOpenAIProviderSettings } from '@ai-sdk/azure';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { AzureIcon } from '../icons';
@@ -66,7 +66,7 @@ export class AzureProvider extends AIProvider {
       ],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     let azure: AzureModule;
 
     try {

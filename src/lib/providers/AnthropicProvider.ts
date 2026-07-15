@@ -1,6 +1,6 @@
 type AnthropicModule = typeof import('@ai-sdk/anthropic');
 import type { AnthropicProviderSettings } from '@ai-sdk/anthropic';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId } from '../types';
 import { AnthropicIcon } from '../icons';
@@ -54,7 +54,7 @@ export class AnthropicProvider extends AIProvider {
       requiresAtLeastOneOf: ['apiKey', 'baseURL'],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let anthropic: AnthropicModule;
 

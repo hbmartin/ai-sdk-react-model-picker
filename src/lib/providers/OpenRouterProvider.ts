@@ -1,5 +1,5 @@
 type OpenRouterModule = typeof import('@openrouter/ai-sdk-provider');
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import {
   AIProvider,
   createModelId,
@@ -71,7 +71,7 @@ export class OpenRouterProvider extends AIProvider {
       fields: [apiKeyField('sk-', true), baseUrlField('https://openrouter.ai/api/v1')],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let openRouter: OpenRouterModule;
 
