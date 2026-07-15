@@ -1,7 +1,7 @@
 import js from '@eslint/js';
-import { defineConfig, globalIgnores } from 'eslint/config';
+import { type Config, defineConfig, globalIgnores } from 'eslint/config';
 import codeComplete from 'eslint-plugin-code-complete';
-import importPlugin from 'eslint-plugin-import';
+import importX from 'eslint-plugin-import-x';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -11,6 +11,7 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import globals from 'globals';
 import { configs as tsConfigs } from 'typescript-eslint';
+import type { ESLint } from 'eslint';
 
 export default defineConfig([
   globalIgnores([
@@ -37,15 +38,20 @@ export default defineConfig([
       reactRefresh.configs.recommended,
       eslintPluginUnicorn.configs.all,
       eslintPluginPrettierRecommended,
-      importPlugin.flatConfigs.recommended,
-      importPlugin.flatConfigs.typescript,
-      sonarjs.configs.recommended,
+      importX.flatConfigs.recommended,
+      importX.flatConfigs.typescript,
+      // sonarjs config objects are typed against a looser core config shape
+      // than ESLint 10's strict defineConfig types; cast to Config to bridge
+      // the gap (runtime behavior is unchanged).
+      sonarjs.configs?.recommended as Config,
     ],
     plugins: {
       'unused-imports': unusedImports,
       'code-complete': codeComplete,
       react: reactPlugin,
-      'react-hooks': reactHooks,
+      // react-hooks v7 exposes a nested `configs.flat` map that does not match
+      // ESLint's Plugin type; the plugin itself is a valid ESLint plugin.
+      'react-hooks': reactHooks as unknown as ESLint.Plugin,
     },
     languageOptions: {
       // eslint-disable-next-line code-complete/no-magic-numbers-except-zero-one
@@ -62,7 +68,7 @@ export default defineConfig([
       },
     },
     settings: {
-      'import/resolver': {
+      'import-x/resolver': {
         typescript: {
           project: './tsconfig.app.json',
         },
@@ -91,7 +97,7 @@ export default defineConfig([
       '@typescript-eslint/no-import-type-side-effects': 'error',
 
       // === IMPORT ORGANIZATION ===
-      'import/order': [
+      'import-x/order': [
         'error',
         {
           groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
@@ -125,8 +131,8 @@ export default defineConfig([
           },
         },
       ],
-      'import/no-duplicates': ['error', { 'prefer-inline': false }],
-      'import/no-unresolved': 'error',
+      'import-x/no-duplicates': ['error', { 'prefer-inline': false }],
+      'import-x/no-unresolved': 'error',
 
       // === DISABLE CONFLICTING RULES ===
       '@typescript-eslint/no-unused-vars': 'off', // Use unused-imports plugin
@@ -286,9 +292,53 @@ export default defineConfig([
       'unicorn/prevent-abbreviations': 'off',
       'unicorn/filename-case': 'off',
       'react-hooks/rules-of-hooks': 'off',
-      'import/no-default-export': 'off',
+      'import-x/no-default-export': 'off',
       '@typescript-eslint/no-unused-vars': 'off', // Use unused-imports plugin
       '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
+  {
+    // Opinionated rules newly enabled by the eslint-plugin-unicorn v71 and
+    // eslint-plugin-sonarjs v4 upgrades. They are disabled here to keep the
+    // dependency upgrade free of unrelated churn: several would rename public
+    // API (name-replacements, consistent-boolean-name) or reformat doc
+    // comments (no-asterisk-prefix-in-documentation-comments). This block runs
+    // last so it applies to source, tests, and stories alike. Opt into any of
+    // these as separate style changes.
+    files: ['**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      'unicorn/name-replacements': 'off',
+      'unicorn/consistent-boolean-name': 'off',
+      'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
+      'unicorn/prefer-await': 'off',
+      'unicorn/prefer-error-is-error': 'off',
+      'unicorn/try-complexity': 'off',
+      'unicorn/no-computed-property-existence-check': 'off',
+      'unicorn/no-unnecessary-global-this': 'off',
+      'unicorn/prefer-early-return': 'off',
+      'unicorn/consistent-class-member-order': 'off',
+      'unicorn/no-declarations-before-early-exit': 'off',
+      'unicorn/prefer-minimal-ternary': 'off',
+      'unicorn/prefer-iterator-to-array': 'off',
+      'unicorn/prefer-iterator-concat': 'off',
+      'unicorn/no-unsafe-property-key': 'off',
+      'unicorn/no-incorrect-template-string-interpolation': 'off',
+      'unicorn/comment-content': 'off',
+      'unicorn/prefer-iterable-in-constructor': 'off',
+      'unicorn/prefer-includes-over-repeated-comparisons': 'off',
+      'unicorn/prefer-else-if': 'off',
+      'unicorn/prefer-continue': 'off',
+      'unicorn/prefer-add-event-listener-options': 'off',
+      'unicorn/no-top-level-assignment-in-function': 'off',
+      'unicorn/no-duplicate-loops': 'off',
+      'unicorn/no-break-in-nested-loop': 'off',
+      'unicorn/consistent-function-scoping': 'off',
+      'unicorn/consistent-conditional-object-spread': 'off',
+      'sonarjs/no-skipped-tests': 'off',
+      // Noisy import hygiene warnings that false-positive on flat-config plugin
+      // objects imported as defaults (e.g. importX.flatConfigs, sonarjs.configs).
+      'import-x/no-named-as-default': 'off',
+      'import-x/no-named-as-default-member': 'off',
     },
   },
 ]);

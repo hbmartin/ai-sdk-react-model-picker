@@ -1,5 +1,5 @@
 type OllamaModule = typeof import('ollama-ai-provider-v2');
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createModelId, createProviderId, isObject } from '../types';
 import { OllamaIcon } from '../icons';
@@ -131,7 +131,7 @@ export class OllamaProvider extends AIProvider {
       requestUrl = new URL(this.metadata.fetchModelListPath, base.origin);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid Ollama base URL: ${reason}`);
+      throw new Error(`Invalid Ollama base URL: ${reason}`, { cause: error });
     }
 
     const response = await fetch(requestUrl);
@@ -156,7 +156,7 @@ export class OllamaProvider extends AIProvider {
     }));
   }
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let ollama: OllamaModule;
 

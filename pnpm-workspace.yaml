@@ -1,0 +1,19 @@
+# pnpm 11 relocated repo-level settings here (they are no longer read from the
+# "pnpm" field in package.json).
+
+# esbuild and unrs-resolver ship prebuilt platform binaries and work without
+# running their install scripts; opt out explicitly so installs don't stall on
+# a build-approval prompt.
+allowBuilds:
+  esbuild: false
+  unrs-resolver: false
+
+# Install security patches immediately instead of pnpm 11's staged-release
+# delay, so the transitive override below can resolve to the patched release.
+minimumReleaseAge: 0
+
+# Transitive-dependency security overrides. These are all dev/build tooling and
+# none of them ship in the published package (see the "files" field); each pins
+# a vulnerable transitive range up to a patched release.
+overrides:
+  rollup: '^4.62.2'

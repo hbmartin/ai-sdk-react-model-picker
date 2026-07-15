@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ConfigAPI } from '../providers/configuration';
 import type { ModelPickerTelemetry } from '../telemetry';
 
@@ -211,8 +211,8 @@ export abstract class AIProvider {
     return data;
   }
 
-  // AI SDK v5 integration - return configured model instance
-  abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2>;
+  // AI SDK v7 integration - return configured model instance
+  abstract createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4>;
 }
 
 // Provider registry interface

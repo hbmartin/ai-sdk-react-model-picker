@@ -1,6 +1,6 @@
 type OpenAIModule = typeof import('@ai-sdk/openai');
 import type { OpenAIProviderSettings } from '@ai-sdk/openai';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId } from '../types';
 import { OpenAIIcon } from '../icons';
@@ -44,7 +44,7 @@ export class OpenAIProvider extends AIProvider {
       requiresAtLeastOneOf: ['apiKey', 'baseURL'],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let openai: OpenAIModule;
 

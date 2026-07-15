@@ -1,5 +1,5 @@
 type ClaudeCodeModule = typeof import('ai-sdk-provider-claude-code');
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId } from '../types';
 import { ClaudeIcon } from '../icons';
@@ -66,7 +66,7 @@ export class ClaudeCodeProvider extends AIProvider {
       ],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let claudeCodeModule: ClaudeCodeModule;
 

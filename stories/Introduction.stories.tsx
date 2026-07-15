@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Meta } from '@storybook/react';
 
 const meta: Meta = {
@@ -10,7 +9,7 @@ const meta: Meta = {
           <h1>AI SDK React Model Picker</h1>
           <p>
             A flexible, theme-aware React component library for selecting and managing AI models.
-            Built for Vercel's AI SDK v5 with special support for IDE integrations.
+            Built for Vercel's AI SDK v7 with special support for IDE integrations.
           </p>
 
           <h2>Installation</h2>

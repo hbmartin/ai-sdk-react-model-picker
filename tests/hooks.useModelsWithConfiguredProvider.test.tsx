@@ -53,7 +53,7 @@ class FakeProvider extends (class {} as { new (): AIProvider }) {
   constructor(id: ProviderId, name: string, models: ModelConfig[]) {
     // @ts-expect-error calling abstract base omitted; not needed for tests
     super();
-    this.metadata = { id, name, icon: DummyIcon } as ModelConfigWithProvider['provider'];
+    this.metadata = { id, name, icon: DummyIcon };
     this.models = models;
   }
 
@@ -78,8 +78,8 @@ function makeModel(id: string, displayName?: string, isDefault?: boolean): Model
 
 function keyFor(providerId: ProviderId, modelId: ModelId): ProviderAndModelKey {
   const mp: ModelConfigWithProvider = {
-    provider: { id: providerId, name: String(providerId), icon: DummyIcon },
-    model: { id: modelId, displayName: String(modelId) },
+    provider: { id: providerId, name: providerId, icon: DummyIcon },
+    model: { id: modelId, displayName: modelId },
   };
   return providerAndModelKey(mp);
 }
