@@ -20,7 +20,6 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from './ui/List
 const ADD_MODEL_ID = '__add_model__' as const;
 const ADD_MODEL_LABEL = 'Add Model Provider' as const;
 
-// eslint-disable-next-line sonarjs/prefer-read-only-props
 export function ModelSelect({
   storage,
   providerRegistry,

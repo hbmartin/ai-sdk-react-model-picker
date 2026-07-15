@@ -131,7 +131,7 @@ export class OllamaProvider extends AIProvider {
       requestUrl = new URL(this.metadata.fetchModelListPath, base.origin);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid Ollama base URL: ${reason}`);
+      throw new Error(`Invalid Ollama base URL: ${reason}`, { cause: error });
     }
 
     const response = await fetch(requestUrl);
