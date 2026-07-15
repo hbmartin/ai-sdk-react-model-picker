@@ -80,7 +80,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Update AI SDK providers to latest
-        run: pnpm add --no-save @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
+        run: pnpm update --latest @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google
 
       - name: Build with latest AI SDK providers
         run: pnpm run build
