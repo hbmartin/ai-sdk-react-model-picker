@@ -1,6 +1,6 @@
 type GoogleModule = typeof import('@ai-sdk/google');
 import type { GoogleGenerativeAIProviderSettings } from '@ai-sdk/google';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { GoogleIcon } from '../icons';
@@ -42,7 +42,7 @@ export class GoogleProvider extends AIProvider {
       ],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     let google: GoogleModule;
 
     try {

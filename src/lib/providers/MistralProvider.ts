@@ -1,6 +1,6 @@
 type MistralModule = typeof import('@ai-sdk/mistral');
 import type { MistralProviderSettings } from '@ai-sdk/mistral';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { MistralIcon } from '../icons';
@@ -53,7 +53,7 @@ export class MistralProvider extends AIProvider {
       fields: [apiKeyField(10, true), baseUrlField('https://api.mistral.ai/v1')],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     let mistral: MistralModule;
 
     try {

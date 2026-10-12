@@ -1,6 +1,6 @@
 type DeepseekModule = typeof import('@ai-sdk/deepseek');
 import type { DeepSeekProviderSettings } from '@ai-sdk/deepseek';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId } from '../types';
 import { DeepSeekIcon } from '../icons';
@@ -33,7 +33,7 @@ export class DeepseekProvider extends AIProvider {
       requiresAtLeastOneOf: ['apiKey', 'baseURL'],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let deepseek: DeepseekModule;
 

@@ -195,8 +195,7 @@ export function makeConfiguration<ConfigObj extends object>(
 }
 
 type FieldValidationProblem =
-  | { warning: string; error?: never }
-  | { warning?: never; error: string };
+  { warning: string; error?: never } | { warning?: never; error: string };
 
 export interface ConfigurationField<T extends object> {
   key: RequiredStringKeys<T> | OptionalStringKeys<T>;

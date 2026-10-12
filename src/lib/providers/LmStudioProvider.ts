@@ -1,6 +1,6 @@
 type OpenAIModule = typeof import('@ai-sdk/openai-compatible');
 import type { OpenAICompatibleProviderSettings } from '@ai-sdk/openai-compatible';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createModelId, createProviderId, isObject } from '../types';
 import { LmStudioIcon } from '../icons';
@@ -105,7 +105,7 @@ export class LmStudioProvider extends AIProvider {
       requestUrl = new URL(this.metadata.fetchModelListPath, base.origin);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid LM Studio base URL: ${reason}`);
+      throw new Error(`Invalid LM Studio base URL: ${reason}`, { cause: error });
     }
 
     const response = await fetch(requestUrl);
@@ -137,7 +137,7 @@ export class LmStudioProvider extends AIProvider {
       }));
   }
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let openai: OpenAIModule;
 

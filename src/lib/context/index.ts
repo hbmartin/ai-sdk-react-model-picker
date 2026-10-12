@@ -208,7 +208,7 @@ export function ModelPickerProvider({
     if (telemetry !== undefined) {
       (base as ModelPickerContextValue).telemetry = telemetry;
     }
-    return base as ModelPickerContextValue;
+    return base;
   }, [
     state,
     selectedModel,

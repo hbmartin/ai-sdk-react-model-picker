@@ -1,6 +1,6 @@
 type CohereModule = typeof import('@ai-sdk/cohere');
 import type { CohereProviderSettings } from '@ai-sdk/cohere';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { ModelConfig, ProviderMetadata, ProviderInstanceParams } from '../types';
 import { AIProvider, createProviderId, createModelId, ModelProviderTags } from '../types';
 import { CohereIcon } from '../icons';
@@ -52,7 +52,7 @@ export class CohereProvider extends AIProvider {
       fields: [apiKeyField(10, true), baseUrlField('https://api.cohere.com/v2')],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     let cohere: CohereModule;
 
     try {

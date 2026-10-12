@@ -1,6 +1,6 @@
 # AI SDK React Model Picker
 
-A flexible, theme-aware React component library for selecting and managing AI models. Built for seamless integration with [Vercel's AI SDK v5](https://ai-sdk.dev/), with special support for VSCode extensions and JetBrains IDEs. Based on [Continue.dev](https://github.com/continuedev/continue).
+A flexible, theme-aware React component library for selecting and managing AI models. Built for seamless integration with [Vercel's AI SDK v7](https://ai-sdk.dev/), with special support for VSCode extensions and JetBrains IDEs. Based on [Continue.dev](https://github.com/continuedev/continue).
 
 [![npm version](https://badge.fury.io/js/ai-sdk-react-model-picker.svg)](https://www.npmjs.com/package/ai-sdk-react-model-picker)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hbmartin/ai-sdk-react-model-picker)
@@ -13,7 +13,7 @@ A flexible, theme-aware React component library for selecting and managing AI mo
 🎯 **Controlled Where It Matters** - Storage-driven selection with optional callbacks  
 🔧 **Provider Extensibility** - Easy-to-extend provider system with built-in validation  
 🎨 **Theme Aware** - Auto-detects VSCode, JetBrains IDEs, and web environments  
-⚡ **AI SDK v5 Ready** - Direct integration with Vercel AI SDK  
+⚡ **AI SDK v7 Ready** - Direct integration with Vercel AI SDK  
 📦 **Progressive Enhancement** - Simple defaults, advanced APIs all available from the package root  
 🔒 **Type Safe** - Full TypeScript support with branded types  
 💾 **Flexible Storage** - Pluggable storage adapters (localStorage, sessionStorage, custom)  

@@ -1,6 +1,6 @@
 type OpenAIModule = typeof import('@ai-sdk/openai');
 import type { OpenAIProviderSettings } from '@ai-sdk/openai';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import {
   AIProvider,
   type ProviderMetadata,
@@ -51,7 +51,7 @@ export class MoonshotProvider extends AIProvider {
       fields: [apiKeyField('sk-', true)],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let openai: OpenAIModule;
 

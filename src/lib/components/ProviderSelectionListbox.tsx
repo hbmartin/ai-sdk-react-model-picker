@@ -20,7 +20,7 @@ export interface ProviderSelectionListboxProps {
 export function ProviderSelectionListbox({
   selectedItem,
   onSelectionChange,
-  topOptions = [],
+  topOptions,
   otherOptions = [],
   className = '',
   placeholder = 'Select an option',

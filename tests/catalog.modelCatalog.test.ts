@@ -45,7 +45,7 @@ class FakeProvider extends (class {} as { new (): AIProvider }) {
   constructor(id: ProviderId, name: string, models: ModelConfig[]) {
     // @ts-expect-error abstract base ctor
     super();
-    this.metadata = { id, name, icon: DummyIcon } as ProviderMetadata;
+    this.metadata = { id, name, icon: DummyIcon };
     this.models = models;
   }
 
@@ -63,7 +63,7 @@ class FakeProvider extends (class {} as { new (): AIProvider }) {
 }
 
 function builtin(id: string, name?: string): ModelConfig {
-  return { id: createModelId(id), displayName: name ?? id } as ModelConfig;
+  return { id: createModelId(id), displayName: name ?? id };
 }
 
 describe('ModelCatalog merge and persistence', () => {

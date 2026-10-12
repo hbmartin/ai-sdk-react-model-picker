@@ -310,7 +310,7 @@ export function ListboxOption({
   className = '',
   onClick,
   ...props
-}: ListboxOptionProps) {
+}: Readonly<ListboxOptionProps>) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { value: selectedValue, onChange, setIsOpen } = useListboxContext();
   const isSelected = selectedValue === value;

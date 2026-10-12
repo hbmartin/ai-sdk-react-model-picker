@@ -1,6 +1,6 @@
 type BedrockModule = typeof import('@ai-sdk/amazon-bedrock');
 import type { AmazonBedrockProviderSettings } from '@ai-sdk/amazon-bedrock';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import {
   AIProvider,
   type ProviderMetadata,
@@ -222,7 +222,7 @@ export class BedrockProvider extends AIProvider {
       ],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let bedrock: BedrockModule;
 

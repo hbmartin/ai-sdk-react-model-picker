@@ -1,6 +1,6 @@
 type OpenAICompatibleModule = typeof import('@ai-sdk/openai-compatible');
 import type { OpenAICompatibleProviderSettings } from '@ai-sdk/openai-compatible';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import {
   AIProvider,
   type ProviderMetadata,
@@ -66,7 +66,7 @@ export class QwenProvider extends AIProvider {
       fields: [apiKeyField('sk-', true), baseUrlField(DEFAULT_BASE_URL)],
     });
 
-  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV2> {
+  async createInstance(params: ProviderInstanceParams): Promise<LanguageModelV4> {
     // Dynamic import to avoid bundling if not needed
     let openai: OpenAICompatibleModule;
 
